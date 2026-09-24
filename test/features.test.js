@@ -140,3 +140,13 @@ test('writing streak counts consecutive daily entries with a grace day', () => {
   assert.equal(writingStreak(entries, '2026-09-25'), 0);
   assert.equal(entriesByDate(entries).get('2026-09-20'), 1);
 });
+
+import { focusElapsedMs, formatRemaining } from '../src/ui/useFocusTimer.js';
+
+test('focus timer elapsed time excludes pauses', () => {
+  const t = { startedAt: 0, minutes: 25, pausedAt: null, pausedMs: 60000 };
+  assert.equal(focusElapsedMs(t, 5 * 60000), 4 * 60000);
+  assert.equal(formatRemaining(t, 5 * 60000), '21:00');
+  assert.equal(focusElapsedMs({ ...t, pausedAt: 3 * 60000 }, 10 * 60000), 2 * 60000);
+  assert.equal(formatRemaining({ ...t, startedAt: -1e9 }, 0), '0:00');
+});

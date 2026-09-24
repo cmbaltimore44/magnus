@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { C } from '../lib/theme.js';
 import { Box, Text, useApp, useInput, useWindowSize } from 'ink';
 import { AppContext } from './context.js';
+import { truncate } from '../lib/display.js';
 import { restoreSession, currentUserId } from '../lib/auth.js';
 import { supabase } from '../lib/supabase.js';
 import { runInteractive, runCapture, editText } from '../lib/shell.js';
@@ -18,6 +19,8 @@ import { Journal } from './views/Journal.jsx';
 import { Search } from './views/Search.jsx';
 import { Upcoming } from './views/Upcoming.jsx';
 import { QuickAdd } from './components/QuickAdd.jsx';
+import { Choice } from './components/Prompt.jsx';
+import { useFocusTimer, formatRemaining } from './useFocusTimer.js';
 
 export const SECTIONS = [
   { view: 'today', label: 'Today', key: 't', digit: '1', component: Today },
@@ -62,12 +65,22 @@ function TabBar({ current, columns }) {
 
 const STATUS_COLORS = { error: 'danger', success: 'success', info: 'accent' };
 
-function Footer({ hints, status, columns }) {
+function Footer({ hints, status, columns, focus }) {
+  const timer = focus ? `${focus.pausedAt ? '⏸' : '◷'} ${formatRemaining(focus)} ${truncate(focus.title, 24)}` : '';
   return (
     <Box flexDirection="column" paddingX={1}>
-      <Text wrap="truncate-end">
-        {status ? <Text color={C[STATUS_COLORS[status.kind] || 'accent']}>{status.text}</Text> : <Text> </Text>}
-      </Text>
+      <Box width={columns - 2}>
+        <Box flexGrow={1} flexShrink={1}>
+          <Text wrap="truncate-end">
+            {status ? <Text color={C[STATUS_COLORS[status.kind] || 'accent']}>{status.text}</Text> : <Text> </Text>}
+          </Text>
+        </Box>
+        {timer ? (
+          <Box flexShrink={0} marginLeft={1}>
+            <Text color={focus.pausedAt ? C.muted : C.accent}>{timer}</Text>
+          </Box>
+        ) : null}
+      </Box>
       <Box width={columns - 2}>
         <Text color={C.muted} wrap="truncate-end">
           {hints}
@@ -88,6 +101,7 @@ export default function App({ gradient }) {
   // updates); every useLoader reloads on it.
   const [dataVersion, setDataVersion] = useState(0);
   const dataChanged = useCallback(() => setDataVersion((v) => v + 1), []);
+  const [focusMenuOpen, setFocusMenuOpen] = useState(false);
   const [captureCount, setCaptureCount] = useState(0);
   const [hints, setHints] = useState('');
   const [status, setStatus] = useState(null);
@@ -123,6 +137,8 @@ export default function App({ gradient }) {
     return true;
   }, [notify]);
 
+  const focus = useFocusTimer({ userId: currentUserId(auth.session), notify, dataChanged });
+
   const checkSession = useCallback(async () => {
     setAuth({ state: 'loading' });
     const { session, offline, error } = await restoreSession();
@@ -149,7 +165,8 @@ export default function App({ gradient }) {
     () => ({
       userId: currentUserId(auth.session),
       searchOpen,
-      overlayOpen: searchOpen || quickAddOpen,
+      overlayOpen: searchOpen || quickAddOpen || focusMenuOpen,
+      startFocus: focus.start,
       dataVersion,
       dataChanged,
       offerUndo,
@@ -190,7 +207,7 @@ export default function App({ gradient }) {
         }
       },
     }),
-    [auth.session, searchOpen, quickAddOpen, dataVersion, dataChanged, offerUndo, columns, rows, route.view, navigate, notify, suspendTerminal]
+    [auth.session, focus.start, focusMenuOpen, searchOpen, quickAddOpen, dataVersion, dataChanged, offerUndo, columns, rows, route.view, navigate, notify, suspendTerminal]
   );
 
   const ready = auth.state === 'ready';
@@ -206,11 +223,12 @@ export default function App({ gradient }) {
       if (input === 'q') return exit();
       if (input === 'a') return setQuickAddOpen(true);
       if (input === 'u') return runUndo();
+      if (input === 'T') return focus.timer ? setFocusMenuOpen(true) : notify('No focus timer running — press t on a task to start one', 'info');
       if (input === '0') return navigate('home');
       const section = SECTIONS.find((s) => s.digit === input);
       if (section) navigate(section.view);
     },
-    { isActive: ready && !searchOpen && !quickAddOpen && captureCount === 0 }
+    { isActive: ready && !searchOpen && !quickAddOpen && !focusMenuOpen && captureCount === 0 }
   );
 
   useInput(
@@ -243,11 +261,30 @@ export default function App({ gradient }) {
     // so closing search returns you exactly where you were.
     body = (
       <>
-        <Box display={searchOpen ? 'none' : 'flex'} flexDirection="column" flexGrow={1}>
+        <Box display={searchOpen ? 'none' : 'flex'} flexDirection="column" flexGrow={1} flexShrink={1} flexBasis={0} minHeight={0} overflow="hidden">
           <View key={route.key} params={route.params} gradient={gradient} sections={SECTIONS} />
         </Box>
         {searchOpen ? <Search onClose={() => setSearchOpen(false)} /> : null}
         {quickAddOpen && !searchOpen ? <QuickAdd onClose={() => setQuickAddOpen(false)} /> : null}
+        {focusMenuOpen && focus.timer ? (
+          <Box flexShrink={0} flexDirection="column">
+          <Choice
+            title={`Focus · ${formatRemaining(focus.timer)} left on “${focus.timer.title}”`}
+            options={[
+              { key: 'pause', label: focus.timer.pausedAt ? 'Resume' : 'Pause' },
+              { key: 'stop', label: 'Stop and log the time so far' },
+              { key: 'discard', label: 'Discard (log nothing)' },
+            ]}
+            onPick={(opt) => {
+              setFocusMenuOpen(false);
+              if (opt.key === 'pause') focus.togglePause();
+              else if (opt.key === 'stop') focus.stop();
+              else focus.discard();
+            }}
+            onCancel={() => setFocusMenuOpen(false)}
+          />
+          </Box>
+        ) : null}
       </>
     );
   }
@@ -259,7 +296,7 @@ export default function App({ gradient }) {
         <Box flexDirection="column" flexGrow={1} paddingX={1} overflow="hidden">
           {body}
         </Box>
-        <Footer hints={ready ? hints : ''} status={status} columns={columns} />
+        <Footer hints={ready ? hints : ''} status={status} columns={columns} focus={ready ? focus.timer : null} />
       </Box>
     </AppContext.Provider>
   );

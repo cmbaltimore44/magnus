@@ -17,10 +17,10 @@ import { layoutQuote, QuoteBlock } from '../components/Quote.jsx';
 // switches for the rest of the session; press r to roll a new one.
 let featuredQuote;
 
-const HINTS = '↑↓ move · space check off / cycle status · enter open task · s unstar · r new quote · R refresh · esc home';
+const HINTS = '↑↓ move · space check off / cycle status · enter open task · s unstar · t focus · r new quote · R refresh · esc home';
 
 export function Today() {
-  const { userId, navigate, notify, columns, contentHeight } = useAppCtx();
+  const { userId, navigate, notify, startFocus, columns, contentHeight } = useAppCtx();
   const [index, setIndex] = useState(0);
   const [quote, setQuote] = useState(featuredQuote ?? null);
   useHints(HINTS);
@@ -106,6 +106,7 @@ export function Today() {
       if (input === ' ') return cycleStatus(selected.task);
       if (key.return) return navigate('board', { taskId: selected.task.id, edit: true });
       if (input === 's') return updateTask(selected.task, { is_starred: false });
+      if (input === 't') return startFocus(selected.task);
     }
   });
 

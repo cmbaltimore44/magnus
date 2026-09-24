@@ -21,7 +21,7 @@ import { Prompt, Confirm, Choice } from '../components/Prompt.jsx';
 import { windowByHeight, windowRange, moveIndex, swapped } from '../components/layout.js';
 
 const HINTS =
-  '←→ column · ↑↓ task · space cycle status · s star · enter edit · n new · d delete · f filter · c category filter · C categories · R refresh · esc home';
+  '←→ column · ↑↓ task · space cycle status · s star · t focus · enter edit · n new · d delete · f filter · c category filter · C categories · R refresh · esc home';
 
 function matchesFilters(task, filterText, filterCategoryId) {
   if (filterCategoryId && task.category_id !== filterCategoryId) return false;
@@ -76,7 +76,7 @@ function taskFields(categories) {
 }
 
 export function Board({ params }) {
-  const { userId, offerUndo, navigate, notify, columns: termCols, contentHeight } = useAppCtx();
+  const { userId, offerUndo, startFocus, navigate, notify, columns: termCols, contentHeight } = useAppCtx();
   const [col, setCol] = useState(0);
   const [rowByCol, setRowByCol] = useState([0, 0, 0]);
   const [filterText, setFilterText] = useState('');
@@ -212,6 +212,7 @@ export function Board({ params }) {
       if (input === 'H') return cycleStatus(selected, -1);
       if (input === 'L') return cycleStatus(selected, 1);
       if (input === 's') return toggleStar(selected);
+      if (input === 't') return startFocus(selected);
       if (key.return || input === 'e') return setMode({ type: 'form', task: selected });
       if (input === 'd') return setMode({ type: 'confirm', task: selected });
     },

@@ -12,14 +12,14 @@ import { categoryColor } from '../../lib/colors.js';
 import { moveIndex, windowRange } from '../components/layout.js';
 
 // Overdue → the next 7 days, across tasks (due date) and projects (target date).
-const HINTS = '↑↓ move · space mark done · enter open · R refresh · esc home';
+const HINTS = '↑↓ move · space mark done · t focus · enter open · R refresh · esc home';
 
 function dayLabel(iso) {
   return new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 export function Upcoming() {
-  const { navigate, notify, columns, contentHeight } = useAppCtx();
+  const { navigate, notify, startFocus, columns, contentHeight } = useAppCtx();
   const [index, setIndex] = useState(0);
   useHints(HINTS);
 
@@ -59,6 +59,7 @@ export function Upcoming() {
     if (key.downArrow || input === 'j') return setIndex((i) => moveIndex(i, 1, entries.length));
     if (!selected) return;
     if (input === ' ' && selected.kind === 'task') return markDone(selected.item);
+    if (input === 't' && selected.kind === 'task') return startFocus(selected.item);
     if (key.return) {
       if (selected.kind === 'task') return navigate('board', { taskId: selected.item.id, edit: true });
       return navigate('projects', { projectId: selected.item.id });
