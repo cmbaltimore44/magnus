@@ -19,6 +19,7 @@ import { Journal } from './views/Journal.jsx';
 import { Search } from './views/Search.jsx';
 import { Upcoming } from './views/Upcoming.jsx';
 import { Insights } from './views/Insights.jsx';
+import { Log } from './views/Log.jsx';
 import { QuickAdd } from './components/QuickAdd.jsx';
 import { Choice } from './components/Prompt.jsx';
 import { useFocusTimer, formatRemaining } from './useFocusTimer.js';
@@ -32,6 +33,7 @@ export const SECTIONS = [
   { view: 'journal', label: 'Journal', key: 'j', digit: '6', component: Journal },
   { view: 'upcoming', label: 'Upcoming', key: 'w', digit: '7', component: Upcoming },
   { view: 'insights', label: 'Insights', key: 'i', digit: '8', component: Insights },
+  { view: 'log', label: 'Log', key: 'g', digit: '9', component: Log },
 ];
 
 function TabBar({ current, columns }) {

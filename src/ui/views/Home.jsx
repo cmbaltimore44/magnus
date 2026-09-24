@@ -13,6 +13,7 @@ const DESCRIPTIONS = {
   journal: 'daily entry, essays, search, capture',
   upcoming: 'overdue, today and the next 7 days',
   insights: 'tasks, routines, focus, mood and sleep trends',
+  log: 'mood, energy, sleep, weight, workouts',
 };
 
 const HINTS = 'press a letter to open · ↑↓ enter · a quick add · ctrl+k or / search · q quit';
