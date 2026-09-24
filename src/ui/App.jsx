@@ -4,7 +4,7 @@ import { Box, Text, useApp, useInput, useWindowSize } from 'ink';
 import { AppContext } from './context.js';
 import { truncate } from '../lib/display.js';
 import { restoreSession, currentUserId } from '../lib/auth.js';
-import { supabase } from '../lib/supabase.js';
+import { supabase, offlineFetch } from '../lib/supabase.js';
 import { runInteractive, runCapture, editText } from '../lib/shell.js';
 import { canOpenGhosttyTabs, openInGhosttyTab } from '../lib/ghostty.js';
 import { loadCoverPng, showCoverFullscreen, supportsKittyGraphics } from '../lib/kitty.js';
@@ -198,13 +198,38 @@ export default function App({ gradient }) {
   const focus = useFocusTimer({ userId: currentUserId(auth.session), notify, dataChanged });
   const summary = useStatusSummary(auth.state === 'ready', dataVersion);
   const live = useLiveUpdates({ ready: auth.state === 'ready', paused: captureCount > 0, onChange: dataChanged });
-  const connection = live === 'live' ? { text: '● live', color: C.success } : null;
+  // Offline layer (lib/offline.js): cached reads, queued writes.
+  const [net, setNet] = useState(() => offlineFetch?.status() || { offline: false, queued: 0 });
+  useEffect(() => {
+    if (!offlineFetch) return undefined;
+    return offlineFetch.subscribe((st) => {
+      setNet({ offline: st.offline, queued: st.queued });
+      if (st.event === 'synced') {
+        notify('Back online — queued changes synced', 'success');
+        dataChanged();
+      } else if (st.event === 'sync-errors') {
+        const n = offlineFetch.failures().length;
+        notify(`Back online — ${n} queued change${n === 1 ? '' : 's'} failed to sync (the server rejected ${n === 1 ? 'it' : 'them'})`, 'error');
+        dataChanged();
+      } else if (st.event === 'offline') {
+        notify('Offline — showing saved data; changes will sync when you reconnect', 'info');
+      }
+    });
+  }, [notify, dataChanged]);
+  const connection = net.offline
+    ? { text: `○ offline${net.queued ? ` · ${net.queued} queued` : ''}`, color: C.soon }
+    : net.queued
+      ? { text: `↻ syncing ${net.queued}`, color: C.soon }
+      : live === 'live'
+        ? { text: '● live', color: C.success }
+        : null;
 
   const checkSession = useCallback(async () => {
     setAuth({ state: 'loading' });
     const { session, offline, error } = await restoreSession();
     if (session) setAuth({ state: 'ready', session });
     else if (offline) setAuth({ state: 'offline', message: error?.message });
+    // (offline with a saved session is handled above: session is set, views use the cache)
     else setAuth({ state: 'login' });
   }, []);
 

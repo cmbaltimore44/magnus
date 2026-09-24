@@ -68,6 +68,13 @@ names, `+3`, `10/1`, `2026-10-01`), priority (`!high`/`!h`, `!low`), the categor
 whose name starts with `home`, and a star. `> some thought` goes to the journal
 inbox instead. Anything that doesn't resolve stays in the title.
 
+**Offline mode**: every read is cached in `~/.config/magnus/cache.json`
+(readable only by you; cleared on sign-out). Without a network, Magnus opens
+on the saved session and cached data, and edits are applied locally and
+queued; the status bar shows `○ offline · N queued`. When the network is
+back, the queue replays in order (last write wins) and the views refresh.
+`magnus context` works offline from the same cache.
+
 **Live updates**: Magnus subscribes to Supabase Realtime (enabled by
 schema_003), so a change made on the phone shows up without pressing R.
 Updates wait while you're typing in a form. `● live` in the status bar means

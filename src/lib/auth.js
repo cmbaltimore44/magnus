@@ -1,5 +1,5 @@
 import { isAuthRetryableFetchError } from '@supabase/supabase-js';
-import { supabase } from './supabase.js';
+import { supabase, authStorage, offlineFetch } from './supabase.js';
 import { deleteSecret } from './keychain.js';
 
 // Returns { session, offline }. getSession() silently refreshes an expired
@@ -8,9 +8,22 @@ import { deleteSecret } from './keychain.js';
 // so a flaky network never bounces you to the sign-in screen.
 export async function restoreSession() {
   const { data, error } = await supabase.auth.getSession();
-  if (error && isAuthRetryableFetchError(error)) return { session: null, offline: true, error };
+  if (error && isAuthRetryableFetchError(error)) return { session: storedSession(), offline: true, error };
   if (error) return { session: null, offline: false, error };
   return { session: data.session, offline: false };
+}
+
+// Offline: the last saved session (possibly with an expired access token),
+// so Magnus can open on cached data; supabase-js refreshes it once the
+// network is back.
+function storedSession() {
+  try {
+    const raw = authStorage?.getItem(supabase.auth.storageKey);
+    const s = raw ? JSON.parse(raw) : null;
+    return s?.user?.id ? s : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function requestCode(email) {
@@ -36,6 +49,7 @@ export async function signOut() {
     await supabase.auth.signOut({ scope: 'local' });
   } finally {
     deleteSecret();
+    offlineFetch?.clear();
   }
 }
 
