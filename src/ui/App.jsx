@@ -61,12 +61,14 @@ function TopEdge({ current, columns, showTabs }) {
   }
   // Full labels when they fit; otherwise inactive tabs shrink to their digit.
   const labelFor = (s, compact) => (!s.digit ? ` ${s.label} ` : compact && current !== s.view ? ` ${s.digit} ` : ` ${s.digit} ${s.label} `);
-  const width = (compact) => 3 + 'MAGNUS '.length + SECTIONS.reduce((n, s) => n + 1 + labelFor(s, compact).length, 0) + 2;
+  // ╭─ (3) + 🪶 and a space (3: the feather is 2 columns wide) + MAGNUS + the tabs + ─╮
+  const width = (compact) => 3 + 3 + 'MAGNUS '.length + SECTIONS.reduce((n, s) => n + 1 + labelFor(s, compact).length, 0) + 2;
   const compact = width(false) > inner;
   const used = Math.min(inner, width(compact));
   return (
     <Text wrap="truncate-end">
       <Text color={C.border}>╭─ </Text>
+      <Text>🪶 </Text>
       <Text color={C.accent} bold>
         MAGNUS{' '}
       </Text>

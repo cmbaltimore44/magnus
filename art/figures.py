@@ -883,8 +883,12 @@ HERON = dict(   # the flying heron (raised-wing pose) as shapes, in its own coor
            [(24, 12.4), (38, 12.8), (38, 13.6), (24, 13.2)], [(24, 14.4), (37, 15), (37, 15.8), (24, 15.2)]],
     ells=[(17.4, 11.6, 7, 2.2, -3), (11.4, 12.2, 1.8, 1.6, 0), (9.6, 10.4, 2, 1.7, 0)])
 
-def heron_parts(k, ox, oy):
-    parts = [poly([(ox + x * k, oy + y * k) for x, y in pts]) for pts in HERON['polys']]
+# The raised wing, and a mid-beat version (tip lowered to about body level).
+WING_MID = [(13.4, 10.4), (17, 8.4), (23, 7), (30, 6.6), (36, 8), (30, 9.4), (24, 10), (21, 10.8)]
+
+def heron_parts(k, ox, oy, wing='up'):
+    polys = HERON['polys'] if wing == 'up' else [WING_MID] + HERON['polys'][1:]
+    parts = [poly([(ox + x * k, oy + y * k) for x, y in pts]) for pts in polys]
     return parts + [ell(ox + cx * k, oy + cy * k, rx * k, ry * k, a) for cx, cy, rx, ry, a in HERON['ells']]
 
 def coopers_hawk_2():
@@ -1039,17 +1043,20 @@ def coopers_hawk_3():
     c.fill(ell(2.4, 25.8, 2, 1.1, -20), 'green'); c.fill(ell(22, 29.2, 2, 1.1, 20), 'green')   # leaves
     return c
 
-def heron_sun_vignette():
-    """Heron scene 1 as a vignette: the sun, the heron, a short tapering strip of water."""
+def heron_sun_vignette(dy=0, wing='up', shimmer=0):
+    """Heron scene 1 as a vignette: the sun, the heron, a short tapering strip of water.
+    dy/wing/shimmer give the animation frames (a glide bob, a wing beat, and the
+    reflection's shimmer)."""
     c = Canvas(42, 30)
     sun = ell(21, 13, 11.4, 11.4)
     c.fill(sun, 'redB'); c.fill(ell(21, 13, 9, 9), 'yellowB')
     water = ell(21, 25.6, 17, 3.2)                                                     # tapers to points at both ends
     c.fill(minus(water, rect(0, 0, 42, 24.2)), 'blue')
     c.fill(both(minus(water, rect(0, 0, 42, 24.2)), lambda x, y: int(y) == 24), 'blueB')   # waterline catching light
-    for y, half, t in ((25, 7, 'redB'), (26.4, 5, 'yellowB'), (27.6, 3, 'redB')):
-        c.fill(rect(21 - half, y, 21 + half, y + 0.7), t)                              # the sun's reflection, narrowing
-    for part in heron_parts(0.8, 5.6, 4.4):
+    for n, (y, half, t) in enumerate(((25, 7, 'redB'), (26.4, 5, 'yellowB'), (27.6, 3, 'redB'))):
+        shift = (1 if n % 2 == 0 else -1) * shimmer                                    # the reflection shimmers side to side
+        c.fill(rect(21 - half + shift, y, 21 + half + shift, y + 0.7), t)
+    for part in heron_parts(0.8, 5.6, 4.4 + dy, wing):
         c.fill(part, 'gray'); c.fill(both(part, sun), 'black')
     return c
 
@@ -1153,9 +1160,10 @@ FIGURES = {'coopers_hawk': coopers_hawk, 'hawk_flight': hawk_flight, 'owl': owl,
 # The shortlist (2026-09-24). The other drawings above stay available.
 SHORTLIST = ['coopers_hawk_3', 'coopers_hawk_2', 'lighthouse_v', 'whale_tail_v', 'whale_breach_v',
              'heron_sun_vignette', 'heron_sun_2_v', 'heron_sun_3_v', 'heron_sun_4_v', 'heron_sun_5_v', 'heron_sun_bare']
-# Every no-argument drawing function in this file, so new ones never need registering.
+# Every drawing function in this file that can be called with no arguments, so new ones never need registering.
 ALL_FIGURES = {n: f for n, f in list(globals().items())
-               if callable(f) and getattr(f, '__module__', None) == __name__ and f.__code__.co_argcount == 0}
+               if callable(f) and getattr(f, '__module__', None) == __name__
+               and f.__code__.co_argcount == len(f.__defaults__ or ())}   # callable with no arguments
 FIGURES = {k: ALL_FIGURES[k] for k in SHORTLIST}
 
 if __name__ == '__main__':

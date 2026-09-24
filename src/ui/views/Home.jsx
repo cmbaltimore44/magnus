@@ -3,7 +3,7 @@ import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useViewInput } from '../context.js';
 import { Banner } from '../components/Banner.jsx';
-import { Starfield } from '../components/Starfield.jsx';
+import { DuskRows, useDusk } from '../components/Dusk.jsx';
 import { PixelArt, pixelRows } from '../components/PixelArt.jsx';
 import { HERON_SUN, HERON_SUN_LEGEND } from '../art/heronSun.js';
 
@@ -68,23 +68,29 @@ export function Home({ gradient, sections }) {
   );
 }
 
-// Home's right side: the starfield, with the heron crossing the sun set into
-// it when there's room (otherwise just the stars).
+// Home's right side: the heron crossing the sun over a still lake, set into
+// a dusk sky of cloud wisps and distant birds. Without room for the art, just
+// the sky and lake.
+const ART_WATERLINE = 12; // text row, within the art, where its water begins
+
 function RightPanel({ width, height }) {
   const art = HERON_SUN;
   const rows = pixelRows(art);
-  if (width < art.width + 6 || height < rows + 2) return <Starfield width={width} height={height} />;
-  const top = Math.max(1, Math.floor((height - rows) / 2) - 1);
+  const fits = width >= art.width + 6 && height >= rows + 2;
+  const top = fits ? Math.max(1, Math.floor((height - rows) / 2) - 1) : 0;
+  const waterFrom = fits ? top + ART_WATERLINE : Math.floor(height * 0.62);
+  const grid = useDusk(width, height, waterFrom);
+  if (!fits) return <DuskRows grid={grid} y0={0} y1={height} />;
   const left = Math.floor((width - art.width) / 2);
   return (
     <Box flexDirection="column" width={width} flexShrink={0}>
-      <Starfield width={width} height={top} seed={3} />
+      <DuskRows grid={grid} y0={0} y1={top} />
       <Box flexDirection="row">
-        <Starfield width={left} height={rows} seed={5} />
+        <DuskRows grid={grid} y0={top} y1={top + rows} x0={0} x1={left} />
         <PixelArt art={art} legend={HERON_SUN_LEGEND} />
-        <Starfield width={width - left - art.width} height={rows} seed={9} />
+        <DuskRows grid={grid} y0={top} y1={top + rows} x0={left + art.width} x1={width} />
       </Box>
-      <Starfield width={width} height={height - top - rows} seed={11} />
+      <DuskRows grid={grid} y0={top + rows} y1={height} />
     </Box>
   );
 }

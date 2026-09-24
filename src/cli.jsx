@@ -25,6 +25,8 @@ Environment:
   MAGNUS_DEMO=1     run against in-memory sample data (no sign-in, nothing saved)
   MAGNUS_KITTY=0|1  force kitty-graphics cover images off/on
   MAGNUS_JOURNAL_TABS=0  start journal entries in this terminal instead of a new Ghostty tab
+  MAGNUS_STILL=1    hold Home's heron still (no animation)
+  MAGNUS_APPEARANCE=light|dark  override the macOS light/dark setting
   VISUAL / EDITOR   editor for long notes (ctrl+e in a form); defaults to fresh
 `;
 

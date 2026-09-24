@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Box, Text } from 'ink';
 import { FAMILY, isLightAppearance } from '../../lib/theme.js';
 
@@ -17,8 +17,9 @@ const FAMILY_TONES = {
   heather: { dark: { yellowB: 'whiteB' } }, // Heather's bright yellow is a muted khaki; a pale sun core suits its pink ring
 };
 
-function cells(art, legend, light) {
-  const rows = light ? art.light : art.dark;
+function cells(art, legend, light, frame) {
+  const set = light ? art.light : art.dark;
+  const rows = Array.isArray(set[0]) ? set[frame % set.length] : set; // frames, or a single grid
   const swap = FAMILY_TONES[FAMILY]?.[light ? 'light' : 'dark'] || {};
   const tone = (ch) => {
     const t = legend[ch];
@@ -42,8 +43,20 @@ function cells(art, legend, light) {
   return lines;
 }
 
-export const PixelArt = memo(function PixelArt({ art, legend }) {
-  const lines = cells(art, legend, isLightAppearance());
+// Steps through art.timeline ([frame, ms] pairs, looping) when it has one.
+function useFrame(timeline, animate) {
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    if (!timeline?.length || !animate) return undefined;
+    const id = setTimeout(() => setStep((s) => (s + 1) % timeline.length), timeline[step][1]);
+    return () => clearTimeout(id);
+  }, [step, timeline, animate]);
+  return timeline?.length ? timeline[step][0] : 0;
+}
+
+export const PixelArt = memo(function PixelArt({ art, legend, animate = true }) {
+  const frame = useFrame(art.timeline, animate && !process.env.MAGNUS_STILL);
+  const lines = cells(art, legend, isLightAppearance(), frame);
   return (
     <Box flexDirection="column" flexShrink={0} width={art.width}>
       {lines.map((runs, i) => (

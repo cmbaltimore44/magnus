@@ -86,13 +86,16 @@ schema_003), so a change made on the phone shows up without pressing R.
 Updates wait while you're typing in a form. `● live` in the status bar means
 the subscription is up.
 
-**Home art**: a pixel-art heron crossing the sun sits in Home's starfield when
-the window is wide enough. It's drawn in `art/figures.py` (Python, with a
-preview tool: `python3 art/preview.py`) and exported to
+**Home art**: when the window is wide enough, Home's right side shows a
+pixel-art heron crossing the sun over a still lake, set into a dusk sky of cloud
+wisps and distant birds (just the sky and lake on narrower windows). It moves
+gently: a slow glide, the reflection shimmering, and a wing beat every few
+seconds (`MAGNUS_STILL=1` holds it still). The art is drawn in `art/figures.py`
+(Python, with a preview tool: `python3 art/preview.py`) and exported to
 `src/ui/art/heronSun.js` by `npm run art`, as dark- and light-mode pixel grids
 in the theme's named colors; light mode turns pale tones into the page itself so
 nothing goes muddy. Magnus follows the macOS appearance for light/dark
-(`MAGNUS_APPEARANCE=light|dark` overrides).
+(`MAGNUS_APPEARANCE=light|dark` overrides). The tab bar carries a 🪶 feather.
 
 **Status bar**: between notifications, the line above the key hints shows
 overdue and due-today counts, routines done today, and your writing streak;
