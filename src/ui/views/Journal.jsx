@@ -41,6 +41,7 @@ const ITEMS = [
   { key: 'i', label: 'Edit Inbox', desc: 'fresh inbox.md', action: { run: 'fresh', tab: true, inbox: true } },
   { key: 'n', label: 'New Note', desc: 'new-note "…" [--tag …] [--link …]', action: { note: true, run: 'new-note', tab: true, tags: true } },
   { key: 'x', label: 'Note from Inbox', desc: 'new-note --from-inbox', action: { run: 'new-note', args: ['--from-inbox'], tab: true } },
+  { key: 'w', label: 'Weekly Review', desc: 'jweek → reviews/YYYY-Www.md', action: { run: 'jweek', tab: true } },
   { key: 'l', label: 'Browse Entries', desc: 'jlist · every daily/essay/note: open or delete', action: { browse: true } },
   { key: 'd', label: 'Back Up to Drive', desc: 'journal-backup (plug in the drive first)', action: { backup: true } },
 ];
