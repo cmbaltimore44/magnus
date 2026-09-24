@@ -11,10 +11,10 @@ import { cleanText } from '../../lib/sanitize.js';
 const MAX_STARRED = 3;
 
 // The `a` overlay: one line → a task (or `> text` → the journal inbox).
-export function QuickAdd({ onClose }) {
+export function QuickAdd({ onClose, initial = '', onCreated }) {
   useCapture();
   const { userId, notify, capture, dataChanged } = useAppCtx();
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(initial);
   const [data, setData] = useState(null);
 
   useEffect(() => {
@@ -49,6 +49,7 @@ export function QuickAdd({ onClose }) {
       await tasksApi.createTask(userId, { title, notes: null, status: 'todo', ...fields }, data.tasks.length);
       notify(`Added “${title}”${note}`, 'success');
       dataChanged();
+      onCreated?.();
     } catch (err) {
       notify(err.message, 'error');
     }

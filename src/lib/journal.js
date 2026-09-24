@@ -100,3 +100,53 @@ export function moveToTrash(file) {
     execFile('trash', [file], (err, _stdout, stderr) => (err ? reject(new Error(String(stderr).trim() || err.message)) : resolve()));
   });
 }
+
+// ---------- inbox.md (written by `capture`) ----------
+
+export function inboxPath(dir = journalDir()) {
+  return path.join(dir, 'inbox.md');
+}
+
+// Items are lines like "- [2026-09-23 17:46] some thought"; `line` is 1-based.
+export function readInbox(file = inboxPath()) {
+  let text;
+  try {
+    text = fs.readFileSync(file, 'utf8');
+  } catch {
+    return [];
+  }
+  return text.split('\n').flatMap((raw, i) => {
+    if (!raw.startsWith('- ')) return [];
+    const m = /^- (?:\[([^\]]+)\] )?(.*)$/.exec(raw);
+    return [{ line: i + 1, raw, when: m[1] || null, text: cleanText(m[2], { keepNewlines: false }) }];
+  });
+}
+
+// Current line number of an item (the file may have changed since it was read).
+export function findInboxLine(raw, file = inboxPath()) {
+  const hit = readInbox(file).find((it) => it.raw === raw);
+  return hit ? hit.line : null;
+}
+
+// Removes the first line exactly equal to `raw` (same rule as new-note).
+// Returns the removed line's index so undo can put it back.
+export function removeInboxLine(raw, file = inboxPath()) {
+  const lines = fs.readFileSync(file, 'utf8').split('\n');
+  const at = lines.indexOf(raw);
+  if (at < 0) return -1;
+  lines.splice(at, 1);
+  writeAtomic(file, lines.join('\n'));
+  return at;
+}
+
+export function restoreInboxLine(raw, at, file = inboxPath()) {
+  const lines = fs.readFileSync(file, 'utf8').split('\n');
+  lines.splice(Math.min(at, lines.length), 0, raw);
+  writeAtomic(file, lines.join('\n'));
+}
+
+function writeAtomic(file, text) {
+  const tmp = `${file}.magnus-${process.pid}`;
+  fs.writeFileSync(tmp, text);
+  fs.renameSync(tmp, file);
+}

@@ -9,6 +9,7 @@ import { canOpenGhosttyTabs, openInGhosttyTab } from '../../lib/ghostty.js';
 import { cleanText } from '../../lib/sanitize.js';
 import { tagLinkFlags, checkinFlags, todayEntryHasCheckin } from '../../lib/journal.js';
 import { JournalBrowser } from './JournalBrowser.jsx';
+import { InboxTriage } from './InboxTriage.jsx';
 
 // Front door to the journal scripts already on $PATH. Magnus doesn't
 // reimplement any of their logic — it just launches them, handing over the
@@ -32,7 +33,8 @@ const ITEMS = [
   { key: 'k', label: 'Backlinks', desc: 'jbacklinks <slug>', action: { prompt: 'Slug:', run: 'jbacklinks', placeholder: 'note-slug' } },
   { key: 'v', label: 'Graph', desc: 'jgraph (opens in browser)', action: { quick: 'jgraph' } },
   { key: 'c', label: 'Quick Capture', desc: 'capture "…" → inbox.md', action: { capture: true } },
-  { key: 'i', label: 'Triage Inbox', desc: 'fresh inbox.md', action: { run: 'fresh', tab: true, inbox: true } },
+  { key: 'r', label: 'Triage Inbox', desc: 'each item → task · note · essay · delete', action: { triage: true } },
+  { key: 'i', label: 'Edit Inbox', desc: 'fresh inbox.md', action: { run: 'fresh', tab: true, inbox: true } },
   { key: 'n', label: 'New Note', desc: 'new-note "…" [--tag …] [--link …]', action: { note: true, run: 'new-note', tab: true, tags: true } },
   { key: 'x', label: 'Note from Inbox', desc: 'new-note --from-inbox', action: { run: 'new-note', args: ['--from-inbox'], tab: true } },
   { key: 'l', label: 'Browse Entries', desc: 'jlist · every daily/essay/note: open or delete', action: { browse: true } },
@@ -51,7 +53,7 @@ export function Journal() {
   const { navigate, notify, run, capture, contentHeight } = useAppCtx();
   const [index, setIndex] = useState(0);
   const [mode, setMode] = useState(null); // {type:'prompt', item, step?, title?} | {type:'output', title, lines, offset}
-  useHints(mode?.type === 'browse' ? null : mode?.type === 'output' ? '↑↓ scroll · esc back' : HINTS);
+  useHints(mode?.type === 'browse' || mode?.type === 'triage' ? null : mode?.type === 'output' ? '↑↓ scroll · esc back' : HINTS);
 
   const start = async (a, args) => {
     if (a.tab && canOpenGhosttyTabs()) {
@@ -131,6 +133,7 @@ export function Journal() {
     if (a.checkin) return todayEntryHasCheckin() ? launch(item, '') : setMode({ type: 'prompt', item });
     if (a.tags && !a.prompt && !a.note) setMode({ type: 'prompt', item, step: 'tags', base: [] });
     else if (a.browse) setMode({ type: 'browse' });
+    else if (a.triage) setMode({ type: 'triage' });
     else if (a.prompt || a.search || a.capture || a.note) setMode({ type: 'prompt', item });
     else launch(item, '');
   };
@@ -162,6 +165,8 @@ export function Journal() {
   if (mode?.type === 'browse') {
     return <JournalBrowser onBack={() => setMode(null)} openEntry={(file) => start({ run: 'fresh', tab: true }, [file])} />;
   }
+
+  if (mode?.type === 'triage') return <InboxTriage onBack={() => setMode(null)} start={start} />;
 
   if (mode?.type === 'output') {
     const size = contentHeight - 3;
