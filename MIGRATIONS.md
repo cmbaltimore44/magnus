@@ -4,6 +4,19 @@ Magnus reads and writes the **same Supabase tables and columns** as the Life
 Tracker web app. Any change to the schema has to be mirrored in the web app's
 UI (in the separate Life Tracker repo), so every change is logged here.
 
+## ⚠️ 2026-09-24 — schema_004: Lists
+
+**Run `supabase/schema_004.sql` (Life Tracker repo) once in the Supabase SQL
+Editor.** Additive only.
+
+| Change | Why | Used by |
+| ------ | --- | ------- |
+| New table `lists (id, user_id, name, sort_order, created_at)` + RLS | Named lists (Groceries, Wish list, …) | Lists section in both apps |
+| New table `list_items (id, user_id, list_id → lists on delete cascade, text, done, url, price ≥ 0, sort_order, created_at)` + RLS | Checkable items, optional link and price | Lists, quick add `+list item` |
+| Both added to `supabase_realtime` | Live updates | Both apps |
+
+Backward compatible with older clients? **yes** — nothing existing changes.
+
 ## ⚠️ 2026-09-23 — schema_003: completed_at, focus sessions, Log, Realtime
 
 **Run `supabase/schema_003.sql` (Life Tracker repo) once in the Supabase SQL
