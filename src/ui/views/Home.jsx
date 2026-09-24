@@ -3,8 +3,6 @@ import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useViewInput } from '../context.js';
 import { Banner } from '../components/Banner.jsx';
-import { DuskRows, useBackdrop } from '../components/Dusk.jsx';
-import { getPref } from '../../lib/prefs.js';
 import { PixelArt, pixelRows } from '../components/PixelArt.jsx';
 import { HERON_SUN, HERON_SUN_LEGEND } from '../art/heronSun.js';
 
@@ -69,29 +67,16 @@ export function Home({ gradient, sections }) {
   );
 }
 
-// Home's right side: the heron crossing the sun, set into the backdrop chosen
-// in Settings (dusk sky and lake, marsh, mountains, or plain). Without room
-// for the art, just the backdrop.
-const ART_WATERLINE = 12; // text row, within the art, where its water begins
-
+// Home's right side: the heron crossing the sun, centered in the open space
+// when the window is wide enough (otherwise nothing).
 function RightPanel({ width, height }) {
   const art = HERON_SUN;
   const rows = pixelRows(art);
-  const fits = width >= art.width + 6 && height >= rows + 2;
-  const top = fits ? Math.max(1, Math.floor((height - rows) / 2) - 1) : 0;
-  const waterFrom = fits ? top + ART_WATERLINE : Math.floor(height * 0.62);
-  const grid = useBackdrop(getPref('homeBackdrop', 'dusk'), width, height, waterFrom);
-  if (!fits) return <DuskRows grid={grid} y0={0} y1={height} />;
-  const left = Math.floor((width - art.width) / 2);
+  if (width < art.width + 6 || height < rows + 2) return null;
+  const top = Math.max(1, Math.floor((height - rows) / 2) - 1);
   return (
-    <Box flexDirection="column" width={width} flexShrink={0}>
-      <DuskRows grid={grid} y0={0} y1={top} />
-      <Box flexDirection="row">
-        <DuskRows grid={grid} y0={top} y1={top + rows} x0={0} x1={left} />
-        <PixelArt art={art} legend={HERON_SUN_LEGEND} />
-        <DuskRows grid={grid} y0={top} y1={top + rows} x0={left + art.width} x1={width} />
-      </Box>
-      <DuskRows grid={grid} y0={top + rows} y1={height} />
+    <Box flexDirection="column" width={width} flexShrink={0} paddingTop={top} alignItems="center">
+      <PixelArt art={art} legend={HERON_SUN_LEGEND} />
     </Box>
   );
 }

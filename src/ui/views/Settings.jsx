@@ -4,7 +4,6 @@ import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useViewInput } from '../context.js';
 import { getPref, setPref } from '../../lib/prefs.js';
 import { moveIndex } from '../components/layout.js';
-import { BACKDROPS, BACKDROP_LABELS } from '../components/Dusk.jsx';
 
 // Per-device preferences (~/.config/magnus/prefs.json), like the web app's
 // localStorage settings. Nothing here is stored in Supabase.
@@ -24,7 +23,6 @@ export function Settings({ sections }) {
     weightUnit: getPref('weightUnit', 'lb'),
     journalTabs: getPref('journalTabs', true),
     startView: getPref('startView', 'home'),
-    homeBackdrop: getPref('homeBackdrop', 'dusk'),
   }));
   useHints(HINTS);
 
@@ -39,7 +37,6 @@ export function Settings({ sections }) {
     { key: 'weightUnit', label: 'Weight unit', values: ['lb', 'kg'], show: (v) => v, note: 'label only; values are stored as typed' },
     { key: 'journalTabs', label: 'Journal entries', values: [true, false], show: (v) => (v ? 'open in a new Ghostty tab' : 'open in this terminal') },
     { key: 'startView', label: 'Start screen', values: starts, show: startLabel },
-    { key: 'homeBackdrop', label: 'Home backdrop', values: BACKDROPS, show: (v) => BACKDROP_LABELS[v], note: 'behind the heron on Home (wide windows)' },
     { key: 'account', label: 'Account', show: () => email || 'signed in', note: 'enter signs out (the Keychain session is removed)' },
   ];
   const current = rows[row];

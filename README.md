@@ -87,10 +87,8 @@ Updates wait while you're typing in a form. `● live` in the status bar means
 the subscription is up.
 
 **Home art**: when the window is wide enough, Home's right side shows a
-pixel-art heron crossing the sun, set into a backdrop you pick in Settings:
-a dusk sky and lake (cloud wisps, distant birds, ripples), a marsh (reeds,
-cattails, a far tree line), mountains (a soft ridge over the lake), or plain.
-Narrower windows show just the backdrop. It moves
+pixel-art heron crossing the sun, on its own in the open space to the right
+of the menu (narrower windows leave it out). It moves
 gently: a slow glide, the reflection shimmering, and a wing beat every few
 seconds (`MAGNUS_STILL=1` holds it still). The art is drawn in `art/figures.py`
 (Python, with a preview tool: `python3 art/preview.py`) and exported to
