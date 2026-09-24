@@ -235,6 +235,12 @@ export function createDemoClient() {
   const session = { access_token: 'demo', refresh_token: 'demo', user: DEMO_USER };
   return {
     from: (table) => new Query(db, table),
+    // Realtime stand-in: subscribes, never delivers changes.
+    channel: () => {
+      const ch = { on: () => ch, subscribe: (cb) => (setTimeout(() => cb?.('SUBSCRIBED'), 10), ch) };
+      return ch;
+    },
+    removeChannel: async () => {},
     auth: {
       getSession: async () => ({ data: { session }, error: null }),
       signInWithOtp: async () => ({ error: null }),

@@ -30,6 +30,7 @@ import { signOut } from '../lib/auth.js';
 import { FAMILY } from '../lib/theme.js';
 import { useFocusTimer, formatRemaining } from './useFocusTimer.js';
 import { useStatusSummary } from './useStatusSummary.js';
+import { useLiveUpdates } from './useLiveUpdates.js';
 
 export const SECTIONS = [
   { view: 'today', label: 'Today', key: 't', digit: '1', component: Today },
@@ -196,6 +197,8 @@ export default function App({ gradient }) {
 
   const focus = useFocusTimer({ userId: currentUserId(auth.session), notify, dataChanged });
   const summary = useStatusSummary(auth.state === 'ready', dataVersion);
+  const live = useLiveUpdates({ ready: auth.state === 'ready', paused: captureCount > 0, onChange: dataChanged });
+  const connection = live === 'live' ? { text: '● live', color: C.success } : null;
 
   const checkSession = useCallback(async () => {
     setAuth({ state: 'loading' });
@@ -402,7 +405,7 @@ export default function App({ gradient }) {
         <Box flexDirection="column" flexGrow={1} paddingX={1} overflow="hidden">
           {body}
         </Box>
-        <Footer hints={ready ? hints : ''} status={status} columns={columns} focus={ready ? focus.timer : null} summary={ready ? summary : null} />
+        <Footer hints={ready ? hints : ''} status={status} columns={columns} focus={ready ? focus.timer : null} summary={ready ? summary : null} connection={ready ? connection : null} />
       </Box>
     </AppContext.Provider>
   );

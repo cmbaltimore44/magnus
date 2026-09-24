@@ -68,6 +68,11 @@ names, `+3`, `10/1`, `2026-10-01`), priority (`!high`/`!h`, `!low`), the categor
 whose name starts with `home`, and a star. `> some thought` goes to the journal
 inbox instead. Anything that doesn't resolve stays in the title.
 
+**Live updates**: Magnus subscribes to Supabase Realtime (enabled by
+schema_003), so a change made on the phone shows up without pressing R.
+Updates wait while you're typing in a form. `● live` in the status bar means
+the subscription is up.
+
 **Status bar**: between notifications, the line above the key hints shows
 overdue and due-today counts, routines done today, and your writing streak;
 on the right, the focus timer, the connection state and the time.
