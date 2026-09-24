@@ -7,6 +7,9 @@ import { Prompt, Confirm } from '../components/Prompt.jsx';
 import { windowRange, moveIndex } from '../components/layout.js';
 import { parseEntries, findBacklinks, moveToTrash, journalDir } from '../../lib/journal.js';
 import { truncate } from '../../lib/display.js';
+import { Split, splitLayout } from '../components/Split.jsx';
+import fs from 'node:fs';
+import { cleanText } from '../../lib/sanitize.js';
 
 // Every journal entry (daily, essays, notes), newest first — the list comes
 // from the `jlist --tsv` script, so Magnus and the command line agree.
@@ -16,7 +19,9 @@ const TYPE_COLORS = { daily: 'soon', essay: 'accent', note: 'success' };
 const HINTS = '↑↓ move · enter open · d move to Trash · tab type · f filter · R refresh · esc back';
 
 export function JournalBrowser({ onBack, openEntry }) {
-  const { capture, notify, contentHeight, columns } = useAppCtx();
+  const { capture, notify, contentHeight, columns: fullColumns } = useAppCtx();
+  const layout = splitLayout(fullColumns);
+  const columns = layout.listColumns;
   const [entries, setEntries] = useState(null);
   const [filter, setFilter] = useState('all');
   const [text, setText] = useState('');
@@ -89,7 +94,9 @@ export function JournalBrowser({ onBack, openEntry }) {
   const [start, end] = windowRange(visible.length, index, listHeight);
   const titleWidth = Math.max(16, columns - 34);
 
+  const selectedEntry = visible[Math.min(index, visible.length - 1)];
   return (
+    <Split layout={layout} height={contentHeight} preview={selectedEntry ? <EntryPreview entry={selectedEntry} height={contentHeight - 2} /> : null}>
     <Box flexDirection="column" height={contentHeight}>
       <Text wrap="truncate-end">
         <Text bold>Journal entries</Text>
@@ -145,5 +152,26 @@ export function JournalBrowser({ onBack, openEntry }) {
         />
       ) : null}
     </Box>
+    </Split>
   );
+}
+
+// First screenful of the entry's Markdown (front matter dimmed).
+function EntryPreview({ entry, height }) {
+  let lines;
+  try {
+    lines = cleanText(fs.readFileSync(entry.path, 'utf8')).split('\n').slice(0, Math.max(1, height));
+  } catch (err) {
+    return <Text color={C.danger}>{err.message}</Text>;
+  }
+  let fence = 0;
+  return lines.map((line, i) => {
+    if (line === '---' && fence < 2 && (i === 0 || fence === 1)) fence++;
+    const inFront = fence === 1 || (fence === 2 && line === '---');
+    return (
+      <Text key={i} wrap="truncate-end" color={inFront ? C.muted : line.startsWith('#') ? C.accent : undefined} bold={line.startsWith('#')}>
+        {line || ' '}
+      </Text>
+    );
+  });
 }

@@ -5,6 +5,7 @@ import { useAppCtx, useHints, useLoader, useViewInput } from '../context.js';
 import { deleteWithUndo } from '../../lib/undo.js';
 import { QuoteToEssay } from '../components/QuoteToEssay.jsx';
 import { BookLookup } from '../components/BookLookup.jsx';
+import { Split, splitLayout } from '../components/Split.jsx';
 import { bookStats } from '../../lib/stats.js';
 import { todayISO } from '../../lib/data/completions.js';
 import * as booksApi from '../../lib/data/books.js';
@@ -247,9 +248,12 @@ export function Library({ params }) {
 
   const budget = contentHeight - 3 - (mode ? 4 : 0);
   const [start, end] = windowRange(rows.length, index, Math.max(3, budget));
-  const titleWidth = Math.max(16, Math.min(50, columns - 50));
+  const layout = splitLayout(columns);
+  const titleWidth = Math.max(16, Math.min(50, layout.listColumns - 50));
+  const preview = current?.kind === 'book' ? <BookPreview book={current.book} width={layout.previewWidth - 4} /> : null;
 
   return (
+    <Split layout={layout} height={contentHeight} preview={preview}>
     <Box flexDirection="column" height={contentHeight}>
       {tabs}
       <Box flexDirection="column" marginTop={1}>
@@ -289,6 +293,7 @@ export function Library({ params }) {
         />
       ) : null}
     </Box>
+    </Split>
   );
 }
 
@@ -737,5 +742,46 @@ function BookStats({ books, onSwitchTab }) {
       {left}
       {right}
     </Box>
+  );
+}
+
+// Read-only book summary for the split view.
+function BookPreview({ book, width }) {
+  const [quotes, setQuotes] = useState(null);
+  useEffect(() => {
+    let live = true;
+    setQuotes(null);
+    quotesApi.listQuotesForBook(book.id).then((rows) => live && setQuotes(rows), () => live && setQuotes([]));
+    return () => {
+      live = false;
+    };
+  }, [book.id]);
+  const dates = [book.started_date && `started ${book.started_date}`, book.finished_date && `finished ${book.finished_date}`].filter(Boolean).join(' · ');
+  return (
+    <>
+      <Text bold wrap="truncate-end">
+        {book.title}
+      </Text>
+      {book.author ? <Text color={C.muted}>{book.author}</Text> : null}
+      <Text>
+        <Text color={C[BOOK_STATUS_COLORS[book.status]]}>{BOOK_STATUS_LABELS[book.status]}</Text>
+        {book.format !== 'none' ? <Text color={C.muted}> · {BOOK_FORMAT_LABELS[book.format]}</Text> : null}
+        {book.rating ? <Text color={C.accent}> {stars(book.rating)}</Text> : null}
+      </Text>
+      {dates ? <Text color={C.muted}>{dates}</Text> : null}
+      {book.notes ? (
+        <Box marginTop={1} width={width}>
+          <Text wrap="wrap">{book.notes}</Text>
+        </Box>
+      ) : null}
+      <Box marginTop={1} flexDirection="column">
+        <Text color={C.muted}>{quotes ? `${quotes.length} highlight${quotes.length === 1 ? '' : 's'}` : 'Loading…'}</Text>
+        {(quotes || []).slice(0, 4).map((q) => (
+          <Box key={q.id} width={width} marginTop={1}>
+            <Text wrap="wrap">“{truncate(q.quote_text, 240)}”</Text>
+          </Box>
+        ))}
+      </Box>
+    </>
   );
 }

@@ -18,6 +18,8 @@ import {
 import { Form } from '../components/Form.jsx';
 import { Prompt, Confirm } from '../components/Prompt.jsx';
 import { windowRange, moveIndex, swapped } from '../components/layout.js';
+import { Split, splitLayout } from '../components/Split.jsx';
+import { useEffect } from 'react';
 
 const LIST_HINTS = '↑↓ move · enter open · n new · s cycle status · d delete · R refresh · esc home';
 const DETAIL_HINTS =
@@ -72,7 +74,9 @@ const projectFields = () => [
 const nextStatus = (s) => PROJECT_STATUSES[(PROJECT_STATUSES.indexOf(s) + 1) % PROJECT_STATUSES.length];
 
 export function Projects({ params }) {
-  const { userId, offerUndo, navigate, notify, columns, contentHeight } = useAppCtx();
+  const { userId, offerUndo, navigate, notify, columns: fullColumns, contentHeight } = useAppCtx();
+  const layout = splitLayout(fullColumns);
+  const columns = layout.listColumns;
   const [index, setIndex] = useState(0);
   const [openId, setOpenId] = useState(params?.projectId || null);
   const [mode, setMode] = useState(null);
@@ -163,9 +167,10 @@ export function Projects({ params }) {
 
   const listBudget = contentHeight - 3 - (mode ? 4 : 0);
   const [start, end] = windowRange(projects.length, index, Math.max(3, listBudget));
-  const nameWidth = Math.max(12, Math.min(40, columns - 60));
+  const nameWidth = Math.max(12, Math.min(40, columns - 48));
 
   return (
+    <Split layout={layout} height={contentHeight} preview={selected ? <ProjectPreview project={selected} width={layout.previewWidth - 4} /> : null}>
     <Box flexDirection="column" height={contentHeight}>
       <Text>
         <Text bold>Projects</Text>
@@ -197,6 +202,7 @@ export function Projects({ params }) {
         />
       ) : null}
     </Box>
+    </Split>
   );
 }
 
@@ -373,5 +379,43 @@ function ProjectDetail({ projectId, cached, onBack, onUpdated, onDelete, onCount
         />
       ) : null}
     </Box>
+  );
+}
+
+// Read-only project summary for the split view.
+function ProjectPreview({ project, width }) {
+  const [items, setItems] = useState(null);
+  useEffect(() => {
+    let live = true;
+    setItems(null);
+    projectTasksApi.listProjectTasks(project.id).then((rows) => live && setItems(rows), () => live && setItems([]));
+    return () => {
+      live = false;
+    };
+  }, [project.id]);
+  return (
+    <>
+      <Text bold wrap="truncate-end">
+        {project.name}
+      </Text>
+      <Text>
+        <Text color={C[PROJECT_STATUS_COLORS[project.status]]}>{PROJECT_STATUS_LABELS[project.status]}</Text> <TargetDate project={project} />
+      </Text>
+      {project.notes ? (
+        <Box marginTop={1} width={width}>
+          <Text wrap="wrap">{project.notes}</Text>
+        </Box>
+      ) : null}
+      <Box marginTop={1} flexDirection="column">
+        <Text color={C.muted}>Checklist</Text>
+        {items == null ? <Text color={C.muted}>Loading…</Text> : null}
+        {items && items.length === 0 ? <Text color={C.muted}>No items.</Text> : null}
+        {(items || []).map((it) => (
+          <Text key={it.id} wrap="truncate-end" color={it.done ? C.muted : undefined}>
+            <Text color={it.done ? C.success : undefined}>{it.done ? '[✓]' : '[ ]'}</Text> {it.title}
+          </Text>
+        ))}
+      </Box>
+    </>
   );
 }

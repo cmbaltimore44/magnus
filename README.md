@@ -68,6 +68,10 @@ names, `+3`, `10/1`, `2026-10-01`), priority (`!high`/`!h`, `!low`), the categor
 whose name starts with `home`, and a star. `> some thought` goes to the journal
 inbox instead. Anything that doesn't resolve stays in the title.
 
+**Split view**: at 140+ columns, Projects, Library (books) and the journal
+entry browser show the list on the left and a read-only preview of the
+selected item on the right (checklist, highlights, the entry's Markdown).
+
 In forms: ↑↓ or tab moves between fields, ←→ changes an option, enter saves,
 esc cancels. On a Notes field, **ctrl+e** opens `$VISUAL`/`$EDITOR` (or `fresh`)
 for multi-line text. Dates accept `2026-10-01`, `10/1`, `today`, `tomorrow`,
