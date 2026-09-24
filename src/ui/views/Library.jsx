@@ -5,6 +5,8 @@ import { useAppCtx, useHints, useLoader, useViewInput } from '../context.js';
 import { deleteWithUndo } from '../../lib/undo.js';
 import { QuoteToEssay } from '../components/QuoteToEssay.jsx';
 import { BookLookup } from '../components/BookLookup.jsx';
+import { bookStats } from '../../lib/stats.js';
+import { todayISO } from '../../lib/data/completions.js';
 import * as booksApi from '../../lib/data/books.js';
 import * as quotesApi from '../../lib/data/quotes.js';
 import {
@@ -31,7 +33,8 @@ const BOOK_GROUPS = [
 ];
 
 const BOOKS_HINTS = 'tab quotes · ↑↓ move · enter open / fold group · n new book · i look up (ISBN/title) · d delete · R refresh · esc home';
-const QUOTES_HINTS = 'tab books · ↑↓ move · enter edit · n new quote · f favorite · w send to essay · F favorites only · d delete · esc home';
+const QUOTES_HINTS = 'tab stats · ↑↓ move · enter edit · n new quote · f favorite · w send to essay · F favorites only · d delete · esc home';
+const STATS_HINTS = 'tab books · esc home';
 const DETAIL_HINTS =
   '↑↓ highlight · n add highlight · enter edit · f favorite · w send to essay · d delete highlight · e edit book · i fill from Open Library · v view cover · D delete book · esc back';
 
@@ -145,7 +148,7 @@ export function Library({ params }) {
 
   const replaceBook = (updated) => setBooks((b) => b.map((x) => (x.id === updated.id ? updated : x)));
 
-  useHints(openBookId ? DETAIL_HINTS : tab === 'books' ? BOOKS_HINTS : QUOTES_HINTS);
+  useHints(openBookId ? DETAIL_HINTS : tab === 'books' ? BOOKS_HINTS : tab === 'quotes' ? QUOTES_HINTS : STATS_HINTS);
 
   useViewInput(
     (input, key) => {
@@ -212,9 +215,22 @@ export function Library({ params }) {
       <Text inverse={tab === 'quotes'} color={tab === 'quotes' ? C.accent : undefined}>
         {' '}
         Quotes{' '}
+      </Text>{' '}
+      <Text inverse={tab === 'stats'} color={tab === 'stats' ? C.accent : undefined}>
+        {' '}
+        Stats{' '}
       </Text>
     </Text>
   );
+
+  if (tab === 'stats') {
+    return (
+      <Box flexDirection="column" height={contentHeight}>
+        {tabs}
+        <BookStats books={books} onSwitchTab={() => setTab('books')} />
+      </Box>
+    );
+  }
 
   if (tab === 'quotes') {
     return (
@@ -223,7 +239,7 @@ export function Library({ params }) {
         <QuotesBrowser
           books={books}
           focusQuoteId={params?.tab === 'quotes' ? params?.quoteId : null}
-          onSwitchTab={() => setTab('books')}
+          onSwitchTab={() => setTab('stats')}
         />
       </Box>
     );
@@ -605,6 +621,121 @@ function QuotesBrowser({ books, focusQuoteId, onSwitchTab }) {
       {mode?.type === 'confirm' ? (
         <Confirm message="Delete this quote?" onYes={() => actions.remove(mode.quote)} onNo={() => setMode(null)} />
       ) : null}
+    </Box>
+  );
+}
+
+function Bar({ n, max, width }) {
+  const len = max ? Math.max(n ? 1 : 0, Math.round((n / max) * width)) : 0;
+  return <Text color={C.accent}>{'█'.repeat(len)}</Text>;
+}
+
+function BookStats({ books, onSwitchTab }) {
+  const { navigate, columns } = useAppCtx();
+  useViewInput((input, key) => {
+    if (key.escape) return navigate('home');
+    if (key.tab) return onSwitchTab();
+  });
+  const st = bookStats(books, todayISO());
+  const year = todayISO().slice(0, 4);
+  const half = columns >= 100;
+  const barWidth = Math.max(10, Math.floor((half ? columns / 2 : columns) - 30));
+  const maxYear = Math.max(1, ...st.byYear.map(([, n]) => n));
+  const maxRating = Math.max(1, ...st.ratingCounts);
+  const label = (text) => <Text color={C.muted}>{text.padEnd(18)}</Text>;
+
+  const left = (
+    <Box flexDirection="column" marginRight={4} flexShrink={0}>
+      <Text bold color={C.accent}>
+        Overview
+      </Text>
+      <Text>
+        {label(`Finished in ${year}`)}
+        <Text bold>{st.finishedThisYear}</Text>
+      </Text>
+      <Text>
+        {label('Finished (all)')}
+        {st.finished}
+      </Text>
+      <Text>
+        {label('Reading now')}
+        {st.reading}
+      </Text>
+      <Text>
+        {label('Want to read')}
+        {st.wantToRead}
+      </Text>
+      <Text>
+        {label('Did not finish')}
+        {st.dnf}
+      </Text>
+      <Text>
+        {label('Average rating')}
+        {st.averageRating ? `${st.averageRating.toFixed(1)} ★` : '—'}
+      </Text>
+      <Text>
+        {label('Days to finish')}
+        {st.averageDays != null ? `${st.averageDays} on average` : '—'}
+      </Text>
+      <Box marginTop={1} flexDirection="column" flexShrink={0}>
+        <Text bold color={C.accent}>
+          Ratings
+        </Text>
+        {[5, 4, 3, 2, 1].map((n) => (
+          <Text key={n}>
+            <Text color={C.muted}>{`${'★'.repeat(n)}`.padEnd(6)} </Text>
+            <Bar n={st.ratingCounts[n - 1]} max={maxRating} width={barWidth} /> <Text color={C.muted}>{st.ratingCounts[n - 1]}</Text>
+          </Text>
+        ))}
+      </Box>
+    </Box>
+  );
+  const right = (
+    <Box flexDirection="column" marginTop={half ? 0 : 1}>
+      <Text bold color={C.accent}>
+        Finished per year
+      </Text>
+      {st.byYear.length ? (
+        st.byYear.slice(0, 8).map(([y, n]) => (
+          <Text key={y}>
+            <Text color={C.muted}>{y} </Text>
+            <Bar n={n} max={maxYear} width={barWidth} /> <Text color={C.muted}>{n}</Text>
+          </Text>
+        ))
+      ) : (
+        <Text color={C.muted}>No finished books with a finish date yet.</Text>
+      )}
+      {st.byFormat.length ? (
+        <Box marginTop={1} flexDirection="column">
+          <Text bold color={C.accent}>
+            By format
+          </Text>
+          {st.byFormat.map(([f, n]) => (
+            <Text key={f}>
+              {label(BOOK_FORMAT_LABELS[f] || 'Unknown')}
+              {n}
+            </Text>
+          ))}
+        </Box>
+      ) : null}
+      {st.topAuthors.length ? (
+        <Box marginTop={1} flexDirection="column">
+          <Text bold color={C.accent}>
+            Most-read authors
+          </Text>
+          {st.topAuthors.map(([a, n]) => (
+            <Text key={a} wrap="truncate-end">
+              {a} <Text color={C.muted}>{n}</Text>
+            </Text>
+          ))}
+        </Box>
+      ) : null}
+    </Box>
+  );
+  return (
+    <Box marginTop={1} flexDirection={half ? 'row' : 'column'} flexShrink={0}>
+      {left}
+      {right}
     </Box>
   );
 }

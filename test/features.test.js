@@ -150,3 +150,26 @@ test('focus timer elapsed time excludes pauses', () => {
   assert.equal(focusElapsedMs({ ...t, pausedAt: 3 * 60000 }, 10 * 60000), 2 * 60000);
   assert.equal(formatRemaining({ ...t, startedAt: -1e9 }, 0), '0:00');
 });
+
+import { bookStats } from '../src/lib/stats.js';
+
+test('book stats', () => {
+  const b = (status, extra = {}) => ({ status, format: 'none', rating: null, author: null, ...extra });
+  const st = bookStats(
+    [
+      b('finished', { finished_date: '2026-03-01', started_date: '2026-02-01', rating: 5, format: 'ebook', author: 'Eliot' }),
+      b('finished', { finished_date: '2025-06-01', rating: 3, author: 'Eliot' }),
+      b('reading'),
+      b('want_to_read'),
+      b('dnf', { rating: 1 }),
+    ],
+    '2026-09-23'
+  );
+  assert.equal(st.finishedThisYear, 1);
+  assert.equal(st.finished, 2);
+  assert.equal(st.averageRating, 3);
+  assert.deepEqual(st.ratingCounts, [1, 0, 1, 0, 1]);
+  assert.equal(st.averageDays, 28);
+  assert.deepEqual(st.byYear, [['2026', 1], ['2025', 1]]);
+  assert.deepEqual(st.topAuthors, [['Eliot', 2]]);
+});
