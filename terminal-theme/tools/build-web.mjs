@@ -6,6 +6,7 @@
 // exactly the same, contrast-tuned colors as the terminal) and writes:
 //   <dir>/themes.css       CSS variables per family and light/dark mode
 //   <dir>/js/palettes.js   the list of families, for the theme picker
+// and then runs <dir>/scripts/generate-icon.py to redraw the per-theme icons.
 //
 // The web app styles everything through the CSS variables in its style.css;
 // these blocks override them via html[data-palette="…"][data-theme="…"].
@@ -15,6 +16,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = process.argv[2];
@@ -141,3 +143,9 @@ fs.writeFileSync(
 );
 console.log(report.join('\n'));
 console.log(`Wrote ${path.join(outDir, 'themes.css')} and ${path.join(outDir, 'js', 'palettes.js')}`);
+
+// The web app's per-theme icons are drawn from themes.css by its own script.
+const iconScript = path.join(outDir, 'scripts', 'generate-icon.py');
+if (fs.existsSync(iconScript)) {
+  execFileSync('python3', [iconScript], { stdio: 'inherit' });
+}

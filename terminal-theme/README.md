@@ -93,7 +93,8 @@ from these Ghostty files so both use identical colors:
     npm run themes:web      # = node terminal-theme/tools/build-web.mjs ../LifeTracker
 
 This writes `themes.css` (CSS variables per theme and light/dark mode) and
-`js/palettes.js` (the picker's list) into the Life Tracker repo. Commit and
+`js/palettes.js` (the picker's list) into the Life Tracker repo, then runs
+its `scripts/generate-icon.py` to redraw the per-theme app icons. Commit and
 push there to deploy. It also prints a contrast report: every text color on
 the page background, cards, sidebar and hover shades is >= 4.5:1, and button
 text on accent/danger colors is chosen for the best contrast.
