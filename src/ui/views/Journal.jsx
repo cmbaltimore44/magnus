@@ -3,6 +3,8 @@ import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useViewInput } from '../context.js';
 import { Prompt } from '../components/Prompt.jsx';
+import os from 'node:os';
+import path from 'node:path';
 import { canOpenGhosttyTabs, openInGhosttyTab } from '../../lib/ghostty.js';
 
 // Front door to the journal scripts already on $PATH. Magnus doesn't
@@ -27,7 +29,13 @@ const ITEMS = [
   { key: 'k', label: 'Backlinks', desc: 'jbacklinks <slug>', action: { prompt: 'Slug:', run: 'jbacklinks', placeholder: 'note-slug' } },
   { key: 'v', label: 'Graph', desc: 'jgraph (opens in browser)', action: { quick: 'jgraph' } },
   { key: 'c', label: 'Quick Capture', desc: 'capture "…" → inbox.md', action: { capture: true } },
+  { key: 'i', label: 'Triage Inbox', desc: 'fresh inbox.md', action: { run: 'fresh', tab: true, inbox: true } },
 ];
+
+// Same location the `capture` script appends to.
+function inboxPath() {
+  return path.join(process.env.JOURNAL_DIR || path.join(os.homedir(), 'journal'), 'inbox.md');
+}
 
 const HINTS = 'press a letter or ↑↓ enter · esc home';
 
@@ -51,6 +59,7 @@ export function Journal() {
 
   const launch = async (item, value) => {
     const a = item.action;
+    if (a.inbox) return start(a, [inboxPath()]);
     if (a.run && !a.prompt) return start(a, []);
     if (a.run && a.prompt) {
       if (!value.trim()) return;

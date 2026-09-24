@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { C, mix } from '../../lib/theme.js';
+import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useLoader, useViewInput } from '../context.js';
 import * as routinesApi from '../../lib/data/routines.js';
@@ -29,10 +29,15 @@ function levelForPct(pct) {
   return 4;
 }
 
-// Web heatmap: level N = color-mix(accent N×25%, surface); empty = border.
-function levelColor(level) {
-  return level === 0 ? C.border : level === 4 ? C.accent : mix(C.accent, C.surface, level * 0.25);
-}
+// Heatmap levels in terminal colors: empty days are a gray dot, then amber
+// → terracotta as more of the day's routines were done (web: accent ramp).
+const LEVELS = [
+  { color: C.muted, char: '·' },
+  { color: C.soon, char: '■' },
+  { color: C.soon, char: '■', bold: true },
+  { color: C.accent, char: '■' },
+  { color: C.accent, char: '■', bold: true },
+];
 
 function Heatmap({ routines, completions, columns }) {
   const weeks = Math.max(4, Math.min(53, Math.floor((columns - 10) / 2)));
@@ -95,8 +100,8 @@ function Heatmap({ routines, completions, columns }) {
             {runs.map((run, i) => {
               if (run.level < 0) return <Text key={i}>{'  '.repeat(run.n)}</Text>;
               return (
-                <Text key={i} color={levelColor(run.level)}>
-                  {'■ '.repeat(run.n)}
+                <Text key={i} color={LEVELS[run.level].color} bold={LEVELS[run.level].bold}>
+                  {`${LEVELS[run.level].char} `.repeat(run.n)}
                 </Text>
               );
             })}

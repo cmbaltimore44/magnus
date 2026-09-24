@@ -15,7 +15,7 @@ const DESCRIPTIONS = {
 
 const HINTS = 'press a letter to open · ↑↓ enter · ctrl+k or / search · q quit';
 
-export function Home({ sections }) {
+export function Home({ gradient, sections }) {
   const { navigate, columns } = useAppCtx();
   const [index, setIndex] = useState(0);
   useHints(HINTS);
@@ -32,7 +32,7 @@ export function Home({ sections }) {
 
   return (
     <Box flexDirection="column" paddingTop={1} paddingLeft={1}>
-      <Banner columns={columns} />
+      <Banner gradient={gradient} columns={columns} />
       <Text color={C.muted}>{date}</Text>
       <Box flexDirection="column" marginTop={1}>
         {sections.map((s, i) => (

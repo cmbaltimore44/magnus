@@ -178,7 +178,7 @@ export function Projects({ params }) {
           return (
             <Text key={p.id} wrap="truncate-end">
               <Text color={C.accent}>{isSel ? '› ' : '  '}</Text>
-              <Text bold={isSel} backgroundColor={isSel ? C.hoverBg : undefined}>
+              <Text bold={isSel} inverse={isSel}>
                 {truncate(p.name, nameWidth).padEnd(nameWidth)}
               </Text>{' '}
               <Text color={C[PROJECT_STATUS_COLORS[p.status]]}>{PROJECT_STATUS_LABELS[p.status].padEnd(12)}</Text>{' '}
@@ -357,7 +357,7 @@ function ProjectDetail({ projectId, cached, onBack, onUpdated, onDelete, onCount
           <Text key={c.id} wrap="truncate-end">
             <Text color={C.accent}>{isSel ? '› ' : '  '}</Text>
             <Text color={c.done ? C.success : undefined}>{c.done ? '[✓]' : '[ ]'}</Text>{' '}
-            <Text bold={isSel} backgroundColor={isSel ? C.hoverBg : undefined} color={c.done && !isSel ? C.muted : undefined}>
+            <Text bold={isSel} inverse={isSel} color={c.done && !isSel ? C.muted : undefined}>
               {c.title}
             </Text>
           </Text>

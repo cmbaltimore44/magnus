@@ -150,7 +150,7 @@ export function Form({ title, fields, initial = {}, onSubmit, onCancel }) {
   const hint = field.hint || (field.type === 'date' ? DATE_HINT : null);
 
   return (
-    <Box flexDirection="column" backgroundColor={C.surface} borderStyle="round" borderColor={C.accent} paddingX={1}>
+    <Box flexDirection="column" borderStyle="round" borderColor={C.accent} paddingX={1}>
       <Text color={C.accent} bold>
         {title}
       </Text>

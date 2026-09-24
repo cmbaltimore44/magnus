@@ -33,7 +33,7 @@ export function TaskCard({ task, categories, selected, width, showNotes = true, 
         <Text wrap="truncate-end">
           <Text color={C.accent}>{selected ? '› ' : '  '}</Text>
           <Text color={C[PRIORITY_COLORS[priority]]}>●</Text>{' '}
-          <Text bold={selected} backgroundColor={selected ? C.hoverBg : undefined} color={done && !selected ? C.muted : undefined}>
+          <Text bold={selected} inverse={selected} color={done && !selected ? C.muted : undefined}>
             {truncate(task.title, titleWidth)}
           </Text>
           {task.is_starred ? <Text color={C.accent}> ★</Text> : null}
@@ -49,7 +49,7 @@ export function TaskCard({ task, categories, selected, width, showNotes = true, 
       <Text wrap="truncate-end">
         <Text color={C.accent}>{selected ? '› ' : '  '}</Text>
         <Text color={C[PRIORITY_COLORS[priority]]}>●</Text>{' '}
-        <Text bold={selected} backgroundColor={selected ? C.hoverBg : undefined} color={done && !selected ? C.muted : undefined}>
+        <Text bold={selected} inverse={selected} color={done && !selected ? C.muted : undefined}>
           {truncate(task.title, inner - (task.is_starred ? 3 : 1))}
         </Text>
         {task.is_starred ? <Text color={C.accent}> ★</Text> : null}

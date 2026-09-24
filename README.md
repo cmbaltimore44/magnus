@@ -44,7 +44,7 @@ Global: **1–6** jump to a section · **0** home · **ctrl+k** or **/** search 
 | Routines | space check off · **K/J** move up/down · **H/L** move to the previous/next time of day · n new · d delete |
 | Projects | enter open · n new · s cycle status · d delete → in a project: space toggle item · n add · d delete item · K/J reorder · e edit · D delete project |
 | Library  | tab Books/Quotes · enter open a book / fold a group · n new → in a book: a add highlight · enter edit · f favorite · e edit book · v view cover · D delete · Quotes tab: F favorites only |
-| Journal  | t today · e new essay · b book essay · f film essay · s search (`#tag` = tag search) · g tags · k backlinks · v graph · c quick capture |
+| Journal  | t today · e new essay · b book essay · f film essay · s search (`#tag` = tag search) · g tags · k backlinks · v graph · c quick capture · i triage inbox (opens inbox.md in Fresh) |
 
 In forms: ↑↓ or tab moves between fields, ←→ changes an option, enter saves,
 esc cancels. On a Notes field, **ctrl+e** opens `$VISUAL`/`$EDITOR` (or `fresh`)
@@ -53,14 +53,12 @@ for multi-line text. Dates accept `2026-10-01`, `10/1`, `today`, `tomorrow`,
 
 ## Design notes
 
-- **Colors are Life Tracker's.** `src/lib/theme.js` holds the web app's light
-  and dark palettes, copied from its `style.css`. At startup Magnus asks the
-  terminal for its background color: a dark background gets the dark palette,
-  a light one gets light (`MAGNUS_THEME=light|dark` forces one). Magnus paints
-  the app background and sets the terminal's default colors to match. Your own
-  Ghostty colors come back when you quit and while a script or editor has the
-  terminal. Category colors show exactly as stored. If the web app's palette
-  changes, update `theme.js`.
+- **Colors come from the terminal theme.** Magnus uses named ANSI colors only
+  (`src/lib/theme.js` maps accent/muted/danger/… to slots). The Life Tracker
+  Ghostty themes in [`terminal-theme/`](terminal-theme/) give those slots the
+  web app's palette, and light/dark follows macOS. Fresh and bat are themed to
+  match. The banner gradient asks the terminal for its bright red and yellow
+  RGB (OSC 4), so it's terracotta → amber under those themes.
 - **Handing the terminal to scripts** (`today`, `new-essay`, `jsearch`,
   `jbacklinks`, `$EDITOR`, cover view) goes through Ink 7's `suspendTerminal()`
   plus `spawnSync(…, { stdio: 'inherit' })`. Raw mode, the alternate screen and

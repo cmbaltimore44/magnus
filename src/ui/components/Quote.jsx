@@ -50,7 +50,7 @@ export function QuoteRow({ quote, layout, selected, maxLines = Infinity, gap = 0
           ) : (
             pad
           )}
-          <Text italic bold={selected} backgroundColor={selected ? C.hoverBg : undefined}>
+          <Text italic bold={selected} inverse={selected}>
             {line}
           </Text>
         </Text>

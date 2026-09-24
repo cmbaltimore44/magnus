@@ -13,7 +13,7 @@ export function Prompt({ label, initial = '', placeholder = '', hint, onSubmit, 
   });
 
   return (
-    <Box flexDirection="column" backgroundColor={C.surface} borderStyle="round" borderColor={C.accent} paddingX={1}>
+    <Box flexDirection="column" borderStyle="round" borderColor={C.accent} paddingX={1}>
       <Box>
         <Text color={C.accent} bold>
           {label}{' '}
@@ -32,7 +32,7 @@ export function Confirm({ message, onYes, onNo }) {
     else if (input === 'n' || input === 'N' || key.escape) onNo();
   });
   return (
-    <Box backgroundColor={C.surface} borderStyle="round" borderColor={C.danger} paddingX={1}>
+    <Box borderStyle="round" borderColor={C.danger} paddingX={1}>
       <Text>
         {message} <Text bold>[y/N]</Text>
       </Text>
@@ -51,7 +51,7 @@ export function Choice({ title, options, initialIndex = 0, onPick, onCancel }) {
     else if (key.return) onPick(options[index]);
   });
   return (
-    <Box flexDirection="column" backgroundColor={C.surface} borderStyle="round" borderColor={C.accent} paddingX={1}>
+    <Box flexDirection="column" borderStyle="round" borderColor={C.accent} paddingX={1}>
       <Text color={C.accent} bold>
         {title}
       </Text>

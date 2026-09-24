@@ -2,7 +2,6 @@ import { spawnSync, execFile } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { terminalColorsOn, TERMINAL_COLORS_RESET } from './theme.js';
 
 // All interactive hand-offs go through Ink's suspendTerminal(): it turns raw
 // mode off, leaves the alternate screen, stops Ink reading stdin, and on
@@ -33,12 +32,10 @@ function ignoreTerminalSignals() {
 export function handOff(suspendTerminal, callback) {
   return suspendTerminal(async () => {
     const restoreSignals = ignoreTerminalSignals();
-    // Child programs get the user's normal terminal colors, not Magnus's.
-    fs.writeSync(1, TERMINAL_COLORS_RESET);
     try {
       return await callback();
     } finally {
-      fs.writeSync(1, terminalColorsOn() + ALT_SCREEN_HOME);
+      fs.writeSync(1, ALT_SCREEN_HOME);
       restoreSignals();
     }
   });

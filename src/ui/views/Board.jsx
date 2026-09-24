@@ -391,7 +391,7 @@ function CategoryManager({ categories, tasks, userId, onChange, onClose }) {
   const nextSwatch = categories.length % CATEGORY_SWATCHES.length;
 
   return (
-    <Box flexDirection="column" backgroundColor={C.surface} borderStyle="round" borderColor={C.accent} paddingX={1}>
+    <Box flexDirection="column" borderStyle="round" borderColor={C.accent} paddingX={1}>
       <Text bold color={C.accent}>
         Categories
       </Text>
@@ -417,7 +417,7 @@ function CategoryManager({ categories, tasks, userId, onChange, onClose }) {
       {mode?.type === 'color' ? (
         <Choice
           title={`Color for “${mode.name}”`}
-          options={CATEGORY_SWATCHES.map((s) => ({ ...s, key: s.hex, swatch: '■', color: s.hex }))}
+          options={CATEGORY_SWATCHES.map((s) => ({ ...s, key: s.hex, swatch: '■', color: s.ansi }))}
           initialIndex={nextSwatch}
           onPick={(swatch) => create(mode.name, swatch)}
           onCancel={() => setMode(null)}

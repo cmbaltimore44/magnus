@@ -110,7 +110,7 @@ export function Search({ onClose }) {
   const width = columns - 8;
 
   return (
-    <Box flexDirection="column" backgroundColor={C.surface} borderStyle="round" borderColor={C.accent} paddingX={1} height={contentHeight + 1}>
+    <Box flexDirection="column" borderStyle="round" borderColor={C.accent} paddingX={1} height={contentHeight + 1}>
       <Box>
         <Text color={C.accent} bold>
           Search{' '}
@@ -142,7 +142,7 @@ export function Search({ onClose }) {
               ) : null}
               <Text wrap="truncate-end">
                 <Text color={C.accent}>{isSel ? '› ' : '  '}</Text>
-                <Text bold={isSel} backgroundColor={isSel ? C.hoverBg : undefined}>
+                <Text bold={isSel} inverse={isSel}>
                   {truncate(item.title, Math.floor(width * 0.6))}
                 </Text>
                 {item.subtitle ? <Text color={C.muted}> {truncate(item.subtitle, Math.floor(width * 0.35))}</Text> : null}

@@ -1,0 +1,25 @@
+# Life Tracker Dark — generated from the Life Tracker web app palette (style.css).
+# Every text color is >= 4.8:1 contrast on the background (WCAG AA is 4.5); color 0 is the near-background shade.
+# red = danger, bright red = the app's terracotta accent, yellow = amber, green = success.
+palette = 0=#3c332b
+palette = 1=#dc6457
+palette = 2=#82a86a
+palette = 3=#e0a83a
+palette = 4=#7f9fc2
+palette = 5=#c48aa8
+palette = 6=#7fb3a8
+palette = 7=#cdbfb0
+palette = 8=#998c7d
+palette = 9=#e2703f
+palette = 10=#9fc486
+palette = 11=#f0c266
+palette = 12=#a3bddb
+palette = 13=#dba7c2
+palette = 14=#9fcfc4
+palette = 15=#f7efe6
+background = #211c18
+foreground = #ece2d6
+cursor-color = #ece2d6
+cursor-text = #211c18
+selection-background = #4a3f35
+selection-foreground = #ece2d6

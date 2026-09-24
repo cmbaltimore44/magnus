@@ -42,7 +42,7 @@ function TabBar({ current, columns }) {
             <Text key={s.view}>
               {' '}
               {active ? (
-                <Text color={C.accent} bold backgroundColor={C.hoverBg}>
+                <Text color={C.accent} bold inverse>
                   {label}
                 </Text>
               ) : (
@@ -73,7 +73,7 @@ function Footer({ hints, status, columns }) {
   );
 }
 
-export default function App() {
+export default function App({ gradient }) {
   const { exit, suspendTerminal } = useApp();
   const { columns, rows } = useWindowSize();
   const [auth, setAuth] = useState({ state: 'loading' });
@@ -186,7 +186,7 @@ export default function App() {
       </Box>
     );
   } else if (auth.state === 'login') {
-    body = <Login onAuthenticated={(session) => setAuth({ state: 'ready', session })} />;
+    body = <Login gradient={gradient} onAuthenticated={(session) => setAuth({ state: 'ready', session })} />;
   } else {
     const View = route.view === 'home' ? Home : SECTIONS.find((s) => s.view === route.view).component;
     // The current view stays mounted (just hidden) under the search overlay,
@@ -194,7 +194,7 @@ export default function App() {
     body = (
       <>
         <Box display={searchOpen ? 'none' : 'flex'} flexDirection="column" flexGrow={1}>
-          <View key={route.key} params={route.params} sections={SECTIONS} />
+          <View key={route.key} params={route.params} gradient={gradient} sections={SECTIONS} />
         </Box>
         {searchOpen ? <Search onClose={() => setSearchOpen(false)} /> : null}
       </>
@@ -203,7 +203,7 @@ export default function App() {
 
   return (
     <AppContext.Provider value={ctx}>
-      <Box flexDirection="column" width={columns} height={rows} backgroundColor={C.bg}>
+      <Box flexDirection="column" width={columns} height={rows}>
         {ready && route.view !== 'home' ? <TabBar current={searchOpen ? null : route.view} columns={columns} /> : null}
         <Box flexDirection="column" flexGrow={1} paddingX={1} overflow="hidden">
           {body}

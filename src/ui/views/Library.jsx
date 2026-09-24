@@ -192,11 +192,11 @@ export function Library({ params }) {
     <Text>
       <Text bold>Library</Text>
       {'  '}
-      <Text backgroundColor={tab === 'books' ? C.hoverBg : undefined} color={tab === 'books' ? C.accent : undefined}>
+      <Text inverse={tab === 'books'} color={tab === 'books' ? C.accent : undefined}>
         {' '}
         Books {books.length}{' '}
       </Text>{' '}
-      <Text backgroundColor={tab === 'quotes' ? C.hoverBg : undefined} color={tab === 'quotes' ? C.accent : undefined}>
+      <Text inverse={tab === 'quotes'} color={tab === 'quotes' ? C.accent : undefined}>
         {' '}
         Quotes{' '}
       </Text>
@@ -242,7 +242,7 @@ export function Library({ params }) {
               <Text color={C.accent}>{isSel ? '› ' : '  '}</Text>
               {'   '}
               <Text color={b.cover_image_url ? C.accent : C.muted}>{b.cover_image_url ? '▣' : '□'}</Text>{' '}
-              <Text bold={isSel} backgroundColor={isSel ? C.hoverBg : undefined}>
+              <Text bold={isSel} inverse={isSel}>
                 {truncate(b.title, titleWidth)}
               </Text>
               {b.author ? <Text color={C.muted}> — {b.author}</Text> : null}

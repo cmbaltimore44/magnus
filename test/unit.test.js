@@ -3,33 +3,27 @@ process.env.MAGNUS_DEMO = '1';
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { categoryColor, CATEGORY_SWATCHES } from '../src/lib/colors.js';
-import { C, PALETTES, setThemeMode, mix, modeForBackground } from '../src/lib/theme.js';
+import { hexToAnsi, categoryColor, CATEGORY_SWATCHES } from '../src/lib/colors.js';
+import { C } from '../src/lib/theme.js';
 import { parseDateInput } from '../src/lib/dates.js';
 import { computeStreak, addDays } from '../src/lib/data/completions.js';
 import { dueStatus, sortForColumn, truncate } from '../src/lib/display.js';
 import { windowByHeight, windowRange, swapped } from '../src/ui/components/layout.js';
-import { parseBackgroundReply } from '../src/lib/termcolors.js';
+import { parsePaletteReplies } from '../src/lib/palette.js';
 import { formatAttribution } from '../src/lib/data/quotes.js';
 
-test('theme: palettes match, mode switching, color-mix', () => {
-  assert.deepEqual(Object.keys(PALETTES.light).sort(), Object.keys(PALETTES.dark).sort());
-  setThemeMode('light');
-  assert.equal(C.bg, '#f2e2d6');
-  setThemeMode('dark');
-  assert.equal(C.bg, '#211c18');
-  assert.equal(mix('#ff0000', '#0000ff', 0.25), '#4000bf');
-  assert.equal(modeForBackground('#1e1e2e'), 'dark');
-  assert.equal(modeForBackground('#fafafa'), 'light');
-  assert.equal(modeForBackground(null), null);
+test('theme tokens are named ANSI colors (the terminal theme supplies RGB)', () => {
+  for (const [k, v] of Object.entries(C)) {
+    if (v !== undefined) assert.match(v, /^[a-z]+(Bright)?$/, k);
+  }
+  assert.equal(C.accent, 'redBright');
 });
 
-test('categories render their stored hex; bad values fall back to muted', () => {
-  setThemeMode('dark');
-  assert.equal(categoryColor({ color: '#1fb6b6' }), '#1fb6b6');
-  assert.equal(categoryColor({ color: 'teal' }), C.muted);
-  assert.equal(categoryColor(null), C.muted);
-  assert.equal(CATEGORY_SWATCHES.length, 8);
+test('every web-app swatch maps to its own distinct ANSI slot', () => {
+  for (const s of CATEGORY_SWATCHES) assert.equal(hexToAnsi(s.hex), s.ansi, s.label);
+  assert.equal(new Set(CATEGORY_SWATCHES.map((s) => hexToAnsi(s.hex))).size, CATEGORY_SWATCHES.length);
+  assert.equal(categoryColor({ color: '#1fb6b6' }), 'cyan');
+  assert.equal(categoryColor(null), 'white');
 });
 
 test('parseDateInput', () => {
@@ -85,10 +79,9 @@ test('list windowing', () => {
   assert.equal(swapped(['a', 'b'], 0, -1), null);
 });
 
-test('parseBackgroundReply handles 2- and 4-digit channels, BEL and ST', () => {
-  assert.equal(parseBackgroundReply('\x1b]11;rgb:2121/1c1c/1818\x07\x1b[?62;22c'), '#211c18');
-  assert.equal(parseBackgroundReply('\x1b]11;rgb:f2/e2/d6\x1b\\'), '#f2e2d6');
-  assert.equal(parseBackgroundReply('\x1b[?62;22c'), null);
+test('parsePaletteReplies handles 2- and 4-digit channels, BEL and ST', () => {
+  const buf = '\x1b]4;9;rgb:e2e2/7070/3f3f\x07\x1b]4;3;rgb:e0/a8/3a\x1b\\\x1b[?62;22c';
+  assert.deepEqual(parsePaletteReplies(buf), { 9: '#e2703f', 3: '#e0a83a' });
 });
 
 test('formatAttribution uses the current book title', () => {

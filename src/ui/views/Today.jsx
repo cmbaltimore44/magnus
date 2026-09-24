@@ -154,7 +154,7 @@ export function Today() {
     <Box
       flexDirection="column"
       flexShrink={0}
-      backgroundColor={C.surface} borderStyle="round"
+      borderStyle="round"
       borderColor={C.accent}
       paddingX={1}
       width={quoteWidth}
@@ -235,7 +235,7 @@ export function RoutineLine({ routine, dates, today, selected, extra }) {
     <Text wrap="truncate-end">
       <Text color={C.accent}>{selected ? '› ' : '  '}</Text>
       <Text color={done ? C.success : undefined}>{done ? '[✓]' : '[ ]'}</Text>{' '}
-      <Text bold={selected} backgroundColor={selected ? C.hoverBg : undefined} color={done && !selected ? C.muted : undefined}>
+      <Text bold={selected} inverse={selected} color={done && !selected ? C.muted : undefined}>
         {routine.name}
       </Text>
       {streak > 0 ? <Text color={C.accent}> 🔥 {streak}</Text> : null}

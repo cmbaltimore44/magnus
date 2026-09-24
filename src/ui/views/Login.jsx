@@ -6,7 +6,7 @@ import { useCapture } from '../context.js';
 import { requestCode, verifyCode } from '../../lib/auth.js';
 import { Banner } from '../components/Banner.jsx';
 
-export function Login({ onAuthenticated }) {
+export function Login({ gradient, onAuthenticated }) {
   useCapture();
   const { columns } = useWindowSize();
   const [step, setStep] = useState('email');
@@ -55,7 +55,7 @@ export function Login({ onAuthenticated }) {
 
   return (
     <Box flexDirection="column" paddingTop={1}>
-      <Banner columns={columns} />
+      <Banner gradient={gradient} columns={columns} />
       <Text bold>Sign in to Life Tracker</Text>
       <Text color={C.muted}>One-time setup — your session is kept in the macOS Keychain after this. (ctrl+c quits)</Text>
       <Box marginTop={1} flexDirection="column">
