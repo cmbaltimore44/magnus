@@ -29,19 +29,19 @@ export function useHints(hints) {
 // useInput for a view's top-level keys: automatically inactive while the
 // global search overlay is open on top of it.
 export function useViewInput(handler, active = true) {
-  const { searchOpen } = useAppCtx();
+  const { overlayOpen } = useAppCtx();
   useInput(
     (input, key) => {
       if (key.ctrl || key.meta || input === '/') return; // global shortcuts
       handler(input, key);
     },
-    { isActive: active && !searchOpen }
+    { isActive: active && !overlayOpen }
   );
 }
 
 // Loads view data; errors go to the status bar instead of crashing the app.
 export function useLoader(load) {
-  const { notify } = useAppCtx();
+  const { notify, dataVersion } = useAppCtx();
   const loadRef = useRef(load);
   loadRef.current = load;
   const [state, setState] = useState({ loading: true, data: null });
@@ -61,6 +61,12 @@ export function useLoader(load) {
   useEffect(() => {
     reload();
   }, [reload]);
+
+  // Data changed elsewhere (quick add, another device): reload quietly.
+  const firstVersion = useRef(dataVersion);
+  useEffect(() => {
+    if (dataVersion !== firstVersion.current) reload();
+  }, [dataVersion, reload]);
 
   const setData = useCallback((updater) => {
     setState((s) => ({ ...s, data: typeof updater === 'function' ? updater(s.data) : updater }));

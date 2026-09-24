@@ -15,6 +15,7 @@ import { Projects } from './views/Projects.jsx';
 import { Library } from './views/Library.jsx';
 import { Journal } from './views/Journal.jsx';
 import { Search } from './views/Search.jsx';
+import { QuickAdd } from './components/QuickAdd.jsx';
 
 export const SECTIONS = [
   { view: 'today', label: 'Today', key: 't', digit: '1', component: Today },
@@ -79,6 +80,11 @@ export default function App({ gradient }) {
   const [auth, setAuth] = useState({ state: 'loading' });
   const [route, setRoute] = useState({ view: 'home', params: {}, key: 0 });
   const [searchOpen, setSearchOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  // Bumped whenever data changes outside the current view (quick add, live
+  // updates); every useLoader reloads on it.
+  const [dataVersion, setDataVersion] = useState(0);
+  const dataChanged = useCallback(() => setDataVersion((v) => v + 1), []);
   const [captureCount, setCaptureCount] = useState(0);
   const [hints, setHints] = useState('');
   const [status, setStatus] = useState(null);
@@ -116,6 +122,9 @@ export default function App({ gradient }) {
     () => ({
       userId: currentUserId(auth.session),
       searchOpen,
+      overlayOpen: searchOpen || quickAddOpen,
+      dataVersion,
+      dataChanged,
       columns,
       rows,
       // tab bar (1) + footer (2), plus the view's own padding line
@@ -142,7 +151,7 @@ export default function App({ gradient }) {
         }
       },
     }),
-    [auth.session, searchOpen, columns, rows, route.view, navigate, notify, suspendTerminal]
+    [auth.session, searchOpen, quickAddOpen, dataVersion, dataChanged, columns, rows, route.view, navigate, notify, suspendTerminal]
   );
 
   const ready = auth.state === 'ready';
@@ -156,11 +165,12 @@ export default function App({ gradient }) {
       if (key.ctrl || key.meta) return;
       if (input === '/') return setSearchOpen(true);
       if (input === 'q') return exit();
+      if (input === 'a') return setQuickAddOpen(true);
       if (input === '0') return navigate('home');
       const section = SECTIONS.find((s) => s.digit === input);
       if (section) navigate(section.view);
     },
-    { isActive: ready && !searchOpen && captureCount === 0 }
+    { isActive: ready && !searchOpen && !quickAddOpen && captureCount === 0 }
   );
 
   useInput(
@@ -197,6 +207,7 @@ export default function App({ gradient }) {
           <View key={route.key} params={route.params} gradient={gradient} sections={SECTIONS} />
         </Box>
         {searchOpen ? <Search onClose={() => setSearchOpen(false)} /> : null}
+        {quickAddOpen && !searchOpen ? <QuickAdd onClose={() => setQuickAddOpen(false)} /> : null}
       </>
     );
   }

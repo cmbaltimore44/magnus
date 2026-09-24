@@ -13,7 +13,7 @@ const DESCRIPTIONS = {
   journal: 'daily entry, essays, search, capture',
 };
 
-const HINTS = 'press a letter to open · ↑↓ enter · ctrl+k or / search · q quit';
+const HINTS = 'press a letter to open · ↑↓ enter · a quick add · ctrl+k or / search · q quit';
 
 export function Home({ gradient, sections }) {
   const { navigate, columns } = useAppCtx();

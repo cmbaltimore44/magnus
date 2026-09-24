@@ -30,7 +30,7 @@ const BOOK_GROUPS = [
 const BOOKS_HINTS = 'tab quotes · ↑↓ move · enter open / fold group · n new book · d delete · R refresh · esc home';
 const QUOTES_HINTS = 'tab books · ↑↓ move · enter edit · n new quote · f favorite · F favorites only · d delete · esc home';
 const DETAIL_HINTS =
-  '↑↓ highlight · a add highlight · enter edit · f favorite · d delete highlight · e edit book · v view cover · D delete book · esc back';
+  '↑↓ highlight · n add highlight · enter edit · f favorite · d delete highlight · e edit book · v view cover · D delete book · esc back';
 
 const stars = (rating) => (rating ? '★'.repeat(rating) + '☆'.repeat(5 - rating) : '');
 const fmtDate = (d) => (d ? formatDue(d) + ' ' + d.slice(0, 4) : '—');
@@ -340,7 +340,7 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
       if (input === 'R') return reload();
       if (key.upArrow || input === 'k') return setIndex((i) => moveIndex(i, -1, highlights.length));
       if (key.downArrow || input === 'j') return setIndex((i) => moveIndex(i, 1, highlights.length));
-      if (input === 'a' || input === 'n') return setMode({ type: 'quote', quote: null });
+      if (input === 'n') return setMode({ type: 'quote', quote: null });
       if (input === 'e') return setMode({ type: 'editBook' });
       if (input === 'v') return showCover(data.book.cover_image_url, data.book.title);
       if (input === 'D') return setMode({ type: 'confirmBook' });

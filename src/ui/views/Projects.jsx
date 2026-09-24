@@ -292,7 +292,7 @@ function ProjectDetail({ projectId, cached, onBack, onUpdated, onDelete, onCount
       if (key.escape) return onBack();
       if (key.upArrow || input === 'k') return setIndex((i) => moveIndex(i, -1, items.length));
       if (key.downArrow || input === 'j') return setIndex((i) => moveIndex(i, 1, items.length));
-      if (input === 'n' || input === 'a') return setMode({ type: 'add' });
+      if (input === 'n') return setMode({ type: 'add' });
       if (input === 'e') return setMode({ type: 'edit' });
       if (input === 's') return cycleStatus();
       if (input === 'D') return setMode({ type: 'confirm' });

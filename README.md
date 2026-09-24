@@ -41,7 +41,7 @@ discards the saved session.
 ## Keys
 
 Global: **1–6** jump to a section · **0** home · **ctrl+k** or **/** search ·
-**q** quit · **esc** back. Each screen lists its own keys in the footer.
+**a** quick add · **q** quit · **esc** back. Each screen lists its own keys in the footer.
 
 | Screen   | Keys |
 | -------- | ---- |
@@ -49,8 +49,14 @@ Global: **1–6** jump to a section · **0** home · **ctrl+k** or **/** search 
 | Board    | ←→/h l column · ↑↓/j k task · **space** cycle status (H/L back/forward) · s star (max 3) · enter/e edit · n new · d delete · f text filter · c cycle category filter · C manage categories · esc clears filters |
 | Routines | space check off · **K/J** move up/down · **H/L** move to the previous/next time of day · n new · d delete |
 | Projects | enter open · n new · s cycle status · d delete → in a project: space toggle item · n add · d delete item · K/J reorder · e edit · D delete project |
-| Library  | tab Books/Quotes · enter open a book / fold a group · n new → in a book: a add highlight · enter edit · f favorite · e edit book · v view cover · D delete · Quotes tab: F favorites only |
+| Library  | tab Books/Quotes · enter open a book / fold a group · n new → in a book: n add highlight · enter edit · f favorite · e edit book · v view cover · D delete · Quotes tab: F favorites only |
 | Journal  | t today · e new essay · b book essay · f film essay · s search (`#tag` = tag search) · g tags · k backlinks · v graph · c quick capture · i triage inbox (opens inbox.md in Fresh) · e/b/f/n end with an optional tags / `[[links]]` prompt · n new note · x note from inbox · l browse all entries (enter open, d move to Trash, tab type filter, f text filter) · d back up to drive (plug it in first) |
+
+**Quick add** (`a`, anywhere): one line becomes a task —
+`renew passport fri !high #home *` sets the due date (`today`, `tom`, weekday
+names, `+3`, `10/1`, `2026-10-01`), priority (`!high`/`!h`, `!low`), the category
+whose name starts with `home`, and a star. `> some thought` goes to the journal
+inbox instead. Anything that doesn't resolve stays in the title.
 
 In forms: ↑↓ or tab moves between fields, ←→ changes an option, enter saves,
 esc cancels. On a Notes field, **ctrl+e** opens `$VISUAL`/`$EDITOR` (or `fresh`)
