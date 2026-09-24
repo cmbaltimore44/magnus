@@ -325,6 +325,7 @@ export default function App({ gradient }) {
     add('Library', 'New book', () => navigate('library', { new: 'newBook' }));
     add('Library', 'Look up a book (ISBN / title)', () => navigate('library', { new: 'lookup' }));
     add('Library', 'Book stats', () => navigate('library', { tab: 'stats' }));
+    add('Library', 'Want to Read', () => navigate('library', { tab: 'want' }));
     for (const it of JOURNAL_ITEMS) add('Journal', it.label, () => navigate('journal', { item: it.key }));
     add('Log', 'Log mood, sleep, weight or a workout', () => navigate('log'));
     for (const fam of ['heather', 'lakeglow', 'beacon', 'hearth']) {

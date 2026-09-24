@@ -8,6 +8,8 @@ import { BookLookup } from '../components/BookLookup.jsx';
 import { Split, splitLayout } from '../components/Split.jsx';
 import { bookStats } from '../../lib/stats.js';
 import { todayISO } from '../../lib/data/completions.js';
+import { addWantToRead, needsDetails } from '../../lib/bookQuickAdd.js';
+import { parseBookText } from '../../lib/quickadd.js';
 import * as booksApi from '../../lib/data/books.js';
 import * as quotesApi from '../../lib/data/quotes.js';
 import {
@@ -22,8 +24,8 @@ import {
 } from '../../lib/display.js';
 import { getPref, setPref } from '../../lib/prefs.js';
 import { Form } from '../components/Form.jsx';
-import { Confirm } from '../components/Prompt.jsx';
-import { windowRange, windowByHeight, moveIndex } from '../components/layout.js';
+import { Prompt, Confirm } from '../components/Prompt.jsx';
+import { windowRange, windowByHeight, moveIndex, swapped } from '../components/layout.js';
 import { layoutQuote, QuoteRow } from '../components/Quote.jsx';
 
 const BOOK_GROUPS = [
@@ -33,11 +35,12 @@ const BOOK_GROUPS = [
   { key: 'dnf', label: 'Did Not Finish', collapsible: true },
 ];
 
-const BOOKS_HINTS = 'tab quotes · ↑↓ move · enter open / fold group · n new book · i look up (ISBN/title) · d delete · R refresh · esc home';
+const BOOKS_HINTS = 'tab want to read · ↑↓ move · enter open / fold group · n new book · i look up (ISBN/title) · d delete · R refresh · esc home';
 const QUOTES_HINTS = 'tab stats · ↑↓ move · enter edit · n new quote · f favorite · w send to essay · F favorites only · d delete · esc home';
 const STATS_HINTS = 'tab books · esc home';
+const WANT_HINTS = 'tab quotes · ↑↓ move · s start reading · enter open · n add (title by author, or ISBN) · K/J reorder · f filter · d delete · esc home';
 const DETAIL_HINTS =
-  '↑↓ highlight · n add highlight · enter edit · f favorite · w send to essay · d delete highlight · e edit book · i fill from Open Library · v view cover · D delete book · esc back';
+  '↑↓ highlight · n add highlight · enter edit · f favorite · w send to essay · d delete highlight · e edit book · s start reading · i fill from Open Library · v view cover · D delete book · esc back';
 
 const stars = (rating) => (rating ? '★'.repeat(rating) + '☆'.repeat(5 - rating) : '');
 const fmtDate = (d) => (d ? formatDue(d) + ' ' + d.slice(0, 4) : '—');
@@ -97,7 +100,7 @@ const layoutsFor = (quotes, books, width) =>
 
 export function Library({ params }) {
   const { navigate, offerUndo, notify, userId, contentHeight, columns } = useAppCtx();
-  const [tab, setTab] = useState(['quotes', 'stats'].includes(params?.tab) ? params.tab : 'books');
+  const [tab, setTab] = useState(['want', 'quotes', 'stats'].includes(params?.tab) ? params.tab : 'books');
   const [openBookId, setOpenBookId] = useState(params?.bookId || null);
   const [index, setIndex] = useState(0);
   const [collapsed, setCollapsed] = useState(() => new Set(getPref('library.collapsedGroups', ['finished', 'dnf'])));
@@ -149,13 +152,13 @@ export function Library({ params }) {
 
   const replaceBook = (updated) => setBooks((b) => b.map((x) => (x.id === updated.id ? updated : x)));
 
-  useHints(openBookId ? DETAIL_HINTS : tab === 'books' ? BOOKS_HINTS : tab === 'quotes' ? QUOTES_HINTS : STATS_HINTS);
+  useHints(openBookId ? DETAIL_HINTS : tab === 'books' ? BOOKS_HINTS : tab === 'want' ? WANT_HINTS : tab === 'quotes' ? QUOTES_HINTS : STATS_HINTS);
 
   useViewInput(
     (input, key) => {
       if (!books) return;
       if (key.escape) return navigate('home');
-      if (key.tab) return setTab('quotes');
+      if (key.tab) return setTab('want');
       if (input === 'R') return reload();
       if (key.upArrow || input === 'k') return setIndex((i) => moveIndex(i, -1, rows.length));
       if (key.downArrow || input === 'j') return setIndex((i) => moveIndex(i, 1, rows.length));
@@ -213,6 +216,10 @@ export function Library({ params }) {
         {' '}
         Books {books.length}{' '}
       </Text>{' '}
+      <Text inverse={tab === 'want'} color={tab === 'want' ? C.accent : undefined}>
+        {' '}
+        Want to Read {books.filter((b) => b.status === 'want_to_read').length}{' '}
+      </Text>{' '}
       <Text inverse={tab === 'quotes'} color={tab === 'quotes' ? C.accent : undefined}>
         {' '}
         Quotes{' '}
@@ -223,6 +230,15 @@ export function Library({ params }) {
       </Text>
     </Text>
   );
+
+  if (tab === 'want' && !openBookId) {
+    return (
+      <Box flexDirection="column" height={contentHeight}>
+        {tabs}
+        <WantToRead books={books} setBooks={setBooks} onOpen={setOpenBookId} onSwitchTab={() => setTab('quotes')} />
+      </Box>
+    );
+  }
 
   if (tab === 'stats') {
     return (
@@ -328,7 +344,7 @@ function useQuoteActions({ reload, setMode }) {
 }
 
 function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }) {
-  const { notify, showCover, contentHeight, columns } = useAppCtx();
+  const { notify, offerUndo, showCover, contentHeight, columns } = useAppCtx();
   const [index, setIndex] = useState(0);
   const [mode, setMode] = useState(null);
 
@@ -377,6 +393,23 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
       if (input === 'n') return setMode({ type: 'quote', quote: null });
       if (input === 'e') return setMode({ type: 'editBook' });
       if (input === 'i') return setMode({ type: 'lookup' });
+      if (input === 's' && data.book.status === 'want_to_read') {
+        return (async () => {
+          try {
+            const before = { status: data.book.status, started_date: data.book.started_date };
+            const updated = await booksApi.updateBook(bookId, { status: 'reading', started_date: todayISO() });
+            setData((d) => ({ ...d, book: updated }));
+            onUpdated(updated);
+            offerUndo(`Started “${updated.title}”`, async () => {
+              const back = await booksApi.updateBook(bookId, before);
+              setData((d) => ({ ...d, book: back }));
+              onUpdated(back);
+            });
+          } catch (err) {
+            notify(err.message, 'error');
+          }
+        })();
+      }
       if (input === 'v') return showCover(data.book.cover_image_url, data.book.title);
       if (input === 'D') return setMode({ type: 'confirmBook' });
       if (!selected) return;
@@ -783,5 +816,151 @@ function BookPreview({ book, width }) {
         ))}
       </Box>
     </>
+  );
+}
+
+// Want to Read as a queue: one line per book in your own order; the first
+// three are "Up next". s starts reading (status + start date, u undoes).
+function WantToRead({ books, setBooks, onOpen, onSwitchTab }) {
+  const { userId, navigate, notify, offerUndo, contentHeight, columns } = useAppCtx();
+  const [index, setIndex] = useState(0);
+  const [filter, setFilter] = useState('');
+  const [mode, setMode] = useState(null); // add | filter | confirm
+  const want = books
+    .filter((b) => b.status === 'want_to_read')
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || String(a.created_at).localeCompare(String(b.created_at)));
+  const q = filter.toLowerCase();
+  const shown = q ? want.filter((b) => `${b.title} ${b.author || ''} ${b.notes || ''}`.toLowerCase().includes(q)) : want;
+  const book = shown[Math.min(index, shown.length - 1)];
+
+  const replace = (u) => setBooks((bs) => bs.map((x) => (x.id === u.id ? u : x)));
+  const run = async (fn) => {
+    try {
+      await fn();
+    } catch (err) {
+      notify(err.message, 'error');
+    }
+  };
+
+  const start = (b) =>
+    run(async () => {
+      const before = { status: b.status, started_date: b.started_date };
+      const updated = await booksApi.updateBook(b.id, { status: 'reading', started_date: todayISO() });
+      replace(updated);
+      offerUndo(`Started “${b.title}”`, async () => replace(await booksApi.updateBook(b.id, before)));
+    });
+
+  const add = (text) =>
+    run(async () => {
+      const parsed = parseBookText(text);
+      if (!parsed.isbn && !parsed.title) return setMode(null);
+      setMode({ type: 'add', key: Date.now() }); // stays open for the next one
+      const { book: created, enriched } = await addWantToRead(userId, parsed, books);
+      setBooks((bs) => [created, ...bs]);
+      enriched.then((u) => u && replace(u));
+    });
+
+  const reorder = (delta) =>
+    run(async () => {
+      if (q || !book) return q && notify('Clear the filter to reorder', 'info');
+      const i = want.indexOf(book);
+      const next = swapped(want, i, delta);
+      if (!next) return;
+      const orders = new Map(next.map((b, k) => [b.id, k]));
+      setBooks((bs) => bs.map((b) => (orders.has(b.id) ? { ...b, sort_order: orders.get(b.id) } : b)));
+      setIndex(i + delta);
+      await Promise.all(next.map((b, k) => booksApi.updateBook(b.id, { sort_order: k })));
+    });
+
+  useViewInput(
+    (input, key) => {
+      if (key.escape) return filter ? setFilter('') : navigate('home');
+      if (key.tab) return onSwitchTab();
+      if (key.upArrow || input === 'k') return setIndex((i) => moveIndex(i, -1, shown.length));
+      if (key.downArrow || input === 'j') return setIndex((i) => moveIndex(i, 1, shown.length));
+      if (input === 'n') return setMode({ type: 'add', key: 0 });
+      if (input === 'f') return setMode({ type: 'filter' });
+      if (!book) return;
+      if (input === 's') return start(book);
+      if (key.return) return onOpen(book.id);
+      if (input === 'K') return reorder(-1);
+      if (input === 'J') return reorder(1);
+      if (input === 'd') return setMode({ type: 'confirm', book });
+    },
+    mode === null
+  );
+
+  const promptRows = mode ? 4 : 0;
+  const lines = [];
+  shown.forEach((b, i) => {
+    const pos = want.indexOf(b);
+    if (!q && pos === 0) lines.push({ header: 'Up next' });
+    if (!q && pos === 3) lines.push({ header: 'Later' });
+    lines.push({ b, pos, i });
+  });
+  const sel = lines.findIndex((l) => l.b && l.b === book);
+  const [from, to] = windowRange(lines.length, Math.max(0, sel), Math.max(3, contentHeight - 3 - promptRows));
+  const titleWidth = Math.max(16, Math.floor((columns - 12) * 0.45));
+
+  return (
+    <Box flexDirection="column" marginTop={1} flexGrow={1}>
+      {filter ? <Text color={C.soon}>filter: “{filter}” (esc clears)</Text> : null}
+      {want.length === 0 ? <Text color={C.muted}>Nothing yet — press n, or quick add `b: Title by Author` from anywhere.</Text> : null}
+      {lines.slice(from, to).map((l) =>
+        l.header ? (
+          <Text key={l.header} bold color={C.accent}>
+            {l.header}
+          </Text>
+        ) : (
+          <Text key={l.b.id} wrap="truncate-end">
+            <Text color={C.accent}>{l.b === book ? '› ' : '  '}</Text>
+            <Text color={C.muted}>{String(l.pos + 1).padStart(3)}. </Text>
+            <Text bold={l.b === book} inverse={l.b === book}>
+              {truncate(l.b.title, titleWidth)}
+            </Text>
+            {l.b.author ? <Text color={C.muted}> — {l.b.author}</Text> : null}
+            {needsDetails(l.b) ? <Text color={C.soon}> ?</Text> : null}
+            {l.b.notes ? <Text color={C.muted}>  {truncate(l.b.notes.split('\n')[0], 50)}</Text> : null}
+          </Text>
+        )
+      )}
+      {mode?.type === 'add' ? (
+        <Prompt
+          key={mode.key}
+          label="Want to read:"
+          placeholder="Piranesi by Susanna Clarke, or an ISBN"
+          hint="enter adds and stays open · details come from Open Library when there's one clear match · esc done"
+          onSubmit={add}
+          onCancel={() => setMode(null)}
+        />
+      ) : null}
+      {mode?.type === 'filter' ? (
+        <Prompt
+          label="Filter:"
+          initial={filter}
+          hint="title, author or notes · empty clears"
+          onSubmit={(v) => {
+            setFilter(v.trim());
+            setIndex(0);
+            setMode(null);
+          }}
+          onCancel={() => setMode(null)}
+        />
+      ) : null}
+      {mode?.type === 'confirm' ? (
+        <Confirm
+          message={`Delete “${mode.book.title}”? (u undoes it)`}
+          onYes={() =>
+            run(async () => {
+              setMode(null);
+              const restore = await deleteWithUndo('books', mode.book.id);
+              setBooks((bs) => bs.filter((x) => x.id !== mode.book.id));
+              offerUndo(`Deleted “${mode.book.title}”`, restore);
+            })
+          }
+          onNo={() => setMode(null)}
+        />
+      ) : null}
+    </Box>
   );
 }
