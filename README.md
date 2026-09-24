@@ -67,6 +67,14 @@ for multi-line text. Dates accept `2026-10-01`, `10/1`, `today`, `tomorrow`,
   input handling are released while the child runs. ctrl+c belongs to the child.
   If a command exits in under ~1.5s or fails (e.g. "No matches found."), Magnus
   waits for a keypress so you can read the output.
+- **Journal entries open in a new Ghostty tab.** Today's Entry and the three
+  New Essay items open in a new tab of the front Ghostty window (via Ghostty
+  1.3's AppleScript `new tab`), so Magnus keeps running. The tab gets
+  Magnus's `PATH`/`JOURNAL_DIR` and closes when Fresh exits. If the script
+  fails right away (within ~3s), the tab stays open until you press a key so
+  you can read the error. Outside Ghostty (or with
+  `MAGNUS_JOURNAL_TABS=0`) they run in this terminal as before. Search and
+  Backlinks still take over this terminal.
 - **`new-essay --book/--film`**: the script doesn't prompt for a missing
   book/film title (a bare `--book` fails with `$2: unbound variable`), so
   Magnus asks for that one value and lets the script prompt for everything else.

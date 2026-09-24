@@ -3,6 +3,7 @@ import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useViewInput } from '../context.js';
 import { Prompt } from '../components/Prompt.jsx';
+import { canOpenGhosttyTabs, openInGhosttyTab } from '../../lib/ghostty.js';
 
 // Front door to the journal scripts already on $PATH. Magnus doesn't
 // reimplement any of their logic — it just launches them, handing over the
@@ -13,11 +14,14 @@ import { Prompt } from '../components/Prompt.jsx';
 // `set -u`, and `--film ""` silently makes a plain essay). So Magnus asks for
 // just that title and passes it along; the script's own prompts still handle
 // the essay title, author and director.
+//
+// Items marked `tab: true` (starting an entry) open in a new Ghostty tab so
+// Magnus stays up in this one; elsewhere they take over this terminal.
 const ITEMS = [
-  { key: 't', label: "Today's Entry", desc: 'today', action: { run: 'today' } },
-  { key: 'e', label: 'New Essay', desc: 'new-essay', action: { run: 'new-essay' } },
-  { key: 'b', label: 'New Book Essay', desc: 'new-essay --book', action: { prompt: 'Book title:', run: 'new-essay', flag: '--book' } },
-  { key: 'f', label: 'New Film Essay', desc: 'new-essay --film', action: { prompt: 'Film title:', run: 'new-essay', flag: '--film' } },
+  { key: 't', label: "Today's Entry", desc: 'today', action: { run: 'today', tab: true } },
+  { key: 'e', label: 'New Essay', desc: 'new-essay', action: { run: 'new-essay', tab: true } },
+  { key: 'b', label: 'New Book Essay', desc: 'new-essay --book', action: { prompt: 'Book title:', run: 'new-essay', flag: '--book', tab: true } },
+  { key: 'f', label: 'New Film Essay', desc: 'new-essay --film', action: { prompt: 'Film title:', run: 'new-essay', flag: '--film', tab: true } },
   { key: 's', label: 'Search', desc: 'jsearch <text> · #tag → jsearch -t <tag>', action: { search: true } },
   { key: 'g', label: 'Tags', desc: 'jtags', action: { output: 'jtags' } },
   { key: 'k', label: 'Backlinks', desc: 'jbacklinks <slug>', action: { prompt: 'Slug:', run: 'jbacklinks', placeholder: 'note-slug' } },
@@ -33,12 +37,24 @@ export function Journal() {
   const [mode, setMode] = useState(null); // {type:'prompt', item} | {type:'output', title, lines, offset}
   useHints(mode?.type === 'output' ? '↑↓ scroll · esc back' : HINTS);
 
+  const start = async (a, args) => {
+    if (a.tab && canOpenGhosttyTabs()) {
+      try {
+        await openInGhosttyTab(a.run, args);
+        return notify(`Opened ${[a.run, ...args].join(' ')} in a new Ghostty tab`, 'success');
+      } catch (err) {
+        notify(`Couldn't open a Ghostty tab (${err.message}) — running here instead`, 'error');
+      }
+    }
+    return run(a.run, args);
+  };
+
   const launch = async (item, value) => {
     const a = item.action;
-    if (a.run && !a.prompt) return run(a.run, []);
+    if (a.run && !a.prompt) return start(a, []);
     if (a.run && a.prompt) {
       if (!value.trim()) return;
-      return run(a.run, a.flag ? [a.flag, value.trim()] : [value.trim()]);
+      return start(a, a.flag ? [a.flag, value.trim()] : [value.trim()]);
     }
     if (a.search) {
       const q = value.trim();
