@@ -27,6 +27,7 @@ import { ITEMS as JOURNAL_ITEMS } from './views/Journal.jsx';
 import { signOut } from '../lib/auth.js';
 import { FAMILY } from '../lib/theme.js';
 import { useFocusTimer, formatRemaining } from './useFocusTimer.js';
+import { useStatusSummary } from './useStatusSummary.js';
 
 export const SECTIONS = [
   { view: 'today', label: 'Today', key: 't', digit: '1', component: Today },
@@ -73,19 +74,61 @@ function TabBar({ current, columns }) {
 
 const STATUS_COLORS = { error: 'danger', success: 'success', info: 'accent' };
 
-function Footer({ hints, status, columns, focus }) {
+// Left of the status line: a notification when there is one, otherwise
+// today's numbers. Right: the focus timer, connection state and the clock.
+function Summary({ summary }) {
+  if (!summary) return <Text> </Text>;
+  const parts = [];
+  if (summary.overdue) parts.push(<Text key="o" color={C.overdue}>{summary.overdue} overdue</Text>);
+  if (summary.dueToday) parts.push(<Text key="d" color={C.soon}>{summary.dueToday} due today</Text>);
+  if (summary.routines) {
+    const all = summary.routinesDone === summary.routines;
+    parts.push(
+      <Text key="r" color={all ? C.success : C.muted}>
+        {summary.routinesDone}/{summary.routines} routines
+      </Text>
+    );
+  }
+  if (summary.streak) parts.push(<Text key="s" color={C.muted}>✎ {summary.streak}-day streak</Text>);
+  return (
+    <Text wrap="truncate-end">
+      {parts.flatMap((p, i) => (i ? [<Text key={`sep${i}`} color={C.muted}> · </Text>, p] : [p]))}
+    </Text>
+  );
+}
+
+function Clock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 15000);
+    return () => clearInterval(id);
+  }, []);
+  return <Text color={C.muted}>{now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</Text>;
+}
+
+function Footer({ hints, status, columns, focus, summary, connection }) {
   const timer = focus ? `${focus.pausedAt ? '⏸' : '◷'} ${formatRemaining(focus)} ${truncate(focus.title, 24)}` : '';
   return (
     <Box flexDirection="column" paddingX={1}>
       <Box width={columns - 2}>
         <Box flexGrow={1} flexShrink={1}>
           <Text wrap="truncate-end">
-            {status ? <Text color={C[STATUS_COLORS[status.kind] || 'accent']}>{status.text}</Text> : <Text> </Text>}
+            {status ? <Text color={C[STATUS_COLORS[status.kind] || 'accent']}>{status.text}</Text> : <Summary summary={summary} />}
           </Text>
         </Box>
         {timer ? (
           <Box flexShrink={0} marginLeft={1}>
             <Text color={focus.pausedAt ? C.muted : C.accent}>{timer}</Text>
+          </Box>
+        ) : null}
+        {connection ? (
+          <Box flexShrink={0} marginLeft={2}>
+            <Text color={connection.color}>{connection.text}</Text>
+          </Box>
+        ) : null}
+        {summary ? (
+          <Box flexShrink={0} marginLeft={2}>
+            <Clock />
           </Box>
         ) : null}
       </Box>
@@ -147,6 +190,7 @@ export default function App({ gradient }) {
   }, [notify]);
 
   const focus = useFocusTimer({ userId: currentUserId(auth.session), notify, dataChanged });
+  const summary = useStatusSummary(auth.state === 'ready', dataVersion);
 
   const checkSession = useCallback(async () => {
     setAuth({ state: 'loading' });
@@ -346,7 +390,7 @@ export default function App({ gradient }) {
         <Box flexDirection="column" flexGrow={1} paddingX={1} overflow="hidden">
           {body}
         </Box>
-        <Footer hints={ready ? hints : ''} status={status} columns={columns} focus={ready ? focus.timer : null} />
+        <Footer hints={ready ? hints : ''} status={status} columns={columns} focus={ready ? focus.timer : null} summary={ready ? summary : null} />
       </Box>
     </AppContext.Provider>
   );

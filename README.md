@@ -68,6 +68,10 @@ names, `+3`, `10/1`, `2026-10-01`), priority (`!high`/`!h`, `!low`), the categor
 whose name starts with `home`, and a star. `> some thought` goes to the journal
 inbox instead. Anything that doesn't resolve stays in the title.
 
+**Status bar**: between notifications, the line above the key hints shows
+overdue and due-today counts, routines done today, and your writing streak;
+on the right, the focus timer, the connection state and the time.
+
 **Split view**: at 140+ columns, Projects, Library (books) and the journal
 entry browser show the list on the left and a read-only preview of the
 selected item on the right (checklist, highlights, the entry's Markdown).
