@@ -16,10 +16,10 @@ import { cleanText } from '../../lib/sanitize.js';
 const FILTERS = ['all', 'daily', 'essay', 'note'];
 const FILTER_LABELS = { all: 'All', daily: 'Daily', essay: 'Essays', note: 'Notes' };
 const TYPE_COLORS = { daily: 'soon', essay: 'accent', note: 'success' };
-const HINTS = '↑↓ move · enter open · d move to Trash · tab type · f filter · R refresh · esc back';
+const HINTS = '↑↓ move · enter open · t tags · d move to Trash · tab type · f filter · R refresh · esc back';
 
 export function JournalBrowser({ onBack, openEntry }) {
-  const { capture, notify, contentHeight, columns: fullColumns } = useAppCtx();
+  const { capture, run, notify, contentHeight, columns: fullColumns } = useAppCtx();
   const layout = splitLayout(fullColumns);
   const columns = layout.listColumns;
   const [entries, setEntries] = useState(null);
@@ -82,6 +82,8 @@ export function JournalBrowser({ onBack, openEntry }) {
       if (input === 'R') return load();
       if (!selected) return;
       if (key.return || input === 'o') return openEntry(selected.path);
+      // jtag's checklist runs right here (it's quick), then the list reloads.
+      if (input === 't') return run('jtag', [selected.path], { pause: 'auto' }).then(load);
       if (input === 'd') return setMode({ type: 'confirm', entry: selected, links: findBacklinks(selected.slug, selected.path) });
     },
     mode === null

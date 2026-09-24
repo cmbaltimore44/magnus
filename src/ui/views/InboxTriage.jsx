@@ -4,6 +4,7 @@ import { C } from '../../lib/theme.js';
 import { useAppCtx, useHints, useViewInput } from '../context.js';
 import { Prompt } from '../components/Prompt.jsx';
 import { QuickAdd } from '../components/QuickAdd.jsx';
+import { TagPrompt } from '../components/TagPrompt.jsx';
 import { readInbox, findInboxLine, removeInboxLine, restoreInboxLine, tagLinkFlags } from '../../lib/journal.js';
 import { truncate } from '../../lib/display.js';
 
@@ -118,11 +119,9 @@ export function InboxTriage({ onBack, start }) {
             />
           ) : null}
           {mode?.type === 'tags' ? (
-            <Prompt
+            <TagPrompt
               key="tags"
-              label="Tags / links:"
-              placeholder="idea work [[some-slug]]"
-              hint={`optional · enter to create the ${mode.kind} (opens in a new tab)`}
+              hint={`optional · [[slug]] adds a link · enter to create the ${mode.kind} (opens in a new tab)`}
               onSubmit={(v) => finish(mode.kind, mode.title, v)}
               onCancel={() => setMode(null)}
             />

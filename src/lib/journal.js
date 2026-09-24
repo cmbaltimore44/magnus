@@ -176,3 +176,26 @@ export function entriesByDate(entries) {
   for (const e of entries) if (e.date) counts.set(e.date, (counts.get(e.date) || 0) + 1);
   return counts;
 }
+
+// ---------- tag suggestions (Tags / links prompts) ----------
+
+// Tags listed in TAGS.md ("- tag" lines), in file order.
+export function listedTags(dir = journalDir()) {
+  try {
+    return [...fs.readFileSync(path.join(dir, 'TAGS.md'), 'utf8').matchAll(/^- (\S.*)$/gm)].map((m) => m[1].trim());
+  } catch {
+    return [];
+  }
+}
+
+// Candidates for the word being typed: TAGS.md tags plus tags in use,
+// prefix matches first, most-used first. `counts` is tag → entries.
+export function suggestTags(word, listed, counts, limit = 6) {
+  const w = String(word || '').replace(/^#/, '').toLowerCase();
+  const all = [...new Set([...listed, ...Object.keys(counts)])];
+  const score = (t) => (t.startsWith(w) ? 0 : t.includes(w) ? 1 : 2);
+  return all
+    .filter((t) => score(t) < 2)
+    .sort((a, b) => score(a) - score(b) || (counts[b] || 0) - (counts[a] || 0) || a.localeCompare(b))
+    .slice(0, limit);
+}

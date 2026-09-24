@@ -3,6 +3,7 @@ import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useViewInput } from '../context.js';
 import { Prompt } from '../components/Prompt.jsx';
+import { TagPrompt } from '../components/TagPrompt.jsx';
 import os from 'node:os';
 import path from 'node:path';
 import { canOpenGhosttyTabs, openInGhosttyTab } from '../../lib/ghostty.js';
@@ -43,6 +44,7 @@ export const ITEMS = [
   { key: 'n', label: 'New Note', desc: 'new-note "…" [--tag …] [--link …]', action: { note: true, run: 'new-note', tab: true, tags: true } },
   { key: 'x', label: 'Note from Inbox', desc: 'new-note --from-inbox', action: { run: 'new-note', args: ['--from-inbox'], tab: true } },
   { key: 'w', label: 'Weekly Review', desc: 'jweek → reviews/YYYY-Www.md', action: { run: 'jweek', tab: true } },
+  { key: 'j', label: "Tag Today's Entry", desc: 'jtag · pick tags from a checklist (t in Browse for any entry)', action: { run: 'jtag' } },
   { key: 'l', label: 'Browse Entries', desc: 'jlist · every daily/essay/note: open or delete', action: { browse: true } },
   { key: 'd', label: 'Back Up to Drive', desc: 'journal-backup (plug in the drive first)', action: { backup: true } },
 ];
@@ -286,16 +288,20 @@ export function Journal({ params }) {
       {below && heatmap && !promptItem ? <Box marginTop={1}>{heatmap}</Box> : null}
       {promptItem ? (
         <Box marginTop={1}>
-          <Prompt
-            key={mode.step || 'first'}
-            {...promptProps}
-            onSubmit={(v) => {
-              if (promptItem.action.tags) return submitWithTags(promptItem, v);
-              setMode(null);
-              launch(promptItem, v);
-            }}
-            onCancel={() => setMode(null)}
-          />
+          {mode.step === 'tags' ? (
+            <TagPrompt key="tags" hint={promptProps.hint} onSubmit={(v) => submitWithTags(promptItem, v)} onCancel={() => setMode(null)} />
+          ) : (
+            <Prompt
+              key={mode.step || 'first'}
+              {...promptProps}
+              onSubmit={(v) => {
+                if (promptItem.action.tags) return submitWithTags(promptItem, v);
+                setMode(null);
+                launch(promptItem, v);
+              }}
+              onCancel={() => setMode(null)}
+            />
+          )}
         </Box>
       ) : null}
     </Box>

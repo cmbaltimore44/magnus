@@ -280,3 +280,14 @@ test('goals come from the unchecked items of the "Goals" list, and reach the wee
   const md = formatWeek({ monday: '2026-09-21', sunday: '2026-09-27', tasks: [], routines: [], completions: new Map(), books: [], focus: [], logs: [], goals: activeGoals(lists, items) }, '2026-09-24');
   assert.match(md, /## Goals\n\n\*\*Half marathon\*\*\n- How did I move toward this, this week\?\n- Next step:/);
 });
+
+import { suggestTags } from '../src/lib/journal.js';
+
+test('tag suggestions: prefix first, then most used', () => {
+  const listed = ['book', 'film', 'travel', 'idea'];
+  const counts = { book: 3, books: 1, notebook: 5, idea: 2 };
+  assert.deepEqual(suggestTags('bo', listed, counts), ['book', 'books', 'notebook']);
+  assert.deepEqual(suggestTags('#tr', listed, counts), ['travel']);
+  assert.deepEqual(suggestTags('', listed, counts, 3), ['notebook', 'book', 'idea']);
+  assert.deepEqual(suggestTags('zz', listed, counts), []);
+});
