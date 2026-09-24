@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useLoader, useViewInput } from '../context.js';
 import * as projectsApi from '../../lib/data/projects.js';
@@ -33,13 +34,13 @@ function computeTaskCounts(rows) {
 }
 
 function ProgressBar({ done, total, width = 10 }) {
-  if (!total) return <Text dimColor>{' '.repeat(width + 6)}</Text>;
+  if (!total) return <Text color={C.muted}>{' '.repeat(width + 6)}</Text>;
   const filled = Math.round((done / total) * width);
   return (
     <Text>
-      <Text color="green">{'█'.repeat(filled)}</Text>
-      <Text dimColor>{'░'.repeat(width - filled)}</Text>
-      <Text dimColor> {`${done}/${total}`.padEnd(5)}</Text>
+      <Text color={C.success}>{'█'.repeat(filled)}</Text>
+      <Text color={C.muted}>{'░'.repeat(width - filled)}</Text>
+      <Text color={C.muted}> {`${done}/${total}`.padEnd(5)}</Text>
     </Text>
   );
 }
@@ -48,20 +49,20 @@ function TargetDate({ project }) {
   if (!project.target_date) return null;
   const status = dueStatus({ due_date: project.target_date, status: project.status });
   return (
-    <Text color={DUE_COLORS[status]} dimColor={!status}>
+    <Text color={status ? C[DUE_COLORS[status]] : C.muted}>
       {status === 'overdue' ? 'Overdue · ' : ''}
       {formatDue(project.target_date)}
     </Text>
   );
 }
 
-const projectFields = [
+const projectFields = () => [
   { key: 'name', label: 'Name', type: 'text', required: true },
   {
     key: 'status',
     label: 'Status',
     type: 'select',
-    options: PROJECT_STATUSES.map((s) => ({ value: s, label: PROJECT_STATUS_LABELS[s], color: PROJECT_STATUS_COLORS[s] })),
+    options: PROJECT_STATUSES.map((s) => ({ value: s, label: PROJECT_STATUS_LABELS[s], color: C[PROJECT_STATUS_COLORS[s]] })),
   },
   { key: 'target_date', label: 'Target date', type: 'date' },
   { key: 'notes', label: 'Notes', type: 'longtext' },
@@ -141,7 +142,7 @@ export function Projects({ params }) {
     mode === null && !openId
   );
 
-  if (!data) return <Text dimColor>Loading…</Text>;
+  if (!data) return <Text color={C.muted}>Loading…</Text>;
 
   if (openId) {
     return (
@@ -167,20 +168,20 @@ export function Projects({ params }) {
     <Box flexDirection="column" height={contentHeight}>
       <Text>
         <Text bold>Projects</Text>
-        <Text dimColor> · {plural(projects.length, 'project')}</Text>
+        <Text color={C.muted}> · {plural(projects.length, 'project')}</Text>
       </Text>
       <Box flexDirection="column" marginTop={1}>
-        {projects.length === 0 ? <Text dimColor>No projects yet — press n to create one.</Text> : null}
+        {projects.length === 0 ? <Text color={C.muted}>No projects yet — press n to create one.</Text> : null}
         {projects.slice(start, end).map((p, i) => {
           const isSel = start + i === index;
           const counts = data.counts.get(p.id);
           return (
             <Text key={p.id} wrap="truncate-end">
-              <Text color="cyan">{isSel ? '› ' : '  '}</Text>
-              <Text bold={isSel} inverse={isSel}>
+              <Text color={C.accent}>{isSel ? '› ' : '  '}</Text>
+              <Text bold={isSel} backgroundColor={isSel ? C.hoverBg : undefined}>
                 {truncate(p.name, nameWidth).padEnd(nameWidth)}
               </Text>{' '}
-              <Text color={PROJECT_STATUS_COLORS[p.status]}>{PROJECT_STATUS_LABELS[p.status].padEnd(12)}</Text>{' '}
+              <Text color={C[PROJECT_STATUS_COLORS[p.status]]}>{PROJECT_STATUS_LABELS[p.status].padEnd(12)}</Text>{' '}
               <ProgressBar done={counts?.done || 0} total={counts?.total || 0} /> <TargetDate project={p} />
             </Text>
           );
@@ -304,12 +305,12 @@ function ProjectDetail({ projectId, cached, onBack, onUpdated, onDelete, onCount
     mode === null
   );
 
-  if (!data) return <Text dimColor>Loading…</Text>;
+  if (!data) return <Text color={C.muted}>Loading…</Text>;
   const { project } = data;
 
   if (mode?.type === 'edit') {
     return (
-      <Form title="Edit Project" fields={projectFields} initial={project} onSubmit={saveProject} onCancel={() => setMode(null)} />
+      <Form title="Edit Project" fields={projectFields()} initial={project} onSubmit={saveProject} onCancel={() => setMode(null)} />
     );
   }
 
@@ -323,40 +324,40 @@ function ProjectDetail({ projectId, cached, onBack, onUpdated, onDelete, onCount
   return (
     <Box flexDirection="column" height={contentHeight}>
       <Text wrap="truncate-end">
-        <Text bold color="cyan">
+        <Text bold color={C.accent}>
           {project.name}
         </Text>
         {'  '}
-        <Text color={PROJECT_STATUS_COLORS[project.status]}>{PROJECT_STATUS_LABELS[project.status]}</Text>
+        <Text color={C[PROJECT_STATUS_COLORS[project.status]]}>{PROJECT_STATUS_LABELS[project.status]}</Text>
         {project.target_date ? (
           <Text>
             {'  '}
-            <Text dimColor>target </Text>
+            <Text color={C.muted}>target </Text>
             <TargetDate project={project} />
           </Text>
         ) : null}
       </Text>
-      <Box flexDirection="column" borderStyle="round" borderColor="gray" paddingX={1} marginTop={1}>
+      <Box flexDirection="column" borderStyle="round" borderColor={C.border} paddingX={1} marginTop={1}>
         {project.notes ? (
           shownNotes.map((line, i) => <Text key={i}>{line || ' '}</Text>)
         ) : (
-          <Text dimColor>No notes — press e to edit the project.</Text>
+          <Text color={C.muted}>No notes — press e to edit the project.</Text>
         )}
         {noteLines.length > shownNotes.length ? (
-          <Text dimColor>… {noteLines.length - shownNotes.length} more lines (e to edit)</Text>
+          <Text color={C.muted}>… {noteLines.length - shownNotes.length} more lines (e to edit)</Text>
         ) : null}
       </Box>
       <Text bold>
-        Checklist <Text dimColor>{items.length ? `${doneCount}/${items.length}` : ''}</Text>
+        Checklist <Text color={C.muted}>{items.length ? `${doneCount}/${items.length}` : ''}</Text>
       </Text>
-      {items.length === 0 ? <Text dimColor>  No items — press n to add one.</Text> : null}
+      {items.length === 0 ? <Text color={C.muted}>  No items — press n to add one.</Text> : null}
       {items.slice(start, end).map((c, i) => {
         const isSel = start + i === index;
         return (
           <Text key={c.id} wrap="truncate-end">
-            <Text color="cyan">{isSel ? '› ' : '  '}</Text>
-            <Text color={c.done ? 'green' : undefined}>{c.done ? '[✓]' : '[ ]'}</Text>{' '}
-            <Text bold={isSel} inverse={isSel} dimColor={c.done && !isSel}>
+            <Text color={C.accent}>{isSel ? '› ' : '  '}</Text>
+            <Text color={c.done ? C.success : undefined}>{c.done ? '[✓]' : '[ ]'}</Text>{' '}
+            <Text bold={isSel} backgroundColor={isSel ? C.hoverBg : undefined} color={c.done && !isSel ? C.muted : undefined}>
               {c.title}
             </Text>
           </Text>

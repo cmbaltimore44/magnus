@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useViewInput } from '../context.js';
 import { Banner } from '../components/Banner.jsx';
@@ -14,7 +15,7 @@ const DESCRIPTIONS = {
 
 const HINTS = 'press a letter to open · ↑↓ enter · ctrl+k or / search · q quit';
 
-export function Home({ gradient, sections }) {
+export function Home({ sections }) {
   const { navigate, columns } = useAppCtx();
   const [index, setIndex] = useState(0);
   useHints(HINTS);
@@ -31,19 +32,19 @@ export function Home({ gradient, sections }) {
 
   return (
     <Box flexDirection="column" paddingTop={1} paddingLeft={1}>
-      <Banner gradient={gradient} columns={columns} />
-      <Text dimColor>{date}</Text>
+      <Banner columns={columns} />
+      <Text color={C.muted}>{date}</Text>
       <Box flexDirection="column" marginTop={1}>
         {sections.map((s, i) => (
           <Box key={s.view}>
-            <Text color={i === index ? 'cyan' : undefined} bold={i === index}>
+            <Text color={i === index ? C.accent : undefined} bold={i === index}>
               {i === index ? '› ' : '  '}
-              <Text color="magenta" bold>
+              <Text color={C.accent} bold>
                 [{s.key}]
               </Text>{' '}
               {s.label.padEnd(10)}
             </Text>
-            <Text dimColor>{DESCRIPTIONS[s.view]}</Text>
+            <Text color={C.muted}>{DESCRIPTIONS[s.view]}</Text>
           </Box>
         ))}
       </Box>

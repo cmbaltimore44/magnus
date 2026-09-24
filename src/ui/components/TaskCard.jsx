@@ -1,6 +1,7 @@
+import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { getCategory, dueStatus, dueLabel, truncate, PRIORITY_COLORS, DUE_COLORS } from '../../lib/display.js';
-import { hexToAnsi } from '../../lib/colors.js';
+import { categoryColor } from '../../lib/colors.js';
 
 export function taskCardHeight(task, { showNotes = true } = {}) {
   return 1 + (showNotes && task.notes ? 1 : 0) + (task.category_id || task.due_date ? 1 : 0);
@@ -17,15 +18,15 @@ export function TaskCard({ task, categories, selected, width, showNotes = true }
   return (
     <Box flexDirection="column" width={width} flexShrink={0}>
       <Text wrap="truncate-end">
-        <Text color="cyan">{selected ? '› ' : '  '}</Text>
-        <Text color={PRIORITY_COLORS[priority]}>●</Text>{' '}
-        <Text bold={selected} inverse={selected} dimColor={done && !selected}>
+        <Text color={C.accent}>{selected ? '› ' : '  '}</Text>
+        <Text color={C[PRIORITY_COLORS[priority]]}>●</Text>{' '}
+        <Text bold={selected} backgroundColor={selected ? C.hoverBg : undefined} color={done && !selected ? C.muted : undefined}>
           {truncate(task.title, inner - (task.is_starred ? 3 : 1))}
         </Text>
-        {task.is_starred ? <Text color="yellow"> ★</Text> : null}
+        {task.is_starred ? <Text color={C.accent}> ★</Text> : null}
       </Text>
       {showNotes && task.notes ? (
-        <Text dimColor wrap="truncate-end">
+        <Text color={C.muted} wrap="truncate-end">
           {'    '}
           {truncate(task.notes, inner - 1)}
         </Text>
@@ -33,10 +34,10 @@ export function TaskCard({ task, categories, selected, width, showNotes = true }
       {cat || task.due_date ? (
         <Text wrap="truncate-end">
           {'    '}
-          {cat ? <Text color={hexToAnsi(cat.color)}>■ {cat.name}</Text> : null}
+          {cat ? <Text color={categoryColor(cat)}>■ {cat.name}</Text> : null}
           {cat && task.due_date ? '  ' : ''}
           {task.due_date ? (
-            <Text color={DUE_COLORS[due]} dimColor={!due}>
+            <Text color={due ? C[DUE_COLORS[due]] : C.muted}>
               {dueLabel(task)}
             </Text>
           ) : null}

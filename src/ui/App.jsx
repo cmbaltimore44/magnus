@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { C } from '../lib/theme.js';
 import { Box, Text, useApp, useInput, useWindowSize } from 'ink';
 import { AppContext } from './context.js';
 import { restoreSession, currentUserId } from '../lib/auth.js';
@@ -27,19 +28,19 @@ export const SECTIONS = [
 function TabBar({ current }) {
   return (
     <Box paddingX={1}>
-      <Text color="magenta" bold>
+      <Text color={C.accent} bold>
         MAGNUS{' '}
       </Text>
       {SECTIONS.map((s) => (
         <Text key={s.view}>
           {' '}
           {current === s.view ? (
-            <Text color="cyan" bold inverse>
+            <Text color={C.accent} bold backgroundColor={C.hoverBg}>
               {' '}
               {s.digit} {s.label}{' '}
             </Text>
           ) : (
-            <Text dimColor>
+            <Text color={C.muted}>
               {' '}
               {s.digit} {s.label}{' '}
             </Text>
@@ -50,16 +51,16 @@ function TabBar({ current }) {
   );
 }
 
-const STATUS_COLORS = { error: 'red', success: 'green', info: 'cyan' };
+const STATUS_COLORS = { error: 'danger', success: 'success', info: 'accent' };
 
 function Footer({ hints, status, columns }) {
   return (
     <Box flexDirection="column" paddingX={1}>
       <Text wrap="truncate-end">
-        {status ? <Text color={STATUS_COLORS[status.kind] || 'cyan'}>{status.text}</Text> : <Text> </Text>}
+        {status ? <Text color={C[STATUS_COLORS[status.kind] || 'accent']}>{status.text}</Text> : <Text> </Text>}
       </Text>
       <Box width={columns - 2}>
-        <Text dimColor wrap="truncate-end">
+        <Text color={C.muted} wrap="truncate-end">
           {hints}
         </Text>
       </Box>
@@ -67,7 +68,7 @@ function Footer({ hints, status, columns }) {
   );
 }
 
-export default function App({ gradient }) {
+export default function App() {
   const { exit, suspendTerminal } = useApp();
   const { columns, rows } = useWindowSize();
   const [auth, setAuth] = useState({ state: 'loading' });
@@ -169,18 +170,18 @@ export default function App({ gradient }) {
   if (auth.state === 'loading') {
     body = (
       <Box padding={1}>
-        <Text dimColor>Connecting to Life Tracker…</Text>
+        <Text color={C.muted}>Connecting to Life Tracker…</Text>
       </Box>
     );
   } else if (auth.state === 'offline') {
     body = (
       <Box padding={1} flexDirection="column">
-        <Text color="red">Couldn't reach Supabase{auth.message ? `: ${auth.message}` : ''}.</Text>
-        <Text dimColor>Your saved session is kept. [r] retry · [q] quit</Text>
+        <Text color={C.danger}>Couldn't reach Supabase{auth.message ? `: ${auth.message}` : ''}.</Text>
+        <Text color={C.muted}>Your saved session is kept. [r] retry · [q] quit</Text>
       </Box>
     );
   } else if (auth.state === 'login') {
-    body = <Login gradient={gradient} onAuthenticated={(session) => setAuth({ state: 'ready', session })} />;
+    body = <Login onAuthenticated={(session) => setAuth({ state: 'ready', session })} />;
   } else {
     const View = route.view === 'home' ? Home : SECTIONS.find((s) => s.view === route.view).component;
     // The current view stays mounted (just hidden) under the search overlay,
@@ -188,7 +189,7 @@ export default function App({ gradient }) {
     body = (
       <>
         <Box display={searchOpen ? 'none' : 'flex'} flexDirection="column" flexGrow={1}>
-          <View key={route.key} params={route.params} gradient={gradient} sections={SECTIONS} />
+          <View key={route.key} params={route.params} sections={SECTIONS} />
         </Box>
         {searchOpen ? <Search onClose={() => setSearchOpen(false)} /> : null}
       </>
@@ -197,7 +198,7 @@ export default function App({ gradient }) {
 
   return (
     <AppContext.Provider value={ctx}>
-      <Box flexDirection="column" width={columns} height={rows}>
+      <Box flexDirection="column" width={columns} height={rows} backgroundColor={C.bg}>
         {ready && route.view !== 'home' ? <TabBar current={searchOpen ? null : route.view} /> : null}
         <Box flexDirection="column" flexGrow={1} paddingX={1} overflow="hidden">
           {body}

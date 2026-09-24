@@ -19,10 +19,12 @@ export const BOOK_STATUS_LABELS = {
 export const BOOK_FORMATS = ['none', 'physical', 'ebook', 'audiobook'];
 export const BOOK_FORMAT_LABELS = { none: '—', physical: 'Physical', ebook: 'Ebook', audiobook: 'Audiobook' };
 
-// Named ANSI colors only — they resolve to whatever the terminal theme says.
-export const PRIORITY_COLORS = { high: 'red', medium: 'yellow', low: 'gray' };
-export const DUE_COLORS = { overdue: 'red', soon: 'yellow' };
-export const PROJECT_STATUS_COLORS = { not_started: 'gray', in_progress: 'cyan', done: 'green' };
+// Theme token names (keys of `C` in lib/theme.js), matching how the web
+// app's style.css colors each state. Resolve with C[token] at render time.
+export const PRIORITY_COLORS = { high: 'danger', medium: 'soon', low: 'muted' };
+export const DUE_COLORS = { overdue: 'overdue', soon: 'soon' };
+export const PROJECT_STATUS_COLORS = { not_started: 'muted', in_progress: 'accent', done: 'soon' };
+export const BOOK_STATUS_COLORS = { reading: 'accent', want_to_read: 'text', finished: 'success', dnf: 'muted' };
 
 export function getCategory(categories, categoryId) {
   return categories.find((c) => c.id === categoryId) || null;

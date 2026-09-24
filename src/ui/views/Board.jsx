@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useLoader, useViewInput } from '../context.js';
 import * as tasksApi from '../../lib/data/tasks.js';
@@ -12,7 +13,7 @@ import {
   getCategory,
   plural,
 } from '../../lib/display.js';
-import { hexToAnsi, CATEGORY_SWATCHES } from '../../lib/colors.js';
+import { categoryColor, CATEGORY_SWATCHES } from '../../lib/colors.js';
 import { TaskCard, taskCardHeight } from '../components/TaskCard.jsx';
 import { Form } from '../components/Form.jsx';
 import { Prompt, Confirm, Choice } from '../components/Prompt.jsx';
@@ -52,7 +53,7 @@ function taskFields(categories) {
       type: 'select',
       options: [
         { value: null, label: '(none)' },
-        ...categories.map((c) => ({ value: c.id, label: c.name, color: hexToAnsi(c.color) })),
+        ...categories.map((c) => ({ value: c.id, label: c.name, color: categoryColor(c) })),
       ],
     },
     { key: 'due_date', label: 'Due', type: 'date' },
@@ -67,7 +68,7 @@ function taskFields(categories) {
       label: 'Priority',
       type: 'select',
       default: 'medium',
-      options: PRIORITIES.map((p) => ({ value: p, label: p[0].toUpperCase() + p.slice(1), color: PRIORITY_COLORS[p] })),
+      options: PRIORITIES.map((p) => ({ value: p, label: p[0].toUpperCase() + p.slice(1), color: C[PRIORITY_COLORS[p]] })),
     },
     { key: 'notes', label: 'Notes', type: 'longtext' },
   ];
@@ -216,7 +217,7 @@ export function Board({ params }) {
     mode === null
   );
 
-  if (!data) return <Text dimColor>Loading…</Text>;
+  if (!data) return <Text color={C.muted}>Loading…</Text>;
 
   if (mode?.type === 'form') {
     return (
@@ -267,16 +268,16 @@ export function Board({ params }) {
         width={colWidth}
         height={colHeight}
         borderStyle="round"
-        borderColor={active ? 'cyan' : 'gray'}
+        borderColor={active ? C.accent : C.border}
         paddingX={1}
         overflow="hidden"
       >
-        <Text bold color={active ? 'cyan' : undefined}>
-          {TASK_STATUS_LABELS[TASK_STATUSES[c]]} <Text dimColor>{list.length}</Text>
-          {start > 0 ? <Text dimColor> ↑{start}</Text> : null}
-          {end < list.length ? <Text dimColor> ↓{list.length - end}</Text> : null}
+        <Text bold color={active ? C.accent : undefined}>
+          {TASK_STATUS_LABELS[TASK_STATUSES[c]]} <Text color={C.muted}>{list.length}</Text>
+          {start > 0 ? <Text color={C.muted}> ↑{start}</Text> : null}
+          {end < list.length ? <Text color={C.muted}> ↓{list.length - end}</Text> : null}
         </Text>
-        {list.length === 0 ? <Text dimColor>{c === 0 ? 'No tasks yet' : 'Nothing here'}</Text> : null}
+        {list.length === 0 ? <Text color={C.muted}>{c === 0 ? 'No tasks yet' : 'Nothing here'}</Text> : null}
         {list.slice(start, end).map((task, i) => (
           <TaskCard
             key={task.id}
@@ -294,14 +295,14 @@ export function Board({ params }) {
     <Box flexDirection="column" height={contentHeight}>
       <Text wrap="truncate-end">
         <Text bold>Board</Text>
-        <Text dimColor> · {plural(data.tasks.length, 'task')}</Text>
+        <Text color={C.muted}> · {plural(data.tasks.length, 'task')}</Text>
         {filterBits.length ? (
-          <Text color="yellow">
-            {'  '}filter: {filterBits.join(', ')} <Text dimColor>(esc clears)</Text>
+          <Text color={C.accent}>
+            {'  '}filter: {filterBits.join(', ')} <Text color={C.muted}>(esc clears)</Text>
           </Text>
         ) : null}
         {narrow ? (
-          <Text dimColor>
+          <Text color={C.muted}>
             {'  '}
             {TASK_STATUSES.map((s, i) => (i === col ? `[${TASK_STATUS_LABELS[s]}]` : TASK_STATUS_LABELS[s])).join(' · ')}
           </Text>
@@ -390,19 +391,19 @@ function CategoryManager({ categories, tasks, userId, onChange, onClose }) {
   const nextSwatch = categories.length % CATEGORY_SWATCHES.length;
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={1}>
-      <Text bold color="cyan">
+    <Box flexDirection="column" backgroundColor={C.surface} borderStyle="round" borderColor={C.accent} paddingX={1}>
+      <Text bold color={C.accent}>
         Categories
       </Text>
-      {categories.length === 0 ? <Text dimColor>No categories yet — press n to add one.</Text> : null}
+      {categories.length === 0 ? <Text color={C.muted}>No categories yet — press n to add one.</Text> : null}
       {categories.slice(start, end).map((c, i) => {
         const isSel = start + i === index;
         const count = tasks.filter((t) => t.category_id === c.id).length;
         return (
           <Text key={c.id}>
-            <Text color="cyan">{isSel ? '› ' : '  '}</Text>
-            <Text color={hexToAnsi(c.color)}>■</Text> <Text bold={isSel}>{c.name}</Text>
-            <Text dimColor> {plural(count, 'task')}</Text>
+            <Text color={C.accent}>{isSel ? '› ' : '  '}</Text>
+            <Text color={categoryColor(c)}>■</Text> <Text bold={isSel}>{c.name}</Text>
+            <Text color={C.muted}> {plural(count, 'task')}</Text>
           </Text>
         );
       })}
@@ -415,8 +416,8 @@ function CategoryManager({ categories, tasks, userId, onChange, onClose }) {
       ) : null}
       {mode?.type === 'color' ? (
         <Choice
-          title={`Color for “${mode.name}” (shown in your terminal theme's colors)`}
-          options={CATEGORY_SWATCHES.map((s) => ({ ...s, key: s.hex, swatch: '■', color: s.ansi }))}
+          title={`Color for “${mode.name}”`}
+          options={CATEGORY_SWATCHES.map((s) => ({ ...s, key: s.hex, swatch: '■', color: s.hex }))}
           initialIndex={nextSwatch}
           onPick={(swatch) => create(mode.name, swatch)}
           onCancel={() => setMode(null)}

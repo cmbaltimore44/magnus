@@ -53,10 +53,14 @@ for multi-line text. Dates accept `2026-10-01`, `10/1`, `today`, `tomorrow`,
 
 ## Design notes
 
-- **Colors come from your terminal theme.** Every color is a named ANSI slot.
-  The home banner gradient is built at startup from the RGB values Ghostty
-  reports for its magenta/blue/cyan slots (OSC 4 query), so changing themes
-  restyles Magnus too. Terminals that don't answer get the plain ANSI colors.
+- **Colors are Life Tracker's.** `src/lib/theme.js` holds the web app's light
+  and dark palettes, copied from its `style.css`. At startup Magnus asks the
+  terminal for its background color: a dark background gets the dark palette,
+  a light one gets light (`MAGNUS_THEME=light|dark` forces one). Magnus paints
+  the app background and sets the terminal's default colors to match. Your own
+  Ghostty colors come back when you quit and while a script or editor has the
+  terminal. Category colors show exactly as stored. If the web app's palette
+  changes, update `theme.js`.
 - **Handing the terminal to scripts** (`today`, `new-essay`, `jsearch`,
   `jbacklinks`, `$EDITOR`, cover view) goes through Ink 7's `suspendTerminal()`
   plus `spawnSync(…, { stdio: 'inherit' })`. Raw mode, the alternate screen and

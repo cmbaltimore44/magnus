@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useViewInput } from '../context.js';
 import { Prompt } from '../components/Prompt.jsx';
@@ -98,8 +99,8 @@ export function Journal() {
     const from = Math.min(mode.offset, Math.max(0, mode.lines.length - size));
     return (
       <Box flexDirection="column" height={contentHeight}>
-        <Text bold color="cyan">
-          {mode.title} <Text dimColor>{mode.lines.length} lines</Text>
+        <Text bold color={C.accent}>
+          {mode.title} <Text color={C.muted}>{mode.lines.length} lines</Text>
         </Text>
         <Box flexDirection="column" marginTop={1}>
           {mode.lines.slice(from, from + size).map((line, i) => (
@@ -127,12 +128,12 @@ export function Journal() {
       <Box flexDirection="column" marginTop={1}>
         {ITEMS.map((item, i) => (
           <Text key={item.key}>
-            <Text color="cyan">{i === index ? '› ' : '  '}</Text>
-            <Text color="magenta" bold>
+            <Text color={C.accent}>{i === index ? '› ' : '  '}</Text>
+            <Text color={C.accent} bold>
               [{item.key}]
             </Text>{' '}
             <Text bold={i === index}>{item.label.padEnd(16)}</Text>
-            <Text dimColor>{item.desc}</Text>
+            <Text color={C.muted}>{item.desc}</Text>
           </Text>
         ))}
       </Box>

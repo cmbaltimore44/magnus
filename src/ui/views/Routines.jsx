@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { C, mix } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useLoader, useViewInput } from '../context.js';
 import * as routinesApi from '../../lib/data/routines.js';
@@ -28,13 +29,10 @@ function levelForPct(pct) {
   return 4;
 }
 
-const LEVEL_STYLE = [
-  { color: 'gray', dimColor: true, char: '·' },
-  { color: 'green', dimColor: true, char: '■' },
-  { color: 'green', dimColor: false, char: '■' },
-  { color: 'greenBright', dimColor: false, char: '■' },
-  { color: 'greenBright', dimColor: false, char: '■', bold: true },
-];
+// Web heatmap: level N = color-mix(accent N×25%, surface); empty = border.
+function levelColor(level) {
+  return level === 0 ? C.border : level === 4 ? C.accent : mix(C.accent, C.surface, level * 0.25);
+}
 
 function Heatmap({ routines, completions, columns }) {
   const weeks = Math.max(4, Math.min(53, Math.floor((columns - 10) / 2)));
@@ -76,10 +74,10 @@ function Heatmap({ routines, completions, columns }) {
 
   return (
     <Box flexDirection="column">
-      <Text bold color="cyan">
+      <Text bold color={C.accent}>
         Activity
       </Text>
-      <Text dimColor>
+      <Text color={C.muted}>
         {'    '}
         {monthChars.join('')}
       </Text>
@@ -93,20 +91,19 @@ function Heatmap({ routines, completions, columns }) {
         }
         return (
           <Text key={d}>
-            <Text dimColor>{dayLabels[d]} </Text>
+            <Text color={C.muted}>{dayLabels[d]} </Text>
             {runs.map((run, i) => {
               if (run.level < 0) return <Text key={i}>{'  '.repeat(run.n)}</Text>;
-              const s = LEVEL_STYLE[run.level];
               return (
-                <Text key={i} color={s.color} dimColor={s.dimColor} bold={s.bold}>
-                  {(s.char + ' ').repeat(run.n)}
+                <Text key={i} color={levelColor(run.level)}>
+                  {'■ '.repeat(run.n)}
                 </Text>
               );
             })}
           </Text>
         );
       })}
-      <Text dimColor>
+      <Text color={C.muted}>
         {total ? `${plural(activeDays, 'active day')} in the last ${weeks} weeks` : ''}
       </Text>
     </Box>
@@ -257,7 +254,7 @@ export function Routines({ params }) {
     mode === null
   );
 
-  if (!data) return <Text dimColor>Loading…</Text>;
+  if (!data) return <Text color={C.muted}>Loading…</Text>;
 
   const overlay = mode ? 4 : 0;
   const showHeatmap = contentHeight - overlay >= 22 && data.routines.length > 0;
@@ -270,7 +267,7 @@ export function Routines({ params }) {
     <Box flexDirection="column" height={contentHeight}>
       <Text>
         <Text bold>Routines</Text>
-        <Text dimColor>
+        <Text color={C.muted}>
           {' '}
           · {plural(data.routines.length, 'routine')} · {doneToday}/{data.routines.length} done today
         </Text>
@@ -281,7 +278,7 @@ export function Routines({ params }) {
           if (visible.length === 0) return null;
           return (
             <Box key={tod} flexDirection="column">
-              <Text bold color="cyan">
+              <Text bold color={C.accent}>
                 {TIME_OF_DAY_LABELS[tod]}
               </Text>
               {visible.map((r) =>
@@ -294,8 +291,8 @@ export function Routines({ params }) {
                     selected={r.i === index}
                   />
                 ) : (
-                  <Text key={`empty-${tod}`} dimColor>
-                    <Text color="cyan">{r.i === index ? '› ' : '  '}</Text>
+                  <Text key={`empty-${tod}`} color={C.muted}>
+                    <Text color={C.accent}>{r.i === index ? '› ' : '  '}</Text>
                     (empty — press n to add a {TIME_OF_DAY_LABELS[tod].toLowerCase()} routine)
                   </Text>
                 )

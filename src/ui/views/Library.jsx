@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useLoader, useViewInput } from '../context.js';
 import * as booksApi from '../../lib/data/books.js';
@@ -8,6 +9,7 @@ import {
   BOOK_STATUS_LABELS,
   BOOK_FORMATS,
   BOOK_FORMAT_LABELS,
+  BOOK_STATUS_COLORS,
   formatDue,
   plural,
   truncate,
@@ -25,8 +27,6 @@ const BOOK_GROUPS = [
   { key: 'dnf', label: 'Did Not Finish', collapsible: true },
 ];
 
-const BOOK_STATUS_COLORS = { reading: 'cyan', want_to_read: 'blue', finished: 'green', dnf: 'gray' };
-
 const BOOKS_HINTS = 'tab quotes · ↑↓ move · enter open / fold group · n new book · d delete · R refresh · esc home';
 const QUOTES_HINTS = 'tab books · ↑↓ move · enter edit · n new quote · f favorite · F favorites only · d delete · esc home';
 const DETAIL_HINTS =
@@ -35,14 +35,14 @@ const DETAIL_HINTS =
 const stars = (rating) => (rating ? '★'.repeat(rating) + '☆'.repeat(5 - rating) : '');
 const fmtDate = (d) => (d ? formatDue(d) + ' ' + d.slice(0, 4) : '—');
 
-const bookFields = [
+const bookFields = () => [
   { key: 'title', label: 'Title', type: 'text', required: true },
   { key: 'author', label: 'Author', type: 'text' },
   {
     key: 'status',
     label: 'Status',
     type: 'select',
-    options: BOOK_STATUSES.map((s) => ({ value: s, label: BOOK_STATUS_LABELS[s], color: BOOK_STATUS_COLORS[s] })),
+    options: BOOK_STATUSES.map((s) => ({ value: s, label: BOOK_STATUS_LABELS[s], color: C[BOOK_STATUS_COLORS[s]] })),
   },
   { key: 'format', label: 'Format', type: 'select', options: BOOK_FORMATS.map((f) => ({ value: f, label: BOOK_FORMAT_LABELS[f] })) },
   { key: 'started_date', label: 'Started', type: 'date' },
@@ -51,7 +51,7 @@ const bookFields = [
     key: 'rating',
     label: 'Rating',
     type: 'select',
-    options: [{ value: null, label: '—' }, ...[1, 2, 3, 4, 5].map((n) => ({ value: n, label: stars(n), color: 'yellow' }))],
+    options: [{ value: null, label: '—' }, ...[1, 2, 3, 4, 5].map((n) => ({ value: n, label: stars(n), color: C.accent }))],
   },
   { key: 'cover_image_url', label: 'Cover URL', type: 'text', placeholder: 'https://…' },
   { key: 'isbn', label: 'ISBN', type: 'text' },
@@ -88,9 +88,9 @@ function QuoteRow({ quote, books, selected, width, showAttribution = true }) {
   return (
     <Box flexDirection="column" width={width}>
       <Text wrap="truncate-end">
-        <Text color="cyan">{selected ? '› ' : '  '}</Text>
-        <Text color="yellow">{quote.is_favorite ? '★ ' : '  '}</Text>
-        <Text italic bold={selected} inverse={selected}>
+        <Text color={C.accent}>{selected ? '› ' : '  '}</Text>
+        <Text color={C.accent}>{quote.is_favorite ? '★ ' : '  '}</Text>
+        <Text italic bold={selected} backgroundColor={selected ? C.hoverBg : undefined}>
           “{truncate(quote.quote_text, width * 2 - 10)}”
         </Text>
       </Text>
@@ -175,13 +175,13 @@ export function Library({ params }) {
     mode === null && !openBookId && tab === 'books'
   );
 
-  if (!books) return <Text dimColor>Loading…</Text>;
+  if (!books) return <Text color={C.muted}>Loading…</Text>;
 
   if (mode?.type === 'newBook') {
     return (
       <Form
         title="New Book"
-        fields={bookFields}
+        fields={bookFields()}
         initial={{ status: 'want_to_read', format: 'none' }}
         onSubmit={createBook}
         onCancel={() => setMode(null)}
@@ -206,11 +206,11 @@ export function Library({ params }) {
     <Text>
       <Text bold>Library</Text>
       {'  '}
-      <Text inverse={tab === 'books'} color={tab === 'books' ? 'cyan' : undefined}>
+      <Text backgroundColor={tab === 'books' ? C.hoverBg : undefined} color={tab === 'books' ? C.accent : undefined}>
         {' '}
         Books {books.length}{' '}
       </Text>{' '}
-      <Text inverse={tab === 'quotes'} color={tab === 'quotes' ? 'cyan' : undefined}>
+      <Text backgroundColor={tab === 'quotes' ? C.hoverBg : undefined} color={tab === 'quotes' ? C.accent : undefined}>
         {' '}
         Quotes{' '}
       </Text>
@@ -238,30 +238,30 @@ export function Library({ params }) {
     <Box flexDirection="column" height={contentHeight}>
       {tabs}
       <Box flexDirection="column" marginTop={1}>
-        {books.length === 0 ? <Text dimColor>No books yet — press n to add one.</Text> : null}
+        {books.length === 0 ? <Text color={C.muted}>No books yet — press n to add one.</Text> : null}
         {rows.slice(start, end).map((r, i) => {
           const isSel = start + i === index;
           if (r.kind === 'header') {
             return (
-              <Text key={r.group.key} bold color={isSel ? 'cyan' : BOOK_STATUS_COLORS[r.group.key]}>
+              <Text key={r.group.key} bold color={isSel ? C.accent : C[BOOK_STATUS_COLORS[r.group.key]]}>
                 {isSel ? '› ' : '  '}
                 {r.group.collapsible ? (r.isCollapsed ? '▸ ' : '▾ ') : '  '}
-                {r.group.label} <Text dimColor>({r.count})</Text>
+                {r.group.label} <Text color={C.muted}>({r.count})</Text>
               </Text>
             );
           }
           const b = r.book;
           return (
             <Text key={b.id} wrap="truncate-end">
-              <Text color="cyan">{isSel ? '› ' : '  '}</Text>
+              <Text color={C.accent}>{isSel ? '› ' : '  '}</Text>
               {'   '}
-              <Text color={b.cover_image_url ? 'magenta' : 'gray'}>{b.cover_image_url ? '▣' : '□'}</Text>{' '}
-              <Text bold={isSel} inverse={isSel}>
+              <Text color={b.cover_image_url ? C.accent : C.muted}>{b.cover_image_url ? '▣' : '□'}</Text>{' '}
+              <Text bold={isSel} backgroundColor={isSel ? C.hoverBg : undefined}>
                 {truncate(b.title, titleWidth)}
               </Text>
-              {b.author ? <Text dimColor> — {b.author}</Text> : null}
-              {b.format !== 'none' ? <Text dimColor> · {BOOK_FORMAT_LABELS[b.format]}</Text> : null}
-              {b.rating ? <Text color="yellow"> {stars(b.rating)}</Text> : null}
+              {b.author ? <Text color={C.muted}> — {b.author}</Text> : null}
+              {b.format !== 'none' ? <Text color={C.muted}> · {BOOK_FORMAT_LABELS[b.format]}</Text> : null}
+              {b.rating ? <Text color={C.accent}> {stars(b.rating)}</Text> : null}
             </Text>
           );
         })}
@@ -366,11 +366,11 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
     mode === null
   );
 
-  if (!data) return <Text dimColor>Loading…</Text>;
+  if (!data) return <Text color={C.muted}>Loading…</Text>;
   const { book } = data;
 
   if (mode?.type === 'editBook') {
-    return <Form title="Edit Book" fields={bookFields} initial={book} onSubmit={saveBook} onCancel={() => setMode(null)} />;
+    return <Form title="Edit Book" fields={bookFields()} initial={book} onSubmit={saveBook} onCancel={() => setMode(null)} />;
   }
   if (mode?.type === 'quote') {
     return (
@@ -390,7 +390,7 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
       height={9}
       flexShrink={0}
       borderStyle="round"
-      borderColor={book.cover_image_url ? 'magenta' : 'gray'}
+      borderColor={book.cover_image_url ? C.accent : C.border}
       flexDirection="column"
       alignItems="center"
       justifyContent="center"
@@ -398,22 +398,22 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
     >
       {book.cover_image_url ? (
         <>
-          <Text color="magenta">▣ cover</Text>
-          <Text dimColor>v to view</Text>
+          <Text color={C.accent}>▣ cover</Text>
+          <Text color={C.muted}>v to view</Text>
         </>
       ) : (
-        <Text dimColor>no cover</Text>
+        <Text color={C.muted}>no cover</Text>
       )}
     </Box>
   );
 
   const meta = [
     ['Author', book.author || '—'],
-    ['Status', <Text color={BOOK_STATUS_COLORS[book.status]}>{BOOK_STATUS_LABELS[book.status]}</Text>],
+    ['Status', <Text color={C[BOOK_STATUS_COLORS[book.status]]}>{BOOK_STATUS_LABELS[book.status]}</Text>],
     ['Format', BOOK_FORMAT_LABELS[book.format]],
     ['Started', fmtDate(book.started_date)],
     ['Finished', fmtDate(book.finished_date)],
-    ['Rating', book.rating ? <Text color="yellow">{stars(book.rating)}</Text> : '—'],
+    ['Rating', book.rating ? <Text color={C.accent}>{stars(book.rating)}</Text> : '—'],
     ['ISBN', book.isbn || '—'],
   ];
 
@@ -427,7 +427,7 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
 
   return (
     <Box flexDirection="column" height={contentHeight}>
-      <Text bold color="cyan" wrap="truncate-end">
+      <Text bold color={C.accent} wrap="truncate-end">
         {book.title}
       </Text>
       <Box marginTop={1}>
@@ -435,7 +435,7 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
         <Box flexDirection="column">
           {meta.map(([label, value]) => (
             <Text key={label}>
-              <Text dimColor>{label.padEnd(10)}</Text>
+              <Text color={C.muted}>{label.padEnd(10)}</Text>
               {value}
             </Text>
           ))}
@@ -443,16 +443,16 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
       </Box>
       {book.notes ? (
         <Text wrap="truncate-end">
-          <Text dimColor>Notes </Text>
+          <Text color={C.muted}>Notes </Text>
           {truncate(book.notes, columns * 2)}
         </Text>
       ) : null}
       <Box marginTop={1}>
         <Text bold>
-          Highlights <Text dimColor>{highlights.length}</Text>
+          Highlights <Text color={C.muted}>{highlights.length}</Text>
         </Text>
       </Box>
-      {highlights.length === 0 ? <Text dimColor>  No highlights yet — press a to add one.</Text> : null}
+      {highlights.length === 0 ? <Text color={C.muted}>  No highlights yet — press a to add one.</Text> : null}
       {highlights.slice(start, end).map((q, i) => (
         <QuoteRow key={q.id} quote={q} books={[]} selected={start + i === index} width={qWidth} />
       ))}
@@ -517,7 +517,7 @@ function QuotesBrowser({ books, focusQuoteId, onSwitchTab }) {
     mode === null
   );
 
-  if (!quotes) return <Text dimColor>Loading…</Text>;
+  if (!quotes) return <Text color={C.muted}>Loading…</Text>;
 
   if (mode?.type === 'quote') {
     return (
@@ -541,13 +541,13 @@ function QuotesBrowser({ books, focusQuoteId, onSwitchTab }) {
 
   return (
     <Box flexDirection="column">
-      <Text dimColor>
+      <Text color={C.muted}>
         {plural(quotes.length, 'quote')}
-        {favoritesOnly ? <Text color="yellow"> · favorites only (F to show all)</Text> : ' · F favorites only'}
+        {favoritesOnly ? <Text color={C.accent}> · favorites only (F to show all)</Text> : ' · F favorites only'}
       </Text>
       <Box flexDirection="column" marginTop={1}>
         {visible.length === 0 ? (
-          <Text dimColor>
+          <Text color={C.muted}>
             {favoritesOnly
               ? 'No favorite quotes yet — press f on one to star it.'
               : 'No quotes yet — press n to add one, or add highlights from a book.'}

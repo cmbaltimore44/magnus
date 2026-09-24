@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { C } from '../../lib/theme.js';
 import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import { useAppCtx, useCapture } from '../context.js';
@@ -109,9 +110,9 @@ export function Search({ onClose }) {
   const width = columns - 8;
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="magenta" paddingX={1} height={contentHeight + 1}>
+    <Box flexDirection="column" backgroundColor={C.surface} borderStyle="round" borderColor={C.accent} paddingX={1} height={contentHeight + 1}>
       <Box>
-        <Text color="magenta" bold>
+        <Text color={C.accent} bold>
           Search{' '}
         </Text>
         <TextInput
@@ -125,9 +126,9 @@ export function Search({ onClose }) {
         />
       </Box>
       <Box flexDirection="column" marginTop={1}>
-        {!index ? <Text dimColor>Loading…</Text> : null}
-        {index && !query.trim() ? <Text dimColor>Start typing to search tasks, projects, books, quotes, and routines.</Text> : null}
-        {index && query.trim() && results.length === 0 ? <Text dimColor>No matches.</Text> : null}
+        {!index ? <Text color={C.muted}>Loading…</Text> : null}
+        {index && !query.trim() ? <Text color={C.muted}>Start typing to search tasks, projects, books, quotes, and routines.</Text> : null}
+        {index && query.trim() && results.length === 0 ? <Text color={C.muted}>No matches.</Text> : null}
         {shown.map((item, i) => {
           const abs = start + i;
           const showLabel = abs === 0 || results[abs - 1].type !== item.type || i === 0;
@@ -135,16 +136,16 @@ export function Search({ onClose }) {
           return (
             <Box key={`${item.type}-${item.id}`} flexDirection="column">
               {showLabel ? (
-                <Text bold color="cyan">
+                <Text bold color={C.accent}>
                   {TYPE_LABELS[item.type]}
                 </Text>
               ) : null}
               <Text wrap="truncate-end">
-                <Text color="magenta">{isSel ? '› ' : '  '}</Text>
-                <Text bold={isSel} inverse={isSel}>
+                <Text color={C.accent}>{isSel ? '› ' : '  '}</Text>
+                <Text bold={isSel} backgroundColor={isSel ? C.hoverBg : undefined}>
                   {truncate(item.title, Math.floor(width * 0.6))}
                 </Text>
-                {item.subtitle ? <Text dimColor> {truncate(item.subtitle, Math.floor(width * 0.35))}</Text> : null}
+                {item.subtitle ? <Text color={C.muted}> {truncate(item.subtitle, Math.floor(width * 0.35))}</Text> : null}
               </Text>
             </Box>
           );

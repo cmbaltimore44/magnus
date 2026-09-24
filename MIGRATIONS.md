@@ -23,9 +23,11 @@ exactly what `supabase/schema.sql` and `supabase/schema_002.sql` define:
 ## Behavior worth knowing on the web-app side (no schema impact)
 
 - **Category colors.** New categories created in Magnus store one of the web
-  app's own eight swatch hex values (`js/views/board.js` `COLORS`), so they
-  render normally in the web app. Magnus itself never renders hex; it maps each
-  stored color to the nearest ANSI slot of your terminal theme.
+  app's own eight swatch hex values (`js/views/board.js` `COLORS`). Magnus
+  draws every category in its stored hex, exactly like the web app.
+- **Palette.** Magnus uses the web app's light/dark palette, copied into
+  `src/lib/theme.js` (UI-only, no schema impact). If you change colors in the
+  web app's `style.css`, mirror them there.
 - **Rules mirrored from the web app:** max 3 starred tasks; moving a task to
   Done auto-unstars it; the routine-streak grace period; the heatmap's
   "today's routine count" denominator; quote attribution derived from the

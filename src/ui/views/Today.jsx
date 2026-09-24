@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useLoader, useViewInput } from '../context.js';
 import * as tasksApi from '../../lib/data/tasks.js';
@@ -107,7 +108,7 @@ export function Today() {
     }
   });
 
-  if (!data) return <Text dimColor>Loading…</Text>;
+  if (!data) return <Text color={C.muted}>Loading…</Text>;
 
   const wide = columns >= 100;
   const leftWidth = wide ? Math.floor((columns - 4) * 0.58) : columns - 4;
@@ -135,8 +136,8 @@ export function Today() {
     <Box
       flexDirection="column"
       flexShrink={0}
-      borderStyle="round"
-      borderColor="magenta"
+      backgroundColor={C.surface} borderStyle="round"
+      borderColor={C.accent}
       paddingX={1}
       width={quoteWidth}
       marginBottom={wide ? 0 : 1}
@@ -148,18 +149,18 @@ export function Today() {
           <Attribution text={attribution} />
         </>
       ) : (
-        <Text dimColor>Add a book highlight or quote to your Library to feature one here.</Text>
+        <Text color={C.muted}>Add a book highlight or quote to your Library to feature one here.</Text>
       )}
     </Box>
   );
 
   const left = (
     <Box flexDirection="column" width={leftWidth} marginRight={wide ? 2 : 0} flexShrink={0}>
-      <Text bold color="cyan">
+      <Text bold color={C.accent}>
         ★ Starred
       </Text>
       {starred.length === 0 ? (
-        <Text dimColor>  Star up to 3 tasks on the Board (s) to feature them here.</Text>
+        <Text color={C.muted}>  Star up to 3 tasks on the Board (s) to feature them here.</Text>
       ) : (
         starred.map((item) => (
           <TaskCard
@@ -173,15 +174,15 @@ export function Today() {
         ))
       )}
       <Box marginTop={1} flexDirection="column" flexShrink={0}>
-        <Text bold color="cyan">
+        <Text bold color={C.accent}>
           ✓ Routines{' '}
-          {rStart > 0 ? <Text dimColor>↑{rStart} </Text> : null}
-          {rEnd < routineLines.length ? <Text dimColor>↓{routineLines.length - rEnd}</Text> : null}
+          {rStart > 0 ? <Text color={C.muted}>↑{rStart} </Text> : null}
+          {rEnd < routineLines.length ? <Text color={C.muted}>↓{routineLines.length - rEnd}</Text> : null}
         </Text>
-        {data.routines.length === 0 ? <Text dimColor>  No routines yet — add some in Routines (3).</Text> : null}
+        {data.routines.length === 0 ? <Text color={C.muted}>  No routines yet — add some in Routines (3).</Text> : null}
         {routineLines.slice(rStart, rEnd).map((line) =>
           line.header ? (
-            <Text key={line.header} dimColor bold>
+            <Text key={line.header} color={C.muted} bold>
               {'  '}
               {TIME_OF_DAY_LABELS[line.header]}
             </Text>
@@ -214,7 +215,7 @@ export function Today() {
 export function Attribution({ text, indent = '' }) {
   if (!text) return null;
   return (
-    <Text dimColor wrap="truncate-end">
+    <Text color={C.muted} wrap="truncate-end">
       {indent}
       {/^[—–-]/.test(text) ? text : `— ${text}`}
     </Text>
@@ -227,12 +228,12 @@ export function RoutineLine({ routine, dates, today, selected, extra }) {
   const streak = completionsApi.computeStreak(set, today);
   return (
     <Text wrap="truncate-end">
-      <Text color="cyan">{selected ? '› ' : '  '}</Text>
-      <Text color={done ? 'green' : undefined}>{done ? '[✓]' : '[ ]'}</Text>{' '}
-      <Text bold={selected} inverse={selected} dimColor={done && !selected}>
+      <Text color={C.accent}>{selected ? '› ' : '  '}</Text>
+      <Text color={done ? C.success : undefined}>{done ? '[✓]' : '[ ]'}</Text>{' '}
+      <Text bold={selected} backgroundColor={selected ? C.hoverBg : undefined} color={done && !selected ? C.muted : undefined}>
         {routine.name}
       </Text>
-      {streak > 0 ? <Text color="yellow"> 🔥 {streak}</Text> : null}
+      {streak > 0 ? <Text color={C.accent}> 🔥 {streak}</Text> : null}
       {extra}
     </Text>
   );

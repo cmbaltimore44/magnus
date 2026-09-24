@@ -1,6 +1,8 @@
 import { render } from 'ink';
 import App from './ui/App.jsx';
-import { queryPalette } from './lib/palette.js';
+import fs from 'node:fs';
+import { queryBackgroundColor } from './lib/termcolors.js';
+import { setThemeMode, modeForBackground, terminalColorsOn, TERMINAL_COLORS_RESET } from './lib/theme.js';
 import { signOut } from './lib/auth.js';
 import { supabase } from './lib/supabase.js';
 import { ALT_SCREEN_HOME } from './lib/shell.js';
@@ -14,6 +16,7 @@ Usage:
 
 Environment:
   MAGNUS_DEMO=1     run against in-memory sample data (no sign-in, nothing saved)
+  MAGNUS_THEME=light|dark  force Life Tracker's light or dark palette (default: match terminal)
   MAGNUS_KITTY=0|1  force kitty-graphics cover images off/on
   VISUAL / EDITOR   editor for long notes (ctrl+e in a form); defaults to fresh
 `;
@@ -36,15 +39,18 @@ if (!process.stdin.isTTY || !process.stdout.isTTY) {
   process.exit(1);
 }
 
-// Ask the terminal for its theme's magenta/blue/cyan so the banner gradient
-// is built from Ghostty's own colors.
-const palette = await queryPalette([5, 4, 6]);
-const gradient = [palette[5], palette[4], palette[6]].filter(Boolean);
+// Life Tracker's light or dark palette: forced via MAGNUS_THEME, otherwise
+// matched to the terminal's current background (dark if it doesn't answer).
+const forced = process.env.MAGNUS_THEME;
+const mode = forced === 'light' || forced === 'dark' ? forced : modeForBackground(await queryBackgroundColor()) || 'dark';
+setThemeMode(mode);
 
-// Start from a cleared, homed alternate screen (see ALT_SCREEN_HOME).
-process.stdout.write(ALT_SCREEN_HOME);
+// Paint the terminal's default colors with the palette (restored on exit and
+// while child programs run), then start from a cleared, homed alternate screen.
+process.on('exit', () => fs.writeSync(1, TERMINAL_COLORS_RESET));
+process.stdout.write(terminalColorsOn() + ALT_SCREEN_HOME);
 
-const instance = render(<App gradient={gradient.length >= 2 ? gradient : null} />, {
+const instance = render(<App />, {
   alternateScreen: true,
   exitOnCtrlC: true,
 });

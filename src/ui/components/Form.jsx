@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { C } from '../../lib/theme.js';
 import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import { useAppCtx, useCapture } from '../context.js';
@@ -113,14 +114,14 @@ export function Form({ title, fields, initial = {}, onSubmit, onCancel }) {
 
   const renderValue = (f, focused) => {
     const v = values[f.key];
-    if (f.type === 'toggle') return <Text color={focused ? 'cyan' : undefined}>{v ? '[x] yes' : '[ ] no'}</Text>;
+    if (f.type === 'toggle') return <Text color={focused ? C.accent : undefined}>{v ? '[x] yes' : '[ ] no'}</Text>;
     if (f.type === 'select') {
       const opt = f.options.find((o) => o.value === v) || f.options[0];
       return (
         <Text>
-          {focused ? <Text color="cyan">‹ </Text> : '  '}
+          {focused ? <Text color={C.accent}>‹ </Text> : '  '}
           <Text color={opt?.color}>{opt?.label}</Text>
-          {focused ? <Text color="cyan"> ›</Text> : ''}
+          {focused ? <Text color={C.accent}> ›</Text> : ''}
         </Text>
       );
     }
@@ -129,7 +130,7 @@ export function Form({ title, fields, initial = {}, onSubmit, onCancel }) {
       return (
         <Text>
           {lines[0]}
-          <Text dimColor> (+{lines.length - 1} more line{lines.length === 2 ? '' : 's'} · ctrl+e to edit)</Text>
+          <Text color={C.muted}> (+{lines.length - 1} more line{lines.length === 2 ? '' : 's'} · ctrl+e to edit)</Text>
         </Text>
       );
     }
@@ -143,20 +144,20 @@ export function Form({ title, fields, initial = {}, onSubmit, onCancel }) {
         />
       );
     }
-    return v ? <Text>{v}</Text> : <Text dimColor>{f.placeholder || '—'}</Text>;
+    return v ? <Text>{v}</Text> : <Text color={C.muted}>{f.placeholder || '—'}</Text>;
   };
 
   const hint = field.hint || (field.type === 'date' ? DATE_HINT : null);
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={1}>
-      <Text color="cyan" bold>
+    <Box flexDirection="column" backgroundColor={C.surface} borderStyle="round" borderColor={C.accent} paddingX={1}>
+      <Text color={C.accent} bold>
         {title}
       </Text>
       {fields.map((f, i) => (
         <Box key={f.key}>
           <Box width={labelWidth} flexShrink={0}>
-            <Text color={i === focus ? 'cyan' : undefined} bold={i === focus}>
+            <Text color={i === focus ? C.accent : undefined} bold={i === focus}>
               {i === focus ? '› ' : '  '}
               {f.label}
             </Text>
@@ -164,9 +165,9 @@ export function Form({ title, fields, initial = {}, onSubmit, onCancel }) {
           <Box flexGrow={1}>{renderValue(f, i === focus)}</Box>
         </Box>
       ))}
-      {hint ? <Text dimColor>{hint}</Text> : null}
-      {error ? <Text color="red">{error}</Text> : null}
-      <Text dimColor>
+      {hint ? <Text color={C.muted}>{hint}</Text> : null}
+      {error ? <Text color={C.danger}>{error}</Text> : null}
+      <Text color={C.muted}>
         {busy
           ? 'Saving…'
           : `↑↓ field · ${field.type === 'select' || field.type === 'toggle' ? '←→ change · ' : ''}${
