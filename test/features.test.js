@@ -196,7 +196,8 @@ test('end-of-day Evening section', () => {
   assert.match(md, /\*\*Finished today \(1\)\*\*\n- Shipped it\n/);
   assert.match(md, /\*\*Routines:\*\* 1\/2 · missed: Read/);
   assert.match(md, /- Focus: 50m\n- Workout: 30 min run/);
-  assert.match(md, /\*\*Carrying over\*\*\n- Late \(overdue\)\n- Starred\n\n/);
+  assert.match(md, /\*\*Carrying over\*\*\n- Late \(overdue\)\n- Starred\n<!-- end evening summary -->\n\n\*\*What went well\?\*\*/);
+  assert.match(md, /^## Evening\n\n<!-- evening summary: refreshed by today --close -->\n\*\*Finished today/);
   assert.doesNotMatch(md, /Someday|Yesterday/);
 });
 
