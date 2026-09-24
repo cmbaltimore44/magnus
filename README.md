@@ -66,7 +66,7 @@ The timer survives quitting Magnus.
 **Quick add** (`a`, anywhere): one line becomes a task —
 `renew passport fri !high #home *` sets the due date (`today`, `tom`, weekday
 names, `+3`, `10/1`, `2026-10-01`), priority (`!high`/`!h`, `!low`), the category
-whose name starts with `home`, and a star. `+groceries oat milk` adds to a list (name or prefix). `> some thought` goes to the journal
+whose name starts with `home`, and a star. `book: Piranesi by Susanna Clarke` (or `b: …`, or `b: <ISBN>`) adds a Want to Read book; Magnus then fills in the author, cover and ISBN from Open Library when there's one clear match. `+groceries oat milk` adds to a list (name or prefix). `> some thought` goes to the journal
 inbox instead. Anything that doesn't resolve stays in the title.
 
 **Offline mode**: every read is cached in `~/.config/magnus/cache.json`

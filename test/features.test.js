@@ -233,3 +233,41 @@ test('undo restores a deleted list with its items', async () => {
   await restore();
   assert.equal((await supabase.from('list_items').select('*').eq('list_id', lists[0].id)).data.length, n);
 });
+
+import { parseBookText } from '../src/lib/quickadd.js';
+import { clearMatch, normalizeTitle, enrichmentFields } from '../src/lib/openlibrary.js';
+import { addWantToRead, needsDetails } from '../src/lib/bookQuickAdd.js';
+
+test('book quick add parsing', () => {
+  assert.deepEqual(parseQuickAdd('book: Piranesi by Susanna Clarke', CATS, NOW), { book: { title: 'Piranesi', author: 'Susanna Clarke' } });
+  assert.deepEqual(parseQuickAdd('b: 978-0-14-143954-9', CATS, NOW), { book: { isbn: '9780141439549' } });
+  assert.deepEqual(parseBookText('Stand by Me by Stephen King'), { title: 'Stand by Me', author: 'Stephen King' });
+  assert.deepEqual(parseBookText('Dune'), { title: 'Dune', author: null });
+});
+
+test('clear match picks one work, or nothing', () => {
+  const c = (title, author, cover = null) => ({ title, author, isbn: '1', cover_image_url: cover });
+  assert.equal(normalizeTitle('The Remains of the Day: A Novel'), 'remains of the day');
+  const remains = [c('The Remains of the Day', 'Kazuo Ishiguro'), c("Ishiguro's the Remains", 'Adam Parkes'), c('The remains of the day', null), c('Remains of the Day', 'Kazuo Ishiguro', 'x.jpg'), c('The remains of the day', 'N. McNamara')];
+  assert.equal(clearMatch({ title: 'the remains of the day' }, remains).cover_image_url, 'x.jpg');
+  const split = [c('Emma', 'Jane Austen'), c('Emma', 'Someone Else'), c('Emma', 'A Third')];
+  assert.equal(clearMatch({ title: 'Emma' }, split), null);
+  assert.equal(clearMatch({ title: 'Emma', author: 'austen' }, split).author, 'Jane Austen');
+  assert.equal(clearMatch({ title: 'Nope' }, split), null);
+  assert.deepEqual(enrichmentFields({ author: 'Me', cover_image_url: null, isbn: null }, c('x', 'Other', 'y.jpg')), { cover_image_url: 'y.jpg', isbn: '1' });
+});
+
+test('addWantToRead saves first, then fills in details', async () => {
+  const fake = async () => [{ title: 'Piranesi', author: 'Susanna Clarke', isbn: '9781526622440', cover_image_url: 'https://c/p.jpg' }];
+  const { book, enriched } = await addWantToRead('00000000-0000-4000-8000-000000000000', { title: 'piranesi', author: null }, [], { lookup: fake });
+  assert.equal(book.status, 'want_to_read');
+  assert.ok(needsDetails(book));
+  const updated = await enriched;
+  assert.equal(updated.author, 'Susanna Clarke');
+  assert.equal(updated.title, 'piranesi'); // your title is kept
+  assert.ok(!needsDetails(updated));
+  const byIsbn = await addWantToRead('00000000-0000-4000-8000-000000000000', { isbn: '9781526622440' }, [], { lookup: fake });
+  assert.equal(byIsbn.book.title, 'Piranesi');
+  const offline = await addWantToRead('00000000-0000-4000-8000-000000000000', { isbn: '9999999999' }, [], { lookup: async () => { throw new Error('down'); } });
+  assert.equal(offline.book.title, 'ISBN 9999999999');
+});

@@ -7,6 +7,8 @@ import * as tasksApi from '../../lib/data/tasks.js';
 import * as categoriesApi from '../../lib/data/categories.js';
 import { parseQuickAdd, describeQuickAdd, findList } from '../../lib/quickadd.js';
 import * as listsApi from '../../lib/data/lists.js';
+import * as booksApi from '../../lib/data/books.js';
+import { addWantToRead } from '../../lib/bookQuickAdd.js';
 import { cleanText } from '../../lib/sanitize.js';
 
 const MAX_STARRED = 3;
@@ -37,6 +39,25 @@ export function QuickAdd({ onClose, initial = '', onCreated }) {
       const res = await capture('capture', [parsed.inbox]);
       const msg = res.ok ? 'Added to the journal inbox' : res.stderr.trim() || 'capture failed';
       return notify(cleanText(msg, { keepNewlines: false }), res.ok ? 'success' : 'error');
+    }
+    if (parsed.book) {
+      const b = parsed.book;
+      if (!b.isbn && !b.title) return;
+      onClose();
+      try {
+        if (b.isbn) notify(`Looking up ISBN ${b.isbn}…`, 'info');
+        const { book, enriched } = await addWantToRead(userId, b, await booksApi.listBooks());
+        notify(`Added “${book.title}” to Want to Read`, 'success');
+        dataChanged();
+        enriched.then((updated) => {
+          if (!updated) return;
+          notify(`Found details for “${updated.title}” (${updated.author || 'author'}, cover)`, 'success');
+          dataChanged();
+        });
+      } catch (err) {
+        notify(err.message, 'error');
+      }
+      return;
     }
     if (parsed.list != null) {
       if (!data) return;
@@ -81,7 +102,7 @@ export function QuickAdd({ onClose, initial = '', onCreated }) {
         <TextInput value={value} onChange={setValue} placeholder="renew passport fri !high #home *" onSubmit={submit} />
       </Box>
       <Text color={C.muted} wrap="truncate-end">
-        {preview || 'date (fri, +3, 10/1) · !high/!low · #category · * star · "+list item" → a list · "> text" → journal inbox'}
+        {preview || 'date (fri, +3, 10/1) · !high/!low · #category · * star · "+list item" → a list · "book: title by author" or an ISBN → Want to Read · "> text" → journal inbox'}
       </Text>
     </Box>
   );
