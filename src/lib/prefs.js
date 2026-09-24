@@ -11,6 +11,7 @@ let cache = null;
 
 function load() {
   if (cache) return cache;
+  if (process.env.MAGNUS_DEMO) return (cache = {});
   try {
     cache = JSON.parse(fs.readFileSync(FILE, 'utf8'));
   } catch {
@@ -27,6 +28,7 @@ export function getPref(key, fallback) {
 export function setPref(key, value) {
   const prefs = load();
   prefs[key] = value;
+  if (process.env.MAGNUS_DEMO) return; // demo mode never touches real files
   try {
     fs.mkdirSync(DIR, { recursive: true });
     fs.writeFileSync(FILE, JSON.stringify(prefs, null, 2));

@@ -26,7 +26,8 @@
     "ink-big-text": "^2.0.0",
     "ink-gradient": "^4.0.1",
     "ink-text-input": "^6.0.0",
-    "react": "^19.3.0"
+    "react": "^19.3.0",
+    "wrap-ansi": "^10.0.2"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

@@ -25,28 +25,33 @@ export const SECTIONS = [
   { view: 'journal', label: 'Journal', key: 'j', digit: '6', component: Journal },
 ];
 
-function TabBar({ current }) {
+function TabBar({ current, columns }) {
+  // Full labels when they fit; otherwise inactive tabs shrink to their digit.
+  const fullWidth = 8 + SECTIONS.reduce((n, s) => n + s.label.length + 5, 0);
+  const compact = fullWidth > columns - 2;
   return (
     <Box paddingX={1}>
-      <Text color={C.accent} bold>
-        MAGNUS{' '}
-      </Text>
-      {SECTIONS.map((s) => (
-        <Text key={s.view}>
-          {' '}
-          {current === s.view ? (
-            <Text color={C.accent} bold backgroundColor={C.hoverBg}>
-              {' '}
-              {s.digit} {s.label}{' '}
-            </Text>
-          ) : (
-            <Text color={C.muted}>
-              {' '}
-              {s.digit} {s.label}{' '}
-            </Text>
-          )}
+      <Text wrap="truncate-end">
+        <Text color={C.accent} bold>
+          MAGNUS{' '}
         </Text>
-      ))}
+        {SECTIONS.map((s) => {
+          const active = current === s.view;
+          const label = compact && !active ? ` ${s.digit} ` : ` ${s.digit} ${s.label} `;
+          return (
+            <Text key={s.view}>
+              {' '}
+              {active ? (
+                <Text color={C.accent} bold backgroundColor={C.hoverBg}>
+                  {label}
+                </Text>
+              ) : (
+                <Text color={C.muted}>{label}</Text>
+              )}
+            </Text>
+          );
+        })}
+      </Text>
     </Box>
   );
 }
@@ -199,7 +204,7 @@ export default function App() {
   return (
     <AppContext.Provider value={ctx}>
       <Box flexDirection="column" width={columns} height={rows} backgroundColor={C.bg}>
-        {ready && route.view !== 'home' ? <TabBar current={searchOpen ? null : route.view} /> : null}
+        {ready && route.view !== 'home' ? <TabBar current={searchOpen ? null : route.view} columns={columns} /> : null}
         <Box flexDirection="column" flexGrow={1} paddingX={1} overflow="hidden">
           {body}
         </Box>

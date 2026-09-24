@@ -18,7 +18,7 @@ import { getPref, setPref } from '../../lib/prefs.js';
 import { Form } from '../components/Form.jsx';
 import { Confirm } from '../components/Prompt.jsx';
 import { windowRange, windowByHeight, moveIndex } from '../components/layout.js';
-import { Attribution } from './Today.jsx';
+import { layoutQuote, QuoteRow } from '../components/Quote.jsx';
 
 const BOOK_GROUPS = [
   { key: 'reading', label: 'Currently Reading', collapsible: false },
@@ -83,24 +83,10 @@ function quoteFields(context, books) {
   ];
 }
 
-function QuoteRow({ quote, books, selected, width, showAttribution = true }) {
-  const attribution = quotesApi.formatAttribution(quote, books);
-  return (
-    <Box flexDirection="column" width={width}>
-      <Text wrap="truncate-end">
-        <Text color={C.accent}>{selected ? '› ' : '  '}</Text>
-        <Text color={C.accent}>{quote.is_favorite ? '★ ' : '  '}</Text>
-        <Text italic bold={selected} backgroundColor={selected ? C.hoverBg : undefined}>
-          “{truncate(quote.quote_text, width * 2 - 10)}”
-        </Text>
-      </Text>
-      {showAttribution ? <Attribution text={attribution} indent="      " /> : null}
-    </Box>
-  );
-}
-
-// Quote rows wrap to at most 2 lines of text plus an attribution line.
-const quoteHeight = (q, width) => Math.min(2, Math.ceil((q.quote_text.length + 8) / Math.max(10, width - 6))) + 1;
+// Lists show each quote in full, wrapped to the window, one blank line apart.
+const QUOTE_GAP = 1;
+const layoutsFor = (quotes, books, width) =>
+  quotes.map((q) => layoutQuote(q, quotesApi.formatAttribution(q, books), width));
 
 export function Library({ params }) {
   const { navigate, notify, userId, contentHeight, columns } = useAppCtx();
@@ -417,10 +403,11 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
     ['ISBN', book.isbn || '—'],
   ];
 
-  const qWidth = columns - 6;
-  const budget = contentHeight - 14 - (book.notes ? 2 : 0) - (mode ? 4 : 0);
+  const qWidth = columns - 3;
+  const budget = Math.max(3, contentHeight - 14 - (book.notes ? 2 : 0) - (mode ? 4 : 0));
+  const layouts = layoutsFor(highlights, [], qWidth);
   const [start, end] = windowByHeight(
-    highlights.map((q) => quoteHeight(q, qWidth)),
+    layouts.map((l) => l.height + QUOTE_GAP),
     index,
     Math.max(3, budget)
   );
@@ -454,7 +441,14 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
       </Box>
       {highlights.length === 0 ? <Text color={C.muted}>  No highlights yet — press a to add one.</Text> : null}
       {highlights.slice(start, end).map((q, i) => (
-        <QuoteRow key={q.id} quote={q} books={[]} selected={start + i === index} width={qWidth} />
+        <QuoteRow
+          key={q.id}
+          quote={q}
+          layout={layouts[start + i]}
+          selected={start + i === index}
+          maxLines={budget}
+          gap={QUOTE_GAP}
+        />
       ))}
       {mode?.type === 'confirmQuote' ? (
         <Confirm message="Delete this highlight?" onYes={() => actions.remove(mode.quote)} onNo={() => setMode(null)} />
@@ -531,10 +525,11 @@ function QuotesBrowser({ books, focusQuoteId, onSwitchTab }) {
     );
   }
 
-  const qWidth = columns - 6;
-  const budget = contentHeight - 4 - (mode ? 4 : 0);
+  const qWidth = columns - 3;
+  const budget = Math.max(3, contentHeight - 4 - (mode ? 4 : 0));
+  const layouts = layoutsFor(visible, books, qWidth);
   const [start, end] = windowByHeight(
-    visible.map((q) => quoteHeight(q, qWidth)),
+    layouts.map((l) => l.height + QUOTE_GAP),
     index,
     Math.max(3, budget)
   );
@@ -554,7 +549,14 @@ function QuotesBrowser({ books, focusQuoteId, onSwitchTab }) {
           </Text>
         ) : null}
         {visible.slice(start, end).map((q, i) => (
-          <QuoteRow key={q.id} quote={q} books={books} selected={start + i === index} width={qWidth} />
+          <QuoteRow
+            key={q.id}
+            quote={q}
+            layout={layouts[start + i]}
+            selected={start + i === index}
+            maxLines={budget}
+            gap={QUOTE_GAP}
+          />
         ))}
       </Box>
       {mode?.type === 'confirm' ? (

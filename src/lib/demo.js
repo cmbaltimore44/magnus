@@ -73,6 +73,7 @@ function seed() {
   const quotes = [
     row({ book_id: books[0].id, attribution: 'p. 838', quote_text: 'For the growing good of the world is partly dependent on unhistoric acts.', is_favorite: true, sort_order: 0 }),
     row({ book_id: books[1].id, attribution: null, quote_text: 'What is the point of worrying oneself too much about what one could or could not have done to control the course one\'s life took?', is_favorite: false, sort_order: 0 }),
+    row({ book_id: books[0].id, attribution: 'ch. 20', quote_text: 'If we had a keen vision and feeling of all ordinary human life, it would be like hearing the grass grow and the squirrel\'s heart beat, and we should die of that roar which lies on the other side of silence.\nAs it is, the quickest of us walk about well wadded with stupidity.', is_favorite: false, sort_order: 0 }),
     row({ book_id: null, attribution: '— Mary Oliver', quote_text: 'Tell me, what is it you plan to do with your one wild and precious life?', is_favorite: true, sort_order: 0 }),
   ];
   return { categories, tasks, routines, routine_completions, projects, project_tasks, books, quotes };

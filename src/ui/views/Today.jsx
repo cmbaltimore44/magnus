@@ -11,6 +11,7 @@ import * as booksApi from '../../lib/data/books.js';
 import { TIME_OF_DAY, TIME_OF_DAY_LABELS, TASK_STATUSES, TASK_STATUS_LABELS } from '../../lib/display.js';
 import { TaskCard, taskCardHeight } from '../components/TaskCard.jsx';
 import { moveIndex, windowRange } from '../components/layout.js';
+import { layoutQuote, QuoteBlock } from '../components/Quote.jsx';
 
 // Like the web app, the featured quote is rolled once and kept across view
 // switches for the rest of the session; press r to roll a new one.
@@ -120,9 +121,26 @@ export function Today() {
   // Row budget, so nothing overflows the screen: date line, the quote box
   // (above everything in the narrow layout), the starred block, then
   // routines, which scroll around the selection.
-  const quoteLines = quote ? Math.ceil((quote.quote_text.length + 2) / Math.max(10, quoteWidth - 4)) + (attribution ? 1 : 0) : 1;
-  const quoteHeight = quoteLines + 2;
-  const starredHeight = 1 + (starred.length ? starred.reduce((n, i) => n + taskCardHeight(i.task, { showNotes: false }), 0) : 1);
+  // The quote is shown in full, wrapped to the box's inner width (border +
+  // padding = 4 columns); only a quote taller than the screen is clipped.
+  // Narrow layout stacks quote, starred and routines. If the full quote
+  // doesn't fit, starred tasks go compact (one line each) to make room;
+  // routines scroll in whatever is left (at least 3 rows).
+  const layout = quote ? layoutQuote(quote, attribution, quoteWidth - 4, { indent: 0, attrIndent: 0 }) : null;
+  const starredRows = (compact) =>
+    1 + (starred.length ? starred.reduce((n, i) => n + taskCardHeight(i.task, { showNotes: false, compact }), 0) : 1);
+  // date+margin (2), quote border (2) + margin (1), routines margin+header (2), 3 routine rows
+  const roomForQuote = (compact) => contentHeight - 2 - 3 - starredRows(compact) - 2 - 3;
+  const compact = !wide && layout != null && layout.height > roomForQuote(false);
+  const starredHeight = starredRows(compact);
+  const maxQuoteLines = Math.max(2, wide ? contentHeight - 4 : roomForQuote(compact));
+  if (layout && layout.height > maxQuoteLines) {
+    const keep = maxQuoteLines - 1;
+    layout.attrLines = [`… ${layout.height - keep} more lines — see Library (5)`];
+    layout.quoteLines = layout.quoteLines.slice(0, keep);
+    layout.height = maxQuoteLines;
+  }
+  const quoteHeight = (layout ? layout.height : 1) + 2;
   const routineBudget = Math.max(3, contentHeight - 2 - (wide ? 0 : quoteHeight + 1) - starredHeight - 2);
 
   const routineLines = TIME_OF_DAY.flatMap((tod) => {
@@ -143,11 +161,8 @@ export function Today() {
       marginBottom={wide ? 0 : 1}
       alignSelf="flex-start"
     >
-      {quote ? (
-        <>
-          <Text italic>“{quote.quote_text}”</Text>
-          <Attribution text={attribution} />
-        </>
+      {layout ? (
+        <QuoteBlock layout={layout} />
       ) : (
         <Text color={C.muted}>Add a book highlight or quote to your Library to feature one here.</Text>
       )}
@@ -170,6 +185,7 @@ export function Today() {
             selected={selected === item}
             width={leftWidth}
             showNotes={false}
+            compact={compact}
           />
         ))
       )}
@@ -208,17 +224,6 @@ export function Today() {
         {wide ? quoteBox : left}
       </Box>
     </Box>
-  );
-}
-
-// Attributions are free text and often already start with a dash.
-export function Attribution({ text, indent = '' }) {
-  if (!text) return null;
-  return (
-    <Text color={C.muted} wrap="truncate-end">
-      {indent}
-      {/^[—–-]/.test(text) ? text : `— ${text}`}
-    </Text>
   );
 }
 
