@@ -5,6 +5,11 @@ import { createDemoClient } from './demo.js';
 import { resilientFetch } from './fetch.js';
 import { makeOfflineFetch } from './offline.js';
 
+// Tests must never reach the real account or its Keychain session (test/_demo.js).
+if (process.env.NODE_TEST_CONTEXT && !process.env.MAGNUS_DEMO) {
+  throw new Error('lib/supabase.js loaded in a test without MAGNUS_DEMO=1');
+}
+
 // Real mode only: the Keychain-backed session storage and the offline layer
 // (cache + write queue, lib/offline.js) on top of the retrying, sanitizing fetch.
 export const authStorage = process.env.MAGNUS_DEMO ? null : createKeychainStorage();

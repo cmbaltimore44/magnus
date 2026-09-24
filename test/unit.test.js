@@ -1,6 +1,6 @@
 // Pure-logic tests. MAGNUS_DEMO keeps the data layer off the network/Keychain.
-process.env.MAGNUS_DEMO = '1';
 
+import './_demo.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { hexToAnsi, categoryColor, CATEGORY_SWATCHES } from '../src/lib/colors.js';

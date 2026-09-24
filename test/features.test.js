@@ -1,6 +1,6 @@
 // Pure logic behind the 2026-09 feature batch (shared with the web app).
-process.env.MAGNUS_DEMO = '1';
 
+import './_demo.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseQuickAdd, describeQuickAdd } from '../src/lib/quickadd.js';
@@ -225,7 +225,8 @@ test('quick add +list and list helpers', () => {
 });
 
 test('undo restores a deleted list with its items', async () => {
-  const { data: lists } = await supabase.from('lists').select('*');
+  const { data: lists, error } = await supabase.from('lists').select('*');
+  assert.equal(error, null, JSON.stringify(error));
   const n = (await supabase.from('list_items').select('*').eq('list_id', lists[0].id)).data.length;
   const restore = await deleteWithUndo('lists', lists[0].id);
   assert.equal((await supabase.from('list_items').select('*').eq('list_id', lists[0].id)).data.length, 0);
