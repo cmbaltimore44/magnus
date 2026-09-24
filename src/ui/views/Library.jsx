@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useLoader, useViewInput } from '../context.js';
+import { deleteWithUndo } from '../../lib/undo.js';
 import * as booksApi from '../../lib/data/books.js';
 import * as quotesApi from '../../lib/data/quotes.js';
 import {
@@ -89,7 +90,7 @@ const layoutsFor = (quotes, books, width) =>
   quotes.map((q) => layoutQuote(q, quotesApi.formatAttribution(q, books), width));
 
 export function Library({ params }) {
-  const { navigate, notify, userId, contentHeight, columns } = useAppCtx();
+  const { navigate, offerUndo, notify, userId, contentHeight, columns } = useAppCtx();
   const [tab, setTab] = useState(params?.tab === 'quotes' ? 'quotes' : 'books');
   const [openBookId, setOpenBookId] = useState(params?.bookId || null);
   const [index, setIndex] = useState(0);
@@ -131,10 +132,10 @@ export function Library({ params }) {
   const deleteBook = async (book) => {
     setMode(null);
     try {
-      await booksApi.deleteBook(book.id);
+      const restore = await deleteWithUndo('books', book.id);
       setBooks((b) => b.filter((x) => x.id !== book.id));
       setOpenBookId(null);
-      notify('Book deleted.', 'success');
+      offerUndo(`Deleted “${book.title}”`, restore);
     } catch (err) {
       notify(err.message, 'error');
     }
@@ -264,7 +265,7 @@ export function Library({ params }) {
 }
 
 function useQuoteActions({ reload, setMode }) {
-  const { notify, userId } = useAppCtx();
+  const { notify, offerUndo, userId } = useAppCtx();
   return {
     toggleFavorite: async (quote) => {
       try {
@@ -283,9 +284,9 @@ function useQuoteActions({ reload, setMode }) {
     remove: async (quote) => {
       setMode(null);
       try {
-        await quotesApi.deleteQuote(quote.id);
+        const restore = await deleteWithUndo('quotes', quote.id);
         await reload();
-        notify('Quote deleted.', 'success');
+        offerUndo('Deleted quote', restore);
       } catch (err) {
         notify(err.message, 'error');
       }

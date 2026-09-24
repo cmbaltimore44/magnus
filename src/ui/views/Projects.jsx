@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useLoader, useViewInput } from '../context.js';
+import { deleteWithUndo } from '../../lib/undo.js';
 import * as projectsApi from '../../lib/data/projects.js';
 import * as projectTasksApi from '../../lib/data/projectTasks.js';
 import {
@@ -71,7 +72,7 @@ const projectFields = () => [
 const nextStatus = (s) => PROJECT_STATUSES[(PROJECT_STATUSES.indexOf(s) + 1) % PROJECT_STATUSES.length];
 
 export function Projects({ params }) {
-  const { userId, navigate, notify, columns, contentHeight } = useAppCtx();
+  const { userId, offerUndo, navigate, notify, columns, contentHeight } = useAppCtx();
   const [index, setIndex] = useState(0);
   const [openId, setOpenId] = useState(params?.projectId || null);
   const [mode, setMode] = useState(null);
@@ -112,10 +113,10 @@ export function Projects({ params }) {
   const remove = async (project) => {
     setMode(null);
     try {
-      await projectsApi.deleteProject(project.id);
+      const restore = await deleteWithUndo('projects', project.id);
       setData((d) => ({ ...d, projects: d.projects.filter((p) => p.id !== project.id) }));
       setOpenId(null);
-      notify('Project deleted.', 'success');
+      offerUndo(`Deleted “${project.name}”`, restore);
     } catch (err) {
       notify(err.message, 'error');
     }
@@ -200,7 +201,7 @@ export function Projects({ params }) {
 }
 
 function ProjectDetail({ projectId, cached, onBack, onUpdated, onDelete, onCounts }) {
-  const { userId, notify, contentHeight } = useAppCtx();
+  const { userId, offerUndo, notify, contentHeight } = useAppCtx();
   const [index, setIndex] = useState(0);
   const [mode, setMode] = useState(null);
 
@@ -249,9 +250,9 @@ function ProjectDetail({ projectId, cached, onBack, onUpdated, onDelete, onCount
 
   const deleteItem = async (it) => {
     try {
-      await projectTasksApi.deleteProjectTask(it.id);
+      const restore = await deleteWithUndo('project_tasks', it.id);
       setChecklist(items.filter((c) => c.id !== it.id));
-      notify('Checklist item deleted.', 'success');
+      offerUndo(`Deleted “${it.title}”`, restore);
     } catch (err) {
       notify(err.message, 'error');
     }

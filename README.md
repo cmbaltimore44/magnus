@@ -40,8 +40,10 @@ discards the saved session.
 
 ## Keys
 
-Global: **1–6** jump to a section · **0** home · **ctrl+k** or **/** search ·
-**a** quick add · **q** quit · **esc** back. Each screen lists its own keys in the footer.
+Global: **1–7** jump to a section · **0** home · **ctrl+k** or **/** search ·
+**a** quick add · **u** undo the last delete (for 10 s, restores children
+too: a project's checklist, a book's quotes, a routine's history, a
+category's tasks) · **q** quit · **esc** back. Each screen lists its own keys in the footer.
 
 | Screen   | Keys |
 | -------- | ---- |
@@ -50,6 +52,7 @@ Global: **1–6** jump to a section · **0** home · **ctrl+k** or **/** search 
 | Routines | space check off · **K/J** move up/down · **H/L** move to the previous/next time of day · n new · d delete |
 | Projects | enter open · n new · s cycle status · d delete → in a project: space toggle item · n add · d delete item · K/J reorder · e edit · D delete project |
 | Library  | tab Books/Quotes · enter open a book / fold a group · n new → in a book: n add highlight · enter edit · f favorite · e edit book · v view cover · D delete · Quotes tab: F favorites only |
+| Upcoming | overdue, today, tomorrow, next 7 days — tasks by due date and projects by target date · space mark done · enter open |
 | Journal  | t today (asks for mood, energy and hours slept once a day, e.g. `4 3 7.5`) · e new essay · b book essay · f film essay · s search (`#tag` = tag search) · g tags · k backlinks · v graph · c quick capture · **r triage inbox** one item at a time (t → task via quick add, n → note, e → essay, d delete, u undo, s skip) · i edit inbox.md in Fresh · e/b/f/n end with an optional tags / `[[links]]` prompt · n new note · x note from inbox · l browse all entries (enter open, d move to Trash, tab type filter, f text filter) · d back up to drive (plug it in first) |
 
 **Quick add** (`a`, anywhere): one line becomes a task —

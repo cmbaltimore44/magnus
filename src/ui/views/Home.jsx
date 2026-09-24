@@ -11,6 +11,7 @@ const DESCRIPTIONS = {
   projects: 'status, target dates, checklists',
   library: 'books, highlights, favorite quotes',
   journal: 'daily entry, essays, search, capture',
+  upcoming: 'overdue, today and the next 7 days',
 };
 
 const HINTS = 'press a letter to open · ↑↓ enter · a quick add · ctrl+k or / search · q quit';

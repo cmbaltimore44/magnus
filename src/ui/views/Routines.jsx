@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useLoader, useViewInput } from '../context.js';
+import { deleteWithUndo } from '../../lib/undo.js';
 import * as routinesApi from '../../lib/data/routines.js';
 import * as completionsApi from '../../lib/data/completions.js';
 import { TIME_OF_DAY, TIME_OF_DAY_LABELS, plural } from '../../lib/display.js';
@@ -116,7 +117,7 @@ function Heatmap({ routines, completions, columns }) {
 }
 
 export function Routines({ params }) {
-  const { userId, navigate, notify, columns, contentHeight } = useAppCtx();
+  const { userId, offerUndo, navigate, notify, columns, contentHeight } = useAppCtx();
   const [index, setIndex] = useState(0);
   const [mode, setMode] = useState(null);
   useHints(HINTS);
@@ -227,13 +228,13 @@ export function Routines({ params }) {
   const remove = async (routine) => {
     setMode(null);
     try {
-      await routinesApi.deleteRoutine(routine.id);
+      const restore = await deleteWithUndo('routines', routine.id);
       setData((d) => {
         const completions = new Map(d.completions);
         completions.delete(routine.id);
         return { routines: d.routines.filter((r) => r.id !== routine.id), completions };
       });
-      notify('Routine deleted.', 'success');
+      offerUndo(`Deleted “${routine.name}”`, restore);
     } catch (err) {
       notify(err.message, 'error');
     }

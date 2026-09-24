@@ -15,11 +15,10 @@ import { truncate } from '../../lib/display.js';
 const HINTS = 't task · n note · e essay · d delete · u undo · s/→ skip · ← back · R reload · esc back';
 
 export function InboxTriage({ onBack, start }) {
-  const { notify, contentHeight, columns } = useAppCtx();
+  const { notify, offerUndo, contentHeight, columns } = useAppCtx();
   const [items, setItems] = useState(() => readInbox());
   const [index, setIndex] = useState(0);
   const [mode, setMode] = useState(null); // {type:'task'} | {type:'title', kind} | {type:'tags', kind, title}
-  const [undo, setUndo] = useState(null); // { raw, at }
   useHints(mode ? null : HINTS);
 
   const item = items[Math.min(index, items.length - 1)];
@@ -59,12 +58,6 @@ export function InboxTriage({ onBack, start }) {
     (input, key) => {
       if (key.escape) return onBack();
       if (input === 'R') return reload();
-      if (input === 'u' && undo) {
-        restoreInboxLine(undo.raw, undo.at);
-        setUndo(null);
-        reload();
-        return notify('Restored to the inbox', 'success');
-      }
       if (!item) return;
       if (input === 's' || key.rightArrow) return setIndex((i) => Math.min(items.length - 1, i + 1));
       if (key.leftArrow) return setIndex((i) => Math.max(0, i - 1));
@@ -74,9 +67,12 @@ export function InboxTriage({ onBack, start }) {
       if (input === 'd') {
         const at = removeLine(item);
         if (at >= 0) {
-          setUndo({ raw: item.raw, at });
+          const { raw } = item;
           drop(item);
-          notify('Deleted from the inbox · u to undo', 'info');
+          offerUndo('Deleted from the inbox', async () => {
+            restoreInboxLine(raw, at);
+            setItems(readInbox());
+          });
         }
       }
     },

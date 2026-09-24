@@ -15,6 +15,7 @@ import { Projects } from './views/Projects.jsx';
 import { Library } from './views/Library.jsx';
 import { Journal } from './views/Journal.jsx';
 import { Search } from './views/Search.jsx';
+import { Upcoming } from './views/Upcoming.jsx';
 import { QuickAdd } from './components/QuickAdd.jsx';
 
 export const SECTIONS = [
@@ -24,6 +25,7 @@ export const SECTIONS = [
   { view: 'projects', label: 'Projects', key: 'p', digit: '4', component: Projects },
   { view: 'library', label: 'Library', key: 'l', digit: '5', component: Library },
   { view: 'journal', label: 'Journal', key: 'j', digit: '6', component: Journal },
+  { view: 'upcoming', label: 'Upcoming', key: 'w', digit: '7', component: Upcoming },
 ];
 
 function TabBar({ current, columns }) {
@@ -90,11 +92,35 @@ export default function App({ gradient }) {
   const [status, setStatus] = useState(null);
   const statusTimer = useRef(null);
 
-  const notify = useCallback((text, kind = 'info') => {
+  const notify = useCallback((text, kind = 'info', ms) => {
     clearTimeout(statusTimer.current);
     setStatus({ text, kind });
-    statusTimer.current = setTimeout(() => setStatus(null), kind === 'error' ? 8000 : 4000);
+    statusTimer.current = setTimeout(() => setStatus(null), ms ?? (kind === 'error' ? 8000 : 4000));
   }, []);
+
+  // Undo after delete: the latest deletion can be restored with u for 10s.
+  const undoRef = useRef(null);
+  const offerUndo = useCallback(
+    (label, restore) => {
+      const entry = { restore, expires: Date.now() + 10000 };
+      undoRef.current = entry;
+      notify(`${label} · u to undo`, 'info', 10000);
+    },
+    [notify]
+  );
+  const runUndo = useCallback(async () => {
+    const entry = undoRef.current;
+    if (!entry || Date.now() > entry.expires) return false;
+    undoRef.current = null;
+    try {
+      await entry.restore();
+      notify('Restored', 'success');
+      setDataVersion((v) => v + 1);
+    } catch (err) {
+      notify(`Couldn't undo: ${err.message}`, 'error');
+    }
+    return true;
+  }, [notify]);
 
   const checkSession = useCallback(async () => {
     setAuth({ state: 'loading' });
@@ -125,6 +151,7 @@ export default function App({ gradient }) {
       overlayOpen: searchOpen || quickAddOpen,
       dataVersion,
       dataChanged,
+      offerUndo,
       columns,
       rows,
       // tab bar (1) + footer (2), plus the view's own padding line
@@ -151,7 +178,7 @@ export default function App({ gradient }) {
         }
       },
     }),
-    [auth.session, searchOpen, quickAddOpen, dataVersion, dataChanged, columns, rows, route.view, navigate, notify, suspendTerminal]
+    [auth.session, searchOpen, quickAddOpen, dataVersion, dataChanged, offerUndo, columns, rows, route.view, navigate, notify, suspendTerminal]
   );
 
   const ready = auth.state === 'ready';
@@ -166,6 +193,7 @@ export default function App({ gradient }) {
       if (input === '/') return setSearchOpen(true);
       if (input === 'q') return exit();
       if (input === 'a') return setQuickAddOpen(true);
+      if (input === 'u') return runUndo();
       if (input === '0') return navigate('home');
       const section = SECTIONS.find((s) => s.digit === input);
       if (section) navigate(section.view);

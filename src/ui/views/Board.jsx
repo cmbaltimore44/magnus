@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useLoader, useViewInput } from '../context.js';
+import { deleteWithUndo } from '../../lib/undo.js';
 import * as tasksApi from '../../lib/data/tasks.js';
 import * as categoriesApi from '../../lib/data/categories.js';
 import {
@@ -75,7 +76,7 @@ function taskFields(categories) {
 }
 
 export function Board({ params }) {
-  const { userId, navigate, notify, columns: termCols, contentHeight } = useAppCtx();
+  const { userId, offerUndo, navigate, notify, columns: termCols, contentHeight } = useAppCtx();
   const [col, setCol] = useState(0);
   const [rowByCol, setRowByCol] = useState([0, 0, 0]);
   const [filterText, setFilterText] = useState('');
@@ -169,9 +170,9 @@ export function Board({ params }) {
   const deleteTask = async (task) => {
     setMode(null);
     try {
-      await tasksApi.deleteTask(task.id);
+      const restore = await deleteWithUndo('tasks', task.id);
       setData((d) => ({ ...d, tasks: d.tasks.filter((t) => t.id !== task.id) }));
-      notify('Task deleted.', 'success');
+      offerUndo(`Deleted “${task.title}”`, restore);
     } catch (err) {
       notify(err.message, 'error');
     }
@@ -329,7 +330,7 @@ export function Board({ params }) {
 }
 
 function CategoryManager({ categories, tasks, userId, onChange, onClose }) {
-  const { notify, contentHeight } = useAppCtx();
+  const { notify, offerUndo, contentHeight } = useAppCtx();
   const [index, setIndex] = useState(0);
   const [mode, setMode] = useState(null); // null | {type:'name'} | {type:'color', name} | {type:'confirm', cat}
   useHints('↑↓ move · n new · d delete · K/J reorder · esc back to board');
@@ -362,12 +363,12 @@ function CategoryManager({ categories, tasks, userId, onChange, onClose }) {
   const remove = async (cat) => {
     setMode(null);
     try {
-      await categoriesApi.deleteCategory(cat.id);
+      const restore = await deleteWithUndo('categories', cat.id);
       onChange(
         categories.filter((c) => c.id !== cat.id),
         tasks.map((t) => (t.category_id === cat.id ? { ...t, category_id: null } : t))
       );
-      notify('Category deleted.', 'success');
+      offerUndo(`Deleted category “${cat.name}”`, restore);
     } catch (err) {
       notify(err.message, 'error');
     }

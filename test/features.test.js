@@ -91,3 +91,41 @@ test('day context markdown', () => {
   assert.match(md, /> Line one\n> Line two\n> — Someone/);
   assert.equal(formatDay({ tasks: [], routines: [], completions: new Map(), projects: [], books: [], quote: null }, today), '');
 });
+
+import { supabase } from '../src/lib/supabase.js';
+import { deleteWithUndo } from '../src/lib/undo.js';
+import { groupUpcoming } from '../src/lib/stats.js';
+
+test('undo restores a deleted row and its cascaded / detached children', async () => {
+  const { data: projects } = await supabase.from('projects').select('*');
+  const project = projects[0];
+  const before = (await supabase.from('project_tasks').select('*').eq('project_id', project.id)).data.length;
+  assert.ok(before > 0);
+  const restore = await deleteWithUndo('projects', project.id);
+  assert.equal((await supabase.from('projects').select('*').eq('id', project.id)).data.length, 0);
+  assert.equal((await supabase.from('project_tasks').select('*').eq('project_id', project.id)).data.length, 0);
+  await restore();
+  assert.equal((await supabase.from('projects').select('*').eq('id', project.id).single()).data.name, project.name);
+  assert.equal((await supabase.from('project_tasks').select('*').eq('project_id', project.id)).data.length, before);
+
+  const { data: cats } = await supabase.from('categories').select('*');
+  const tagged = (await supabase.from('tasks').select('*').eq('category_id', cats[0].id)).data.length;
+  const restoreCat = await deleteWithUndo('categories', cats[0].id);
+  assert.equal((await supabase.from('tasks').select('*').eq('category_id', cats[0].id)).data.length, 0);
+  await restoreCat();
+  assert.equal((await supabase.from('tasks').select('*').eq('category_id', cats[0].id)).data.length, tagged);
+});
+
+test('upcoming groups overdue / today / tomorrow / next 7 days', () => {
+  const t = (id, due_date, status = 'todo') => ({ id, due_date, status });
+  const g = groupUpcoming(
+    [t('a', '2026-09-20'), t('b', '2026-09-23'), t('c', '2026-09-24'), t('d', '2026-09-30'), t('e', '2026-10-01'), t('f', '2026-09-20', 'done'), t('g', null)],
+    [{ id: 'p', target_date: '2026-09-25', status: 'in_progress' }, { id: 'q', target_date: '2026-09-25', status: 'done' }],
+    '2026-09-23'
+  );
+  const ids = (k) => g[k].map((x) => x.item.id);
+  assert.deepEqual(ids('overdue'), ['a']);
+  assert.deepEqual(ids('today'), ['b']);
+  assert.deepEqual(ids('tomorrow'), ['c']);
+  assert.deepEqual(ids('week'), ['p', 'd']);
+});
