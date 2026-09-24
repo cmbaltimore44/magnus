@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { cleanText } from './sanitize.js';
+import { toISO } from './data/completions.js';
 
 // Turns the "Tags / links" answer (New Note, New Essay, book/film essays)
 // into new-note / new-essay flags:
@@ -17,6 +18,38 @@ export function tagLinkFlags(text) {
   return args;
 }
 
+// "4 3 7.5" (mood, energy, hours slept; "-" skips one) → today's flags.
+export function checkinFlags(text) {
+  const parts = String(text || '').trim().split(/[\s,/]+/).filter(Boolean);
+  if (parts.length > 3) throw new Error('Mood, energy, sleep: at most three numbers (e.g. 4 3 7.5)');
+  const [mood, energy, sleep] = parts;
+  const args = [];
+  for (const [flag, v] of [['--mood', mood], ['--energy', energy]]) {
+    if (v == null || v === '-') continue;
+    if (!/^[1-5]$/.test(v)) throw new Error(`${flag.slice(2)} is 1–5 (got "${v}")`);
+    args.push(flag, v);
+  }
+  if (sleep != null && sleep !== '-') {
+    if (!/^\d{1,2}(\.\d+)?$/.test(sleep) || Number(sleep) > 24) throw new Error(`sleep is hours, e.g. 7.5 (got "${sleep}")`);
+    args.push('--sleep', sleep);
+  }
+  return args;
+}
+
+export function todayEntryPath(date = new Date(), dir = journalDir()) {
+  const iso = toISO(date);
+  return path.join(dir, 'daily', iso.slice(0, 4), iso.slice(5, 7), `${iso}.md`);
+}
+
+// True when today's entry exists and its front matter already has a mood.
+export function todayEntryHasCheckin(file = todayEntryPath()) {
+  try {
+    const fm = /^---\n([\s\S]*?)\n---/.exec(fs.readFileSync(file, 'utf8'));
+    return Boolean(fm && /^mood:\s*\S/m.test(fm[1]));
+  } catch {
+    return false;
+  }
+}
 
 export function journalDir() {
   return process.env.JOURNAL_DIR || path.join(os.homedir(), 'journal');

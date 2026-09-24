@@ -5,6 +5,7 @@ import { GRADIENT_SLOTS } from './lib/theme.js';
 import { signOut } from './lib/auth.js';
 import { supabase } from './lib/supabase.js';
 import { ALT_SCREEN_HOME } from './lib/shell.js';
+import { runSubcommand, SUBCOMMANDS } from './subcommands.js';
 
 const HELP = `magnus — terminal companion to Life Tracker
 
@@ -12,6 +13,12 @@ Usage:
   magnus            launch the full-screen interface
   magnus --logout   sign out and remove the session from the macOS Keychain
   magnus --help     show this help
+
+Journal plumbing (used by the ~/bin scripts; print Markdown or nothing):
+  magnus context [--date YYYY-MM-DD]   today's plan: starred/due tasks, routines, a quote
+  magnus context --week YYYY-Www       one week of Life Tracker data (for jweek)
+  magnus log [--date D] [--mood 1-5] [--energy 1-5] [--sleep H] [--weight N]
+             [--workout MIN [--type T]]   write to the Log
 
 Environment:
   MAGNUS_DEMO=1     run against in-memory sample data (no sign-in, nothing saved)
@@ -25,6 +32,10 @@ const args = process.argv.slice(2);
 if (args.includes('--help') || args.includes('-h')) {
   process.stdout.write(HELP);
   process.exit(0);
+}
+
+if (SUBCOMMANDS.includes(args[0])) {
+  process.exit(await runSubcommand(args[0], args.slice(1)));
 }
 
 if (args.includes('--logout')) {

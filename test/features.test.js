@@ -41,3 +41,53 @@ test('quick add routes > to the inbox and describes a parse', () => {
   assert.equal(describeQuickAdd(parseQuickAdd('x tom !h #home *', CATS, NOW), CATS), 'due 2026-09-24 · high priority · Home · starred');
   assert.equal(describeQuickAdd(parseQuickAdd('x', CATS, NOW), CATS), '');
 });
+
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { checkinFlags, todayEntryHasCheckin, todayEntryPath } from '../src/lib/journal.js';
+import { formatDay } from '../src/lib/digest.js';
+
+test('daily check-in flags', () => {
+  assert.deepEqual(checkinFlags('4 3 7.5'), ['--mood', '4', '--energy', '3', '--sleep', '7.5']);
+  assert.deepEqual(checkinFlags('- - 6'), ['--sleep', '6']);
+  assert.deepEqual(checkinFlags(''), []);
+  assert.throws(() => checkinFlags('6'), /mood is 1–5/);
+  assert.throws(() => checkinFlags('3 3 30'), /sleep/);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'magnus-j-'));
+  const file = todayEntryPath(new Date(2026, 8, 23), dir);
+  assert.equal(file, path.join(dir, 'daily/2026/09/2026-09-23.md'));
+  assert.equal(todayEntryHasCheckin(file), false);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, '---\ndate: 2026-09-23\n---\nmood: 4 in the body does not count\n');
+  assert.equal(todayEntryHasCheckin(file), false);
+  fs.writeFileSync(file, '---\ndate: 2026-09-23\nmood: 4\n---\n');
+  assert.equal(todayEntryHasCheckin(file), true);
+  fs.rmSync(dir, { recursive: true });
+});
+
+test('day context markdown', () => {
+  const today = '2026-09-23';
+  const md = formatDay(
+    {
+      tasks: [
+        { title: 'Starred one', status: 'todo', is_starred: true, due_date: '2026-09-24' },
+        { title: 'Late', status: 'todo', is_starred: false, due_date: '2026-09-20' },
+        { title: 'Done', status: 'done', is_starred: false, due_date: '2026-09-20' },
+        { title: 'Later', status: 'todo', is_starred: false, due_date: '2026-10-20' },
+      ],
+      routines: [{ id: 'r', name: 'Stretch', time_of_day: 'morning', sort_order: 0 }],
+      completions: new Map([['r', new Set([today])]]),
+      projects: [],
+      books: [],
+      quote: { quote_text: 'Line one\nLine two', attribution: '— Someone', book_id: null },
+    },
+    today
+  );
+  assert.match(md, /\*\*Starred\*\*\n- Starred one — due Thu, Sep 24/);
+  assert.match(md, /\*\*Due\*\*\n- Late — overdue \(Sun, Sep 20\)\n\n/);
+  assert.doesNotMatch(md, /Done|Later/);
+  assert.match(md, /- Morning: Stretch ✓/);
+  assert.match(md, /> Line one\n> Line two\n> — Someone/);
+  assert.equal(formatDay({ tasks: [], routines: [], completions: new Map(), projects: [], books: [], quote: null }, today), '');
+});

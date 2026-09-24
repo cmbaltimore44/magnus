@@ -76,7 +76,38 @@ function seed() {
     row({ book_id: books[0].id, attribution: 'ch. 20', quote_text: 'If we had a keen vision and feeling of all ordinary human life, it would be like hearing the grass grow and the squirrel\'s heart beat, and we should die of that roar which lies on the other side of silence.\nAs it is, the quickest of us walk about well wadded with stupidity.', is_favorite: false, sort_order: 0 }),
     row({ book_id: null, attribution: '— Mary Oliver', quote_text: 'Tell me, what is it you plan to do with your one wild and precious life?', is_favorite: true, sort_order: 0 }),
   ];
-  return { categories, tasks, routines, routine_completions, projects, project_tasks, books, quotes };
+  // schema_003: completion times, focus sessions, the daily Log.
+  tasks.forEach((task, i) => {
+    task.completed_at = task.status === 'done' ? new Date(Date.now() - (i + 1) * 3 * 86400000).toISOString() : null;
+  });
+  for (let w = 1; w < 8; w++) {
+    for (let k = 0; k < (w * 5) % 4 + 1; k++) {
+      tasks.push(row({ title: `Old task ${w}.${k}`, notes: null, status: 'done', category_id: work, priority: 'low', due_date: null, is_starred: false, sort_order: 100 + w * 10 + k, completed_at: new Date(Date.now() - (w * 7 + k) * 86400000).toISOString() }));
+    }
+  }
+  const focus_sessions = [];
+  for (let d = 0; d < 40; d += 2) {
+    focus_sessions.push(row({ task_id: tasks[d % 3 === 0 ? 0 : 3].id, started_at: new Date(Date.now() - d * 86400000 - 3600000).toISOString(), minutes: 25 + (d % 3) * 5 }));
+  }
+  const log_entries = [];
+  for (let d = 1; d < 30; d++) {
+    if (d % 7 === 3) continue;
+    log_entries.push(row({ entry_date: iso(-d), metric: 'mood', value: 2 + ((d * 3) % 4), note: null }));
+    log_entries.push(row({ entry_date: iso(-d), metric: 'energy', value: 1 + ((d * 5) % 5), note: null }));
+    log_entries.push(row({ entry_date: iso(-d), metric: 'sleep', value: 6 + ((d * 7) % 5) / 2, note: null }));
+    if (d % 3 === 0) log_entries.push(row({ entry_date: iso(-d), metric: 'weight', value: 172 - d / 10, note: null }));
+    if (d % 2 === 0) log_entries.push(row({ entry_date: iso(-d), metric: 'workout', value: 30 + (d % 4) * 10, note: d % 4 ? 'run' : 'lift' }));
+  }
+  return { categories, tasks, routines, routine_completions, projects, project_tasks, books, quotes, focus_sessions, log_entries };
+}
+
+// Same rule as schema_003's tasks_completed_at trigger.
+function stampCompleted(task, previousStatus) {
+  if (task.status === 'done') {
+    if (previousStatus !== 'done') task.completed_at = task.completed_at || new Date().toISOString();
+  } else {
+    task.completed_at = null;
+  }
 }
 
 class Query {
@@ -99,7 +130,19 @@ class Query {
     return this;
   }
   eq(col, value) {
-    this.filters.push([col, value]);
+    this.filters.push((r) => r[col] === value);
+    return this;
+  }
+  gte(col, value) {
+    this.filters.push((r) => r[col] != null && r[col] >= value);
+    return this;
+  }
+  lte(col, value) {
+    this.filters.push((r) => r[col] != null && r[col] <= value);
+    return this;
+  }
+  in(col, values) {
+    this.filters.push((r) => values.includes(r[col]));
     return this;
   }
   insert(payload) {
@@ -131,19 +174,28 @@ class Query {
   }
   exec() {
     const rows = (this.db[this.table] ||= []);
-    const match = (r) => this.filters.every(([c, v]) => r[c] === v);
+    const match = (r) => this.filters.every((f) => f(r));
     let result;
     if (this.op === 'insert') {
-      const inserted = { id: randomUUID(), created_at: new Date().toISOString(), ...this.payload };
-      const clash =
-        this.table === 'routine_completions' &&
-        rows.some((r) => r.routine_id === inserted.routine_id && r.completed_date === inserted.completed_date);
-      if (clash) return { data: null, error: { message: 'duplicate key value violates unique constraint' } };
-      rows.push(inserted);
-      result = [inserted];
+      result = [];
+      for (const payload of Array.isArray(this.payload) ? this.payload : [this.payload]) {
+        const inserted = { id: randomUUID(), created_at: new Date().toISOString(), ...payload };
+        const clash =
+          rows.some((r) => r.id === inserted.id) ||
+          (this.table === 'routine_completions' &&
+            rows.some((r) => r.routine_id === inserted.routine_id && r.completed_date === inserted.completed_date));
+        if (clash) return { data: null, error: { message: 'duplicate key value violates unique constraint' } };
+        if (this.table === 'tasks') stampCompleted(inserted, null);
+        rows.push(inserted);
+        result.push(inserted);
+      }
     } else if (this.op === 'update') {
       result = rows.filter(match);
-      result.forEach((r) => Object.assign(r, this.payload));
+      result.forEach((r) => {
+        const before = r.status;
+        Object.assign(r, this.payload);
+        if (this.table === 'tasks' && 'status' in this.payload) stampCompleted(r, before);
+      });
     } else if (this.op === 'delete') {
       const doomed = new Set(rows.filter(match));
       this.db[this.table] = rows.filter((r) => !doomed.has(r));
@@ -173,6 +225,7 @@ class Query {
     if (this.table === 'routines') db.routine_completions = db.routine_completions.filter((c) => !ids.has(c.routine_id));
     if (this.table === 'projects') db.project_tasks = db.project_tasks.filter((c) => !ids.has(c.project_id));
     if (this.table === 'books') db.quotes = db.quotes.filter((q) => !ids.has(q.book_id));
+    if (this.table === 'tasks') db.focus_sessions.forEach((f) => ids.has(f.task_id) && (f.task_id = null));
     if (this.table === 'categories') db.tasks.forEach((t) => ids.has(t.category_id) && (t.category_id = null));
   }
 }

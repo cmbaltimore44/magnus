@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { canOpenGhosttyTabs, openInGhosttyTab } from '../../lib/ghostty.js';
 import { cleanText } from '../../lib/sanitize.js';
-import { tagLinkFlags } from '../../lib/journal.js';
+import { tagLinkFlags, checkinFlags, todayEntryHasCheckin } from '../../lib/journal.js';
 import { JournalBrowser } from './JournalBrowser.jsx';
 
 // Front door to the journal scripts already on $PATH. Magnus doesn't
@@ -23,7 +23,7 @@ import { JournalBrowser } from './JournalBrowser.jsx';
 // Items marked `tab: true` (starting an entry) open in a new Ghostty tab so
 // Magnus stays up in this one; elsewhere they take over this terminal.
 const ITEMS = [
-  { key: 't', label: "Today's Entry", desc: 'today', action: { run: 'today', tab: true } },
+  { key: 't', label: "Today's Entry", desc: 'today [--mood --energy --sleep]', action: { run: 'today', tab: true, checkin: true } },
   { key: 'e', label: 'New Essay', desc: 'new-essay [--tag …] [--link …]', action: { run: 'new-essay', tab: true, tags: true } },
   { key: 'b', label: 'New Book Essay', desc: 'new-essay --book … [--tag …] [--link …]', action: { prompt: 'Book title:', run: 'new-essay', flag: '--book', tab: true, tags: true } },
   { key: 'f', label: 'New Film Essay', desc: 'new-essay --film … [--tag …] [--link …]', action: { prompt: 'Film title:', run: 'new-essay', flag: '--film', tab: true, tags: true } },
@@ -74,6 +74,13 @@ export function Journal() {
       const msg = cleanText((res.stdout.trim() || res.stderr.trim()).split('\n').pop() || '', { keepNewlines: false });
       return notify(msg || (res.ok ? 'Journal backed up.' : 'Backup failed.'), res.ok ? 'success' : 'error');
     }
+    if (a.checkin) {
+      try {
+        return start(a, checkinFlags(value));
+      } catch (err) {
+        return notify(err.message, 'error');
+      }
+    }
     if (a.run && !a.prompt) return start(a, a.args || []);
     if (a.run && a.prompt) {
       if (!value.trim()) return;
@@ -120,6 +127,8 @@ export function Journal() {
 
   const choose = (item) => {
     const a = item.action;
+    // Mood/energy/sleep once a day: skipped when today's entry already has them.
+    if (a.checkin) return todayEntryHasCheckin() ? launch(item, '') : setMode({ type: 'prompt', item });
     if (a.tags && !a.prompt && !a.note) setMode({ type: 'prompt', item, step: 'tags', base: [] });
     else if (a.browse) setMode({ type: 'browse' });
     else if (a.prompt || a.search || a.capture || a.note) setMode({ type: 'prompt', item });
@@ -175,7 +184,9 @@ export function Journal() {
 
   const promptItem = mode?.type === 'prompt' ? mode.item : null;
   const promptProps = promptItem
-    ? promptItem.action.search
+    ? promptItem.action.checkin
+      ? { label: 'Mood energy sleep:', placeholder: '4 3 7.5', hint: 'optional · mood and energy 1–5, hours slept · - skips one · enter to start the entry' }
+      : promptItem.action.search
       ? { label: 'Search journal:', hint: 'text for full-text search · #tag for a tag search · esc cancel' }
       : promptItem.action.capture
         ? { label: 'Capture:', hint: 'appends a timestamped line to inbox.md · esc cancel' }
