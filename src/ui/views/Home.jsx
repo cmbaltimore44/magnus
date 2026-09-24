@@ -3,7 +3,8 @@ import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useViewInput } from '../context.js';
 import { Banner } from '../components/Banner.jsx';
-import { DuskRows, useDusk } from '../components/Dusk.jsx';
+import { DuskRows, useBackdrop } from '../components/Dusk.jsx';
+import { getPref } from '../../lib/prefs.js';
 import { PixelArt, pixelRows } from '../components/PixelArt.jsx';
 import { HERON_SUN, HERON_SUN_LEGEND } from '../art/heronSun.js';
 
@@ -68,9 +69,9 @@ export function Home({ gradient, sections }) {
   );
 }
 
-// Home's right side: the heron crossing the sun over a still lake, set into
-// a dusk sky of cloud wisps and distant birds. Without room for the art, just
-// the sky and lake.
+// Home's right side: the heron crossing the sun, set into the backdrop chosen
+// in Settings (dusk sky and lake, marsh, mountains, or plain). Without room
+// for the art, just the backdrop.
 const ART_WATERLINE = 12; // text row, within the art, where its water begins
 
 function RightPanel({ width, height }) {
@@ -79,7 +80,7 @@ function RightPanel({ width, height }) {
   const fits = width >= art.width + 6 && height >= rows + 2;
   const top = fits ? Math.max(1, Math.floor((height - rows) / 2) - 1) : 0;
   const waterFrom = fits ? top + ART_WATERLINE : Math.floor(height * 0.62);
-  const grid = useDusk(width, height, waterFrom);
+  const grid = useBackdrop(getPref('homeBackdrop', 'dusk'), width, height, waterFrom);
   if (!fits) return <DuskRows grid={grid} y0={0} y1={height} />;
   const left = Math.floor((width - art.width) / 2);
   return (
