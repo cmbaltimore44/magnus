@@ -8,6 +8,10 @@ import path from 'node:path';
 // different slot:
 //   heather:      magenta = lilac accent, cyan = teal; gradient pale lilac →
 //                 lilac → soft rose (bright magenta, magenta, bright red)
+//   lakeglow:     bright red = coral sun accent; sunset gradient gold →
+//                 coral → rose (bright yellow, bright red, bright magenta)
+//   beacon:       bright red = sodium-streetlight orange accent; gradient fog
+//                 blue → sodium orange → lamp yellow (bright blue/red/yellow)
 //   life-tracker: bright red = terracotta accent; gradient terracotta → amber
 // Both: red = danger/overdue, yellow = warnings ("soon"), green = success,
 // bright black ("gray") = muted text. `undefined` = terminal default.
@@ -22,6 +26,8 @@ export function activeFamily() {
 
 const FAMILY_ACCENTS = {
   heather: { accent: 'magenta', gradientSlots: [13, 5, 9], gradientFallback: ['magentaBright', 'magenta', 'redBright'] },
+  lakeglow: { accent: 'redBright', gradientSlots: [11, 9, 13], gradientFallback: ['yellowBright', 'redBright', 'magentaBright'] },
+  beacon: { accent: 'redBright', gradientSlots: [12, 9, 11], gradientFallback: ['blueBright', 'redBright', 'yellowBright'] },
   'life-tracker': { accent: 'redBright', gradientSlots: [9, 3], gradientFallback: ['redBright', 'yellow'] },
 };
 

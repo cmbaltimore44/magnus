@@ -40,7 +40,7 @@ if (!process.stdin.isTTY || !process.stdout.isTTY) {
 
 // Colors come from the terminal theme. For the banner gradient, ask the
 // terminal for the RGB of the active theme family's two signature slots
-// (pale lilac → lilac → rose, or terracotta → amber) so it matches
+// (e.g. lilac → rose, gold → coral → rose, terracotta → amber) so it matches
 // the real theme.
 const palette = await queryPalette(GRADIENT_SLOTS);
 const gradient = GRADIENT_SLOTS.map((slot) => palette[slot]).filter(Boolean);

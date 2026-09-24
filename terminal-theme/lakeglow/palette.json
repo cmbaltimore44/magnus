@@ -1,0 +1,62 @@
+{
+  "name": "Lakeglow",
+  "description": "a spring sunset over a lake: twilight-lake background, sunlit cream text, coral sun, gold, rose and lavender sky, lake blues, new-leaf green.",
+  "roles": {
+    "accent": 9,
+    "error": 1,
+    "warning": 3,
+    "success": 2,
+    "code": 2,
+    "link": 4,
+    "constant": 5,
+    "extra": 6,
+    "muted": 8
+  },
+  "dark": {
+    "bg": "#1b1d30",
+    "fg": "#efe4da",
+    "highlightToward": "#383c63",
+    "seed": [
+      "#2c3050",
+      "#e0707a",
+      "#8fcf86",
+      "#f2c46d",
+      "#7aa8e0",
+      "#b69ce6",
+      "#6cc6c4",
+      "#cfc6c0",
+      "#8e8aa6",
+      "#f59a7d",
+      "#b3e0a4",
+      "#fbd98f",
+      "#a8c8f0",
+      "#f0a8c8",
+      "#9ae0dc",
+      "#fbf3ea"
+    ]
+  },
+  "light": {
+    "bg": "#f8ece2",
+    "fg": "#1f2340",
+    "highlightToward": "#eec7b0",
+    "seed": [
+      "#1f2340",
+      "#b8404e",
+      "#3f7d3a",
+      "#8a6212",
+      "#2f5f9e",
+      "#6b4fa6",
+      "#1f7472",
+      "#4a4760",
+      "#6c6882",
+      "#b5502f",
+      "#356c31",
+      "#7a560e",
+      "#294f86",
+      "#a0426e",
+      "#1a6664",
+      "#34324a"
+    ],
+    "target": 5.5
+  }
+}

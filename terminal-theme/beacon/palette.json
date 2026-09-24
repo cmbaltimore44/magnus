@@ -1,0 +1,28 @@
+{
+  "name": "Beacon",
+  "description": "a foggy late night in downtown Boston: blue-gray night, fog-gray text, sodium-streetlight orange, lamp-lit windows, brick and taillight red, Green Line green, harbor teal, a hazy neon sign.",
+  "roles": { "accent": 9, "error": 1, "warning": 3, "success": 2, "code": 6, "link": 4, "constant": 5, "extra": 2, "muted": 8 },
+  "dark": {
+    "bg": "#1a1e25",
+    "fg": "#d3d8dc",
+    "highlightToward": "#3a4250",
+    "seed": [
+      "#2a303a",
+      "#d9675f", "#7fb58a", "#e4c36e", "#7c9cc4", "#c48ab5", "#72b5b8", "#b9bfc6",
+      "#8a929c",
+      "#f2a05e", "#a3d1ad", "#f3dc99", "#a9c1de", "#e0aed3", "#a0d3d5", "#eef1f3"
+    ]
+  },
+  "light": {
+    "bg": "#e3e5e6",
+    "fg": "#1d2330",
+    "target": 5.5,
+    "highlightToward": "#c6ccd3",
+    "seed": [
+      "#1d2330",
+      "#a83a33", "#2f6b3e", "#7e5a10", "#2f5688", "#8a3f78", "#1d6568", "#474e59",
+      "#5d6570",
+      "#a9531d", "#2a6038", "#6d4f0e", "#264a78", "#7a3669", "#18595c", "#2d3440"
+    ]
+  }
+}

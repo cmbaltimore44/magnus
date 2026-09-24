@@ -1,5 +1,5 @@
 // Fresh theme = <family>-<dark|light>, matching the Ghostty theme:
-//   family: ~/.config/magnus/terminal-theme ("heather" or
+//   family: ~/.config/magnus/terminal-theme ("heather", "lakeglow", "beacon" or
 //           "life-tracker"), written by `magnus-theme <family>`
 //   mode:   macOS appearance — `defaults read -g AppleInterfaceStyle`
 //           prints "Dark" in dark mode and exits non-zero in light mode.

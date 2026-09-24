@@ -62,8 +62,9 @@ for multi-line text. Dates accept `2026-10-01`, `10/1`, `today`, `tomorrow`,
 - **Colors come from the terminal theme.** Magnus uses named ANSI colors only
   (`src/lib/theme.js` maps accent/muted/danger/… to slots). Two theme
   families for Ghostty, Fresh and bat live in [`terminal-theme/`](terminal-theme/):
-  **Heather** (current) and **Life Tracker** (the web app's palette).
-  Switch with `magnus-theme heather|life-tracker`. Light/dark follows
+  **Heather**, **Lakeglow** (spring sunset over a lake), **Beacon**
+  (foggy late night in downtown Boston) and **Life Tracker** (the web app's
+  palette). Switch with `magnus-theme heather|lakeglow|beacon|life-tracker`. Light/dark follows
   macOS. The banner gradient asks the terminal for the family's two signature
   colors (OSC 4).
 - **Handing the terminal to scripts** (`today`, `new-essay`, `jsearch`,
