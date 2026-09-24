@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 import { createKeychainStorage } from './keychain.js';
 import { createDemoClient } from './demo.js';
-import { sanitizingFetch } from './sanitize.js';
+import { resilientFetch } from './fetch.js';
 
 function makeClient() {
   if (process.env.MAGNUS_DEMO) return createDemoClient();
@@ -13,8 +13,10 @@ function makeClient() {
       autoRefreshToken: true,
       detectSessionInUrl: false,
     },
-    // Strip terminal control sequences from all data before it reaches the UI.
-    global: { fetch: sanitizingFetch },
+    // Retries the "JWT issued at future" race after a token refresh
+    // (lib/fetch.js), and strips terminal control sequences from all data
+    // before it reaches the UI (lib/sanitize.js).
+    global: { fetch: resilientFetch },
   });
 }
 
