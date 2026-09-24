@@ -9,11 +9,11 @@ import { TIME_OF_DAY, TIME_OF_DAY_LABELS, plural } from '../../lib/display.js';
 import { Prompt, Confirm } from '../components/Prompt.jsx';
 import { windowRange, moveIndex } from '../components/layout.js';
 import { RoutineLine } from './Today.jsx';
+import { CalendarHeatmap } from '../components/Heatmap.jsx';
 
 const HINTS =
   '↑↓ move · space check off today · K/J reorder · H/L move to earlier/later group · n new · d delete · R refresh · esc home';
 
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const HEATMAP_ROWS = 10; // title + months + 7 days + summary
 
 function sortedGroup(routines, tod) {
@@ -30,89 +30,19 @@ function levelForPct(pct) {
   return 4;
 }
 
-// Heatmap levels in terminal colors: empty days are a gray dot, then amber
-// → terracotta as more of the day's routines were done (web: accent ramp).
-const LEVELS = [
-  { color: C.muted, char: '·' },
-  { color: C.soon, char: '■' },
-  { color: C.soon, char: '■', bold: true },
-  { color: C.accent, char: '■' },
-  { color: C.accent, char: '■', bold: true },
-];
-
 function Heatmap({ routines, completions, columns }) {
-  const weeks = Math.max(4, Math.min(53, Math.floor((columns - 10) / 2)));
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const gridEnd = new Date(today);
-  gridEnd.setDate(gridEnd.getDate() + (6 - today.getDay()));
-  const gridStart = new Date(gridEnd);
-  gridStart.setDate(gridStart.getDate() - (weeks * 7 - 1));
-
   const total = routines.length;
   const counts = completionsApi.countsByDate(completions);
-  const grid = Array.from({ length: 7 }, () => []);
-  const monthChars = Array(weeks * 2).fill(' ');
-  let lastMonth = -1;
-  let activeDays = 0;
-  const cursor = new Date(gridStart);
-
-  for (let w = 0; w < weeks; w++) {
-    if (cursor.getMonth() !== lastMonth) {
-      lastMonth = cursor.getMonth();
-      const label = MONTH_NAMES[lastMonth];
-      if (w * 2 + label.length <= monthChars.length) [...label].forEach((ch, k) => (monthChars[w * 2 + k] = ch));
-    }
-    for (let d = 0; d < 7; d++) {
-      if (cursor > today) {
-        grid[d].push(-1);
-      } else {
-        const count = Math.min(counts.get(completionsApi.toISO(cursor)) || 0, total);
-        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-        grid[d].push(levelForPct(pct));
-        if (count > 0) activeDays++;
-      }
-      cursor.setDate(cursor.getDate() + 1);
-    }
-  }
-
-  const dayLabels = ['   ', 'Mon', '   ', 'Wed', '   ', 'Fri', '   '];
-
   return (
-    <Box flexDirection="column">
-      <Text bold color={C.accent}>
-        Activity
-      </Text>
-      <Text color={C.muted}>
-        {'    '}
-        {monthChars.join('')}
-      </Text>
-      {grid.map((cells, d) => {
-        // Merge runs of equal levels into one <Text> to keep the tree small.
-        const runs = [];
-        for (const level of cells) {
-          const last = runs[runs.length - 1];
-          if (last && last.level === level) last.n++;
-          else runs.push({ level, n: 1 });
-        }
-        return (
-          <Text key={d}>
-            <Text color={C.muted}>{dayLabels[d]} </Text>
-            {runs.map((run, i) => {
-              if (run.level < 0) return <Text key={i}>{'  '.repeat(run.n)}</Text>;
-              return (
-                <Text key={i} color={LEVELS[run.level].color} bold={LEVELS[run.level].bold}>
-                  {`${LEVELS[run.level].char} `.repeat(run.n)}
-                </Text>
-              );
-            })}
-          </Text>
-        );
-      })}
-      <Text color={C.muted}>
-        {total ? `${plural(activeDays, 'active day')} in the last ${weeks} weeks` : ''}
-      </Text>
-    </Box>
+    <CalendarHeatmap
+      title="Activity"
+      columns={columns}
+      levelFor={(iso) => {
+        const count = Math.min(counts.get(iso) || 0, total);
+        return levelForPct(total > 0 ? Math.round((count / total) * 100) : 0);
+      }}
+      footer={(activeDays, weeks) => (total ? `${plural(activeDays, 'active day')} in the last ${weeks} weeks` : '')}
+    />
   );
 }
 

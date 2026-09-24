@@ -150,3 +150,29 @@ function writeAtomic(file, text) {
   fs.writeFileSync(tmp, text);
   fs.renameSync(tmp, file);
 }
+
+// ---------- writing stats (from jlist rows) ----------
+
+// Consecutive days with a daily entry, ending today — or yesterday, while
+// today's entry isn't written yet (same grace rule as routine streaks).
+export function writingStreak(entries, todayISO) {
+  const days = new Set(entries.filter((e) => e.type === 'daily').map((e) => e.date));
+  const back = (iso) => {
+    const d = new Date(iso + 'T00:00:00');
+    d.setDate(d.getDate() - 1);
+    return toISO(d);
+  };
+  let cursor = days.has(todayISO) ? todayISO : back(todayISO);
+  let n = 0;
+  while (days.has(cursor)) {
+    n++;
+    cursor = back(cursor);
+  }
+  return n;
+}
+
+export function entriesByDate(entries) {
+  const counts = new Map();
+  for (const e of entries) if (e.date) counts.set(e.date, (counts.get(e.date) || 0) + 1);
+  return counts;
+}

@@ -129,3 +129,14 @@ test('upcoming groups overdue / today / tomorrow / next 7 days', () => {
   assert.deepEqual(ids('tomorrow'), ['c']);
   assert.deepEqual(ids('week'), ['p', 'd']);
 });
+
+import { writingStreak, entriesByDate } from '../src/lib/journal.js';
+
+test('writing streak counts consecutive daily entries with a grace day', () => {
+  const e = (type, date) => ({ type, date });
+  const entries = [e('daily', '2026-09-22'), e('daily', '2026-09-21'), e('essay', '2026-09-20'), e('daily', '2026-09-19')];
+  assert.equal(writingStreak(entries, '2026-09-23'), 2); // today not written yet
+  assert.equal(writingStreak([...entries, e('daily', '2026-09-23')], '2026-09-23'), 3);
+  assert.equal(writingStreak(entries, '2026-09-25'), 0);
+  assert.equal(entriesByDate(entries).get('2026-09-20'), 1);
+});

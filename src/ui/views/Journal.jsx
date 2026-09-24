@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useViewInput } from '../context.js';
@@ -10,6 +10,10 @@ import { cleanText } from '../../lib/sanitize.js';
 import { tagLinkFlags, checkinFlags, todayEntryHasCheckin } from '../../lib/journal.js';
 import { JournalBrowser } from './JournalBrowser.jsx';
 import { InboxTriage } from './InboxTriage.jsx';
+import { CalendarHeatmap } from '../components/Heatmap.jsx';
+import { parseEntries, writingStreak, entriesByDate } from '../../lib/journal.js';
+import { todayISO } from '../../lib/data/completions.js';
+import { plural } from '../../lib/display.js';
 
 // Front door to the journal scripts already on $PATH. Magnus doesn't
 // reimplement any of their logic — it just launches them, handing over the
@@ -50,9 +54,15 @@ function inboxPath() {
 const HINTS = 'press a letter or ↑↓ enter · esc home';
 
 export function Journal() {
-  const { navigate, notify, run, capture, contentHeight } = useAppCtx();
+  const { navigate, notify, run, capture, contentHeight, columns } = useAppCtx();
   const [index, setIndex] = useState(0);
   const [mode, setMode] = useState(null); // {type:'prompt', item, step?, title?} | {type:'output', title, lines, offset}
+  const [entries, setEntries] = useState(null);
+  useEffect(() => {
+    // Writing streak + heatmap; refreshed whenever we come back to the menu.
+    if (mode !== null) return;
+    capture('jlist', ['--tsv']).then((res) => setEntries(res.ok ? parseEntries(res.stdout) : []));
+  }, [mode === null]); // eslint-disable-line react-hooks/exhaustive-deps
   useHints(mode?.type === 'browse' || mode?.type === 'triage' ? null : mode?.type === 'output' ? '↑↓ scroll · esc back' : HINTS);
 
   const start = async (a, args) => {
@@ -212,10 +222,36 @@ export function Journal() {
               }
     : null;
 
+  const streak = entries ? writingStreak(entries, todayISO()) : 0;
+  const counts = entries ? entriesByDate(entries) : new Map();
+  const month = todayISO().slice(0, 7);
+  const thisMonth = entries ? entries.filter((e) => e.date?.startsWith(month)).length : 0;
+  const menuWidth = 2 + 4 + 18 + Math.max(...ITEMS.map((it) => it.desc.length));
+  // The heatmap goes beside the menu when there's room, else below it, else it's left out.
+  const side = columns - 4 - menuWidth - 2 >= 40;
+  const below = !side && contentHeight >= ITEMS.length + 2 + 11 + (promptItem ? 4 : 0);
+  const heatmap = entries?.length ? (
+    <CalendarHeatmap
+      title="Writing"
+      columns={side ? columns - 4 - menuWidth - 2 : columns - 4}
+      maxWeeks={side ? 26 : 53}
+      levelFor={(iso) => Math.min(4, counts.get(iso) || 0)}
+      footer={(active, weeks) => `${plural(active, 'day')} with an entry in the last ${weeks} weeks`}
+    />
+  ) : null;
+
   return (
     <Box flexDirection="column" height={contentHeight}>
-      <Text bold>Journal</Text>
-      <Box flexDirection="column" marginTop={1}>
+      <Text bold>
+        Journal{' '}
+        {entries ? (
+          <Text color={C.muted}>
+            {streak ? <Text color={C.accent}>✎ {streak}-day streak</Text> : 'no daily streak yet'} · {thisMonth} {thisMonth === 1 ? 'entry' : 'entries'} this month
+          </Text>
+        ) : null}
+      </Text>
+      <Box flexDirection="row">
+      <Box flexDirection="column" marginTop={1} flexShrink={0}>
         {ITEMS.map((item, i) => (
           <Text key={item.key}>
             <Text color={C.accent}>{i === index ? '› ' : '  '}</Text>
@@ -227,6 +263,13 @@ export function Journal() {
           </Text>
         ))}
       </Box>
+      {side && heatmap ? (
+        <Box marginTop={1} marginLeft={2}>
+          {heatmap}
+        </Box>
+      ) : null}
+      </Box>
+      {below && heatmap && !promptItem ? <Box marginTop={1}>{heatmap}</Box> : null}
       {promptItem ? (
         <Box marginTop={1}>
           <Prompt
