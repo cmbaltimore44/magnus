@@ -4,10 +4,27 @@ Magnus reads and writes the **same Supabase tables and columns** as the Life
 Tracker web app. Any change to the schema has to be mirrored in the web app's
 UI (in the separate Life Tracker repo), so every change is logged here.
 
-## Current status: no schema changes
+## ⚠️ 2026-09-23 — schema_003: completed_at, focus sessions, Log, Realtime
 
-Magnus v0.1 needs **no new tables, columns, constraints, or policies**. It uses
-exactly what `supabase/schema.sql` and `supabase/schema_002.sql` define:
+**Run `supabase/schema_003.sql` (Life Tracker repo) once in the Supabase SQL
+Editor.** It is purely additive, so either app works before or after it runs;
+the features below just stay empty until it has run.
+
+| Change | Why | Used by |
+| ------ | --- | ------- |
+| `tasks.completed_at timestamptz` + trigger `tasks_completed_at` | The database stamps the time a task moves to Done (and clears it when it leaves Done), so no client has to write it. Existing Done tasks stay null. | Insights, weekly review (`jweek`), status bar |
+| New table `focus_sessions (id, user_id, task_id → tasks on delete set null, started_at, minutes > 0, created_at)` + RLS | Focus timer runs | Focus timer, Insights |
+| New table `log_entries (id, user_id, entry_date, metric in sleep/weight/workout/mood/energy, value, note, created_at)` + RLS; mood/energy must be 1–5 | Daily Log; mood/energy/sleep from the daily entry | Log, Insights, `today --mood/--energy/--sleep`, `jweek` |
+| Tables added to the `supabase_realtime` publication | Live updates between devices | Both apps |
+
+Web app follow-up: done in the same batch (Log, Insights, focus timer, live
+updates). Backward compatible with the old web app? **yes** — no existing
+column changes, and old clients never write `completed_at`.
+
+## Tables and columns used
+
+Before schema_003, Magnus used exactly what `supabase/schema.sql` and
+`supabase/schema_002.sql` define:
 
 | Table                 | Columns Magnus reads/writes                                                                                          |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------- |
