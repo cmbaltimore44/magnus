@@ -3,6 +3,7 @@ import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useLoader, useViewInput } from '../context.js';
 import { deleteWithUndo } from '../../lib/undo.js';
+import { QuoteToEssay } from '../components/QuoteToEssay.jsx';
 import * as booksApi from '../../lib/data/books.js';
 import * as quotesApi from '../../lib/data/quotes.js';
 import {
@@ -29,9 +30,9 @@ const BOOK_GROUPS = [
 ];
 
 const BOOKS_HINTS = 'tab quotes · ↑↓ move · enter open / fold group · n new book · d delete · R refresh · esc home';
-const QUOTES_HINTS = 'tab books · ↑↓ move · enter edit · n new quote · f favorite · F favorites only · d delete · esc home';
+const QUOTES_HINTS = 'tab books · ↑↓ move · enter edit · n new quote · f favorite · w send to essay · F favorites only · d delete · esc home';
 const DETAIL_HINTS =
-  '↑↓ highlight · n add highlight · enter edit · f favorite · d delete highlight · e edit book · v view cover · D delete book · esc back';
+  '↑↓ highlight · n add highlight · enter edit · f favorite · w send to essay · d delete highlight · e edit book · v view cover · D delete book · esc back';
 
 const stars = (rating) => (rating ? '★'.repeat(rating) + '☆'.repeat(5 - rating) : '');
 const fmtDate = (d) => (d ? formatDue(d) + ' ' + d.slice(0, 4) : '—');
@@ -348,6 +349,7 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
       if (!selected) return;
       if (key.return) return setMode({ type: 'quote', quote: selected });
       if (input === 'f') return actions.toggleFavorite(selected);
+      if (input === 'w') return setMode({ type: 'essay', quote: selected });
       if (input === 'd') return setMode({ type: 'confirmQuote', quote: selected });
     },
     mode === null
@@ -355,6 +357,7 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
 
   if (!data) return <Text color={C.muted}>Loading…</Text>;
   const { book } = data;
+  if (mode?.type === 'essay') return <QuoteToEssay quote={mode.quote} books={books} onDone={() => setMode(null)} />;
 
   if (mode?.type === 'editBook') {
     return <Form title="Edit Book" fields={bookFields()} initial={book} onSubmit={saveBook} onCancel={() => setMode(null)} />;
@@ -507,12 +510,14 @@ function QuotesBrowser({ books, focusQuoteId, onSwitchTab }) {
       if (!selected) return;
       if (key.return) return setMode({ type: 'quote', quote: selected });
       if (input === 'f') return actions.toggleFavorite(selected);
+      if (input === 'w') return setMode({ type: 'essay', quote: selected });
       if (input === 'd') return setMode({ type: 'confirm', quote: selected });
     },
     mode === null
   );
 
   if (!quotes) return <Text color={C.muted}>Loading…</Text>;
+  if (mode?.type === 'essay') return <QuoteToEssay quote={mode.quote} books={books} onDone={() => setMode(null)} />;
 
   if (mode?.type === 'quote') {
     return (

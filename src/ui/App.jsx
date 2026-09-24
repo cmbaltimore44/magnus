@@ -5,6 +5,7 @@ import { AppContext } from './context.js';
 import { restoreSession, currentUserId } from '../lib/auth.js';
 import { supabase } from '../lib/supabase.js';
 import { runInteractive, runCapture, editText } from '../lib/shell.js';
+import { canOpenGhosttyTabs, openInGhosttyTab } from '../lib/ghostty.js';
 import { loadCoverPng, showCoverFullscreen, supportsKittyGraphics } from '../lib/kitty.js';
 import { Login } from './views/Login.jsx';
 import { Home } from './views/Home.jsx';
@@ -162,6 +163,17 @@ export default function App({ gradient }) {
       setCaptureCount,
       run: (cmd, args, opts) => runInteractive(suspendTerminal, cmd, args, opts),
       capture: (cmd, args) => runCapture(cmd, args),
+      // A new Ghostty tab when possible (Magnus stays up here), else this terminal.
+      openTab: async (cmd, args = []) => {
+        if (canOpenGhosttyTabs()) {
+          try {
+            return await openInGhosttyTab(cmd, args);
+          } catch (err) {
+            notify(`Couldn't open a Ghostty tab (${err.message}) — running here instead`, 'error');
+          }
+        }
+        return runInteractive(suspendTerminal, cmd, args);
+      },
       editText: (initial) => editText(suspendTerminal, initial),
       showCover: async (url, caption) => {
         if (!url) return notify('This book has no cover image URL.', 'info');
