@@ -43,7 +43,7 @@ discards the saved session.
 Global: **1–9** jump to a section · **0** home · **ctrl+k** or **/** search ·
 **ctrl+p** or **:** command palette (every action by name: go to a section, new task/project/book, book lookup, any journal action, focus timer controls, switch theme, undo, sign out) · **,** settings (theme, focus length, weight unit, journal entries in a new tab or here, start screen, sign out; saved per device in `prefs.json`) · **a** quick add · **u** undo the last delete (for 10 s, restores children
 too: a project's checklist, a book's quotes, a routine's history, a
-category's tasks) · **t** start a focus timer on the selected task (Today, Board, Upcoming) · **T** pause / stop / discard it · **q** quit · **esc** back. Each screen lists its own keys in the footer.
+category's tasks) · **t** start a Pomodoro on the selected task (Today, Board, Upcoming) · **T** start one without a task, or pause / skip / +5 / stop it · **q** quit · **esc** back. Each screen lists its own keys in the footer.
 
 | Screen   | Keys |
 | -------- | ---- |
@@ -58,10 +58,14 @@ category's tasks) · **t** start a focus timer on the selected task (Today, Boar
 | Lists    | `k` from Home (no digit left) or the palette · lists on the left, the open list's items on the right (enter/esc on narrow windows) · space check · n add (stays open for the next item) · e edit text, link, price · o open link · c clear checked · d delete · K/J reorder · checked items sink to the bottom; prices total the unchecked ones |
 | Journal  | header: writing streak (consecutive days with a daily entry) and entries this month; a heatmap of entries per day sits beside the menu on wide windows (below it on tall ones) · t today (asks for mood, energy and hours slept once a day, e.g. `4 3 7.5`) · o close the day (`today --close`: adds an Evening section with tasks finished, routines, carry-overs and reflection prompts) · e new essay · b book essay · f film essay · s search (`#tag` = tag search) · g tags · k backlinks · v graph · c quick capture · **r triage inbox** one item at a time (t → task via quick add, n → note, e → essay, d delete, u undo, s skip) · i edit inbox.md in Fresh · e/b/f/n end with an optional tags / `[[links]]` prompt · n new note · x note from inbox · w weekly review (`jweek`) · l browse all entries (enter open, d move to Trash, tab type filter, f text filter) · d back up to drive (plug it in first) |
 
-**Focus timer**: one at a time, 25 minutes by default (Settings). The time
-left shows at the bottom right; a bell rings when it's done. Finished runs, and
-runs stopped after at least a minute, are logged to `focus_sessions` (schema_003).
-The timer survives quitting Magnus.
+**Focus timer (Pomodoro)**: `t` on a task (Today, Board, Upcoming) or `T`
+anywhere starts a focus round: 25 min focus, 5 min break, and a 15 min long
+break after every 4 rounds (all adjustable in Settings). When a phase ends,
+Magnus rings, posts a macOS notification and waits: `T` → start the next
+phase or add 5 minutes. While it runs, `T` pauses/resumes, skips to the next
+phase, adds 5 minutes, stops or discards. Focus minutes (≥1, pauses and
+waiting excluded) are logged to `focus_sessions` when you leave a focus
+round. The timer survives quitting Magnus; the status bar shows it.
 
 **Quick add** (`a`, anywhere): one line becomes a task —
 `renew passport fri !high #home *` sets the due date (`today`, `tom`, weekday

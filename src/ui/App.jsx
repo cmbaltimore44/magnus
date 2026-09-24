@@ -29,7 +29,7 @@ import { Palette } from './components/Palette.jsx';
 import { ITEMS as JOURNAL_ITEMS } from './views/Journal.jsx';
 import { signOut } from '../lib/auth.js';
 import { FAMILY } from '../lib/theme.js';
-import { useFocusTimer, formatRemaining } from './useFocusTimer.js';
+import { useFocusTimer, timerStatus, timerChoices } from './useFocusTimer.js';
 import { useStatusSummary } from './useStatusSummary.js';
 import { useLiveUpdates } from './useLiveUpdates.js';
 
@@ -113,7 +113,7 @@ function Clock() {
 }
 
 function Footer({ hints, status, columns, focus, summary, connection }) {
-  const timer = focus ? `${focus.pausedAt ? '⏸' : '◷'} ${formatRemaining(focus)} ${truncate(focus.title, 24)}` : '';
+  const timer = focus ? truncate(timerStatus(focus), 44) : '';
   return (
     <Box flexDirection="column" paddingX={1}>
       <Box width={columns - 2}>
@@ -124,7 +124,9 @@ function Footer({ hints, status, columns, focus, summary, connection }) {
         </Box>
         {timer ? (
           <Box flexShrink={0} marginLeft={1}>
-            <Text color={focus.pausedAt ? C.muted : C.accent}>{timer}</Text>
+            <Text color={focus.status === 'ended' ? C.soon : focus.pausedAt ? C.muted : C.accent} bold={focus.status === 'ended'} inverse={focus.status === 'ended'}>
+              {focus.status === 'ended' ? ` ${timer} ` : timer}
+            </Text>
           </Box>
         ) : null}
         {connection ? (
@@ -317,9 +319,12 @@ export default function App({ gradient }) {
     add('Task', 'New task (form)', () => navigate('board', { new: true }));
     add('Search', 'Search everything', () => setSearchOpen(true), 'ctrl+k');
     if (focus.timer) {
-      add('Focus', focus.timer.pausedAt ? 'Resume focus timer' : 'Pause focus timer', focus.togglePause, 'T');
-      add('Focus', 'Stop focus timer and log it', focus.stop);
-      add('Focus', 'Discard focus timer', focus.discard);
+      for (const c of timerChoices(focus.timer)) {
+        const fn = { pause: focus.togglePause, advance: focus.advance, extend: focus.extend, stop: focus.stop, discard: focus.discard }[c.key];
+        add('Focus', c.label, fn, 'T');
+      }
+    } else {
+      add('Focus', 'Start a focus timer (no task)', () => focus.start(null), 'T');
     }
     add('Project', 'New project', () => navigate('projects', { new: true }));
     add('Library', 'New book', () => navigate('library', { new: 'newBook' }));
@@ -343,7 +348,7 @@ export default function App({ gradient }) {
     });
     add('App', 'Quit', () => exit(), 'q');
     return list;
-  }, [navigate, focus.timer, focus.togglePause, focus.stop, focus.discard, notify, runUndo, exit]);
+  }, [navigate, focus.timer, focus.start, focus.togglePause, focus.advance, focus.extend, focus.stop, focus.discard, notify, runUndo, exit]);
 
   useInput(
     (input, key) => {
@@ -359,7 +364,7 @@ export default function App({ gradient }) {
       if (input === ':') return setPaletteOpen(true);
       if (input === ',') return navigate('settings');
       if (input === 'u') return runUndo();
-      if (input === 'T') return focus.timer ? setFocusMenuOpen(true) : notify('No focus timer running — press t on a task to start one', 'info');
+      if (input === 'T') return focus.timer ? setFocusMenuOpen(true) : focus.start(null); // t on a task starts one for that task
       if (input === '0') return navigate('home');
       const section = SECTIONS.find((s) => s.digit === input);
       if (section) navigate(section.view);
@@ -408,17 +413,11 @@ export default function App({ gradient }) {
         {focusMenuOpen && focus.timer ? (
           <Box flexShrink={0} flexDirection="column">
           <Choice
-            title={`Focus · ${formatRemaining(focus.timer)} left on “${focus.timer.title}”`}
-            options={[
-              { key: 'pause', label: focus.timer.pausedAt ? 'Resume' : 'Pause' },
-              { key: 'stop', label: 'Stop and log the time so far' },
-              { key: 'discard', label: 'Discard (log nothing)' },
-            ]}
+            title={timerStatus(focus.timer).replace(/ · T$/, '')}
+            options={timerChoices(focus.timer)}
             onPick={(opt) => {
               setFocusMenuOpen(false);
-              if (opt.key === 'pause') focus.togglePause();
-              else if (opt.key === 'stop') focus.stop();
-              else focus.discard();
+              ({ pause: focus.togglePause, advance: focus.advance, extend: focus.extend, stop: focus.stop, discard: focus.discard })[opt.key]();
             }}
             onCancel={() => setFocusMenuOpen(false)}
           />

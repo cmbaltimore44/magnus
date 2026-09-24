@@ -17,6 +17,9 @@ export function Settings({ sections }) {
   const [theme, setTheme] = useState(FAMILY);
   const [prefs, setPrefs] = useState(() => ({
     focusMinutes: getPref('focusMinutes', 25),
+    breakMinutes: getPref('breakMinutes', 5),
+    longBreakMinutes: getPref('longBreakMinutes', 15),
+    longBreakEvery: getPref('longBreakEvery', 4),
     weightUnit: getPref('weightUnit', 'lb'),
     journalTabs: getPref('journalTabs', true),
     startView: getPref('startView', 'home'),
@@ -27,7 +30,10 @@ export function Settings({ sections }) {
   const startLabel = (v) => (v === 'home' ? 'Home' : sections.find((s) => s.view === v)?.label || v);
   const rows = [
     { key: 'theme', label: 'Theme', values: FAMILIES, show: (v) => `${cap(v)}${v === FAMILY ? ' (current)' : ''}`, note: 'Ghostty, Fresh and bat · enter applies (restart Magnus for its accent)' },
-    { key: 'focusMinutes', label: 'Focus length', values: [15, 20, 25, 30, 45, 50, 60, 90], show: (v) => `${v} minutes` },
+    { key: 'focusMinutes', label: 'Focus length', values: [15, 20, 25, 30, 45, 50, 60, 90], show: (v) => `${v} minutes`, note: 'Pomodoro: focus, break, focus… and a long break every few rounds' },
+    { key: 'breakMinutes', label: 'Break', values: [3, 5, 10, 15], show: (v) => `${v} minutes` },
+    { key: 'longBreakMinutes', label: 'Long break', values: [10, 15, 20, 25, 30], show: (v) => `${v} minutes` },
+    { key: 'longBreakEvery', label: 'Long break after', values: [2, 3, 4, 5, 6], show: (v) => `${v} focus rounds` },
     { key: 'weightUnit', label: 'Weight unit', values: ['lb', 'kg'], show: (v) => v, note: 'label only; values are stored as typed' },
     { key: 'journalTabs', label: 'Journal entries', values: [true, false], show: (v) => (v ? 'open in a new Ghostty tab' : 'open in this terminal') },
     { key: 'startView', label: 'Start screen', values: starts, show: startLabel },
