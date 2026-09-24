@@ -17,6 +17,7 @@ Usage:
 Journal plumbing (used by the ~/bin scripts; print Markdown or nothing):
   magnus context [--date YYYY-MM-DD]   today's plan: starred/due tasks, routines, a quote
   magnus context --week YYYY-Www       one week of Life Tracker data (for jweek)
+  magnus context --close [--date D]    end of day: finished tasks, routines, carry-overs, prompts
   magnus log [--date D] [--mood 1-5] [--energy 1-5] [--sleep H] [--weight N]
              [--workout MIN [--type T]]   write to the Log
 

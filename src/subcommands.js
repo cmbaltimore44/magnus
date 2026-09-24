@@ -7,7 +7,7 @@ import { supabase } from './lib/supabase.js';
 import { todayISO } from './lib/data/completions.js';
 import { parseDateInput } from './lib/dates.js';
 import { isoWeek } from './lib/stats.js';
-import { loadDay, formatDay, loadWeek, formatWeek } from './lib/digest.js';
+import { loadDay, formatDay, loadWeek, formatWeek, loadClose, formatClose } from './lib/digest.js';
 import * as logsApi from './lib/data/logs.js';
 
 export const SUBCOMMANDS = ['context', 'log'];
@@ -37,9 +37,13 @@ export async function runSubcommand(name, args) {
   }, 12000);
   try {
     if (name === 'context') {
-      const flags = parseFlags(args, ['date', 'week']);
+      const close = args.includes('--close');
+      const flags = parseFlags(args.filter((a) => a !== '--close'), ['date', 'week']);
       await session();
-      if (flags.week) {
+      if (close) {
+        const date = flags.date ? parseDateInput(flags.date) : todayISO();
+        process.stdout.write(formatClose(await loadClose(date), date));
+      } else if (flags.week) {
         const label = flags.week === 'this' ? isoWeek(todayISO()) : flags.week;
         process.stdout.write(formatWeek(await loadWeek(label), todayISO()));
       } else {

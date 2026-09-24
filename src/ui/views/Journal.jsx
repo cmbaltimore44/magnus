@@ -29,6 +29,7 @@ import { plural } from '../../lib/display.js';
 // Magnus stays up in this one; elsewhere they take over this terminal.
 export const ITEMS = [
   { key: 't', label: "Today's Entry", desc: 'today [--mood --energy --sleep]', action: { run: 'today', tab: true, checkin: true } },
+  { key: 'o', label: 'Close the Day', desc: 'today --close (Evening section)', action: { run: 'today', args: ['--close'], tab: true } },
   { key: 'e', label: 'New Essay', desc: 'new-essay [--tag …] [--link …]', action: { run: 'new-essay', tab: true, tags: true } },
   { key: 'b', label: 'New Book Essay', desc: 'new-essay --book … [--tag …] [--link …]', action: { prompt: 'Book title:', run: 'new-essay', flag: '--book', tab: true, tags: true } },
   { key: 'f', label: 'New Film Essay', desc: 'new-essay --film … [--tag …] [--link …]', action: { prompt: 'Film title:', run: 'new-essay', flag: '--film', tab: true, tags: true } },

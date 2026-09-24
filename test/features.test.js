@@ -181,3 +181,30 @@ test('palette fuzzy match prefers word starts', () => {
   assert.equal(fuzzyScore('xyz', 'Library New book'), 0);
   assert.ok(fuzzyScore('trg', 'Journal Triage Inbox') > 0);
 });
+
+import { formatClose } from '../src/lib/digest.js';
+
+test('end-of-day Evening section', () => {
+  const date = '2026-09-24';
+  const md = formatClose(
+    {
+      tasks: [
+        { title: 'Shipped it', status: 'done', completed_at: new Date(2026, 8, 24, 15).toISOString() },
+        { title: 'Yesterday', status: 'done', completed_at: new Date(2026, 8, 23, 15).toISOString() },
+        { title: 'Late', status: 'todo', due_date: '2026-09-20' },
+        { title: 'Starred', status: 'todo', is_starred: true },
+        { title: 'Someday', status: 'todo' },
+      ],
+      routines: [{ id: 'a', name: 'Stretch' }, { id: 'b', name: 'Read' }],
+      completions: new Map([['a', new Set([date])]]),
+      focus: [{ started_at: new Date(2026, 8, 24, 10).toISOString(), minutes: 50 }],
+      logs: [{ entry_date: date, metric: 'workout', value: 30, note: 'run' }],
+    },
+    date
+  );
+  assert.match(md, /\*\*Finished today \(1\)\*\*\n- Shipped it\n/);
+  assert.match(md, /\*\*Routines:\*\* 1\/2 · missed: Read/);
+  assert.match(md, /- Focus: 50m\n- Workout: 30 min run/);
+  assert.match(md, /\*\*Carrying over\*\*\n- Late \(overdue\)\n- Starred\n\n/);
+  assert.doesNotMatch(md, /Someday|Yesterday/);
+});

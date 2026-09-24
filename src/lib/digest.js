@@ -134,3 +134,40 @@ export function formatWeek({ monday, sunday, tasks, routines, completions, books
   if (finished.length) out.push(`**Books finished:** ${finished.map((b) => `_${oneLine(b.title)}_`).join(', ')}`, '');
   return out.join('\n').replace(/\n+$/, '\n');
 }
+
+// ---------- end of day (`magnus context --close`, used by `today --close`) ----------
+
+export async function loadClose(dateISO) {
+  const [tasks, routines, completions, focus, logs] = await Promise.all([
+    tasksApi.listTasks(),
+    routinesApi.listRoutines(),
+    completionsApi.listCompletions(),
+    optional(focusApi.listFocusSessions(new Date(addDays(dateISO, -1) + 'T00:00:00').toISOString())),
+    optional(logsApi.listLogs(dateISO)),
+  ]);
+  return { tasks, routines, completions, focus, logs };
+}
+
+export function formatClose({ tasks, routines, completions, focus, logs }, date) {
+  const done = tasks.filter((t) => t.status === 'done' && t.completed_at && localDate(t.completed_at) === date);
+  const carry = tasks
+    .filter((t) => t.status !== 'done' && (t.is_starred || (t.due_date && t.due_date <= date)))
+    .map((t) => `${oneLine(t.title)}${t.due_date && t.due_date < date ? ' (overdue)' : ''}`);
+  const doneRoutines = routines.filter((r) => (completions.get(r.id) || new Set()).has(date));
+  const missed = routines.filter((r) => !(completions.get(r.id) || new Set()).has(date));
+  const focusMin = focus.filter((s) => localDate(s.started_at) === date).reduce((n, s) => n + s.minutes, 0);
+  const workouts = logs.filter((e) => e.entry_date === date && e.metric === 'workout');
+
+  const out = ['## Evening', ''];
+  out.push(`**Finished today (${done.length})**`, ...(done.length ? done.map((t) => `- ${oneLine(t.title)}`) : ['- nothing marked done']), '');
+  if (routines.length) {
+    out.push(`**Routines:** ${doneRoutines.length}/${routines.length}${missed.length ? ` · missed: ${missed.map((r) => oneLine(r.name)).join(', ')}` : ' · all done ✓'}`, '');
+  }
+  const extras = [];
+  if (focusMin) extras.push(`Focus: ${Math.floor(focusMin / 60) ? `${Math.floor(focusMin / 60)}h ` : ''}${focusMin % 60}m`);
+  if (workouts.length) extras.push(`Workout: ${workouts.map((w) => `${Number(w.value)} min${w.note ? ` ${oneLine(w.note)}` : ''}`).join(', ')}`);
+  if (extras.length) out.push(...extras.map((e) => `- ${e}`), '');
+  if (carry.length) out.push('**Carrying over**', ...carry.map((c) => `- ${c}`), '');
+  out.push('**What went well?**', '', '**What would I do differently?**', '', '**First thing tomorrow:**', '');
+  return out.join('\n').replace(/\n+$/, '\n');
+}
