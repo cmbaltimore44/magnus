@@ -40,7 +40,7 @@ discards the saved session.
 
 ## Keys
 
-Global: **1–7** jump to a section · **0** home · **ctrl+k** or **/** search ·
+Global: **1–8** jump to a section · **0** home · **ctrl+k** or **/** search ·
 **a** quick add · **u** undo the last delete (for 10 s, restores children
 too: a project's checklist, a book's quotes, a routine's history, a
 category's tasks) · **t** start a focus timer on the selected task (Today, Board, Upcoming) · **T** pause / stop / discard it · **q** quit · **esc** back. Each screen lists its own keys in the footer.
@@ -53,6 +53,7 @@ category's tasks) · **t** start a focus timer on the selected task (Today, Boar
 | Projects | enter open · n new · s cycle status · d delete → in a project: space toggle item · n add · d delete item · K/J reorder · e edit · D delete project |
 | Library  | tab Books → Quotes → **Stats** (finished this year, ratings, days to finish, per year, by format, repeat authors) · enter open a book / fold a group · **i look up a book on Open Library** by ISBN or title/author and start a New Book prefilled (title, author, ISBN, cover) · n new → in a book: n add highlight · enter edit · f favorite · **w send a quote to an essay** (append to an existing essay, or start a new book essay with the quote on the clipboard) · e edit book · i fill in the cover/ISBN/author from Open Library · v view cover · D delete · Quotes tab: F favorites only |
 | Upcoming | overdue, today, tomorrow, next 7 days — tasks by due date and projects by target date · space mark done · enter open |
+| Insights | tasks finished per week (8 weeks, from `completed_at`), routine consistency (30 days), focus minutes per week, mood/energy/sleep sparklines and workouts from the Log, writing streak, books this year · ↑↓ scrolls on narrow windows |
 | Journal  | header: writing streak (consecutive days with a daily entry) and entries this month; a heatmap of entries per day sits beside the menu on wide windows (below it on tall ones) · t today (asks for mood, energy and hours slept once a day, e.g. `4 3 7.5`) · e new essay · b book essay · f film essay · s search (`#tag` = tag search) · g tags · k backlinks · v graph · c quick capture · **r triage inbox** one item at a time (t → task via quick add, n → note, e → essay, d delete, u undo, s skip) · i edit inbox.md in Fresh · e/b/f/n end with an optional tags / `[[links]]` prompt · n new note · x note from inbox · w weekly review (`jweek`) · l browse all entries (enter open, d move to Trash, tab type filter, f text filter) · d back up to drive (plug it in first) |
 
 **Focus timer**: one at a time, 25 minutes by default (Settings). The time

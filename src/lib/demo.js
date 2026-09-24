@@ -93,7 +93,7 @@ function seed() {
   for (let d = 1; d < 30; d++) {
     if (d % 7 === 3) continue;
     log_entries.push(row({ entry_date: iso(-d), metric: 'mood', value: 2 + ((d * 3) % 4), note: null }));
-    log_entries.push(row({ entry_date: iso(-d), metric: 'energy', value: 1 + ((d * 5) % 5), note: null }));
+    log_entries.push(row({ entry_date: iso(-d), metric: 'energy', value: 1 + ((d * 2) % 5), note: null }));
     log_entries.push(row({ entry_date: iso(-d), metric: 'sleep', value: 6 + ((d * 7) % 5) / 2, note: null }));
     if (d % 3 === 0) log_entries.push(row({ entry_date: iso(-d), metric: 'weight', value: 172 - d / 10, note: null }));
     if (d % 2 === 0) log_entries.push(row({ entry_date: iso(-d), metric: 'workout', value: 30 + (d % 4) * 10, note: d % 4 ? 'run' : 'lift' }));
