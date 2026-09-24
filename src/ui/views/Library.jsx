@@ -4,6 +4,7 @@ import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useLoader, useViewInput } from '../context.js';
 import { deleteWithUndo } from '../../lib/undo.js';
 import { QuoteToEssay } from '../components/QuoteToEssay.jsx';
+import { BookLookup } from '../components/BookLookup.jsx';
 import * as booksApi from '../../lib/data/books.js';
 import * as quotesApi from '../../lib/data/quotes.js';
 import {
@@ -29,10 +30,10 @@ const BOOK_GROUPS = [
   { key: 'dnf', label: 'Did Not Finish', collapsible: true },
 ];
 
-const BOOKS_HINTS = 'tab quotes · ↑↓ move · enter open / fold group · n new book · d delete · R refresh · esc home';
+const BOOKS_HINTS = 'tab quotes · ↑↓ move · enter open / fold group · n new book · i look up (ISBN/title) · d delete · R refresh · esc home';
 const QUOTES_HINTS = 'tab books · ↑↓ move · enter edit · n new quote · f favorite · w send to essay · F favorites only · d delete · esc home';
 const DETAIL_HINTS =
-  '↑↓ highlight · n add highlight · enter edit · f favorite · w send to essay · d delete highlight · e edit book · v view cover · D delete book · esc back';
+  '↑↓ highlight · n add highlight · enter edit · f favorite · w send to essay · d delete highlight · e edit book · i fill from Open Library · v view cover · D delete book · esc back';
 
 const stars = (rating) => (rating ? '★'.repeat(rating) + '☆'.repeat(5 - rating) : '');
 const fmtDate = (d) => (d ? formatDue(d) + ' ' + d.slice(0, 4) : '—');
@@ -155,6 +156,7 @@ export function Library({ params }) {
       if (key.upArrow || input === 'k') return setIndex((i) => moveIndex(i, -1, rows.length));
       if (key.downArrow || input === 'j') return setIndex((i) => moveIndex(i, 1, rows.length));
       if (input === 'n') return setMode({ type: 'newBook' });
+      if (input === 'i') return setMode({ type: 'lookup' });
       if (!current) return;
       if (key.return && current.kind === 'header') return current.group.collapsible && toggleGroup(current.group.key);
       if (key.return) return setOpenBookId(current.book.id);
@@ -165,12 +167,21 @@ export function Library({ params }) {
 
   if (!books) return <Text color={C.muted}>Loading…</Text>;
 
+  if (mode?.type === 'lookup') {
+    return (
+      <BookLookup
+        onPick={(fields) => setMode({ type: 'newBook', initial: fields })}
+        onCancel={() => setMode(null)}
+      />
+    );
+  }
+
   if (mode?.type === 'newBook') {
     return (
       <Form
         title="New Book"
         fields={bookFields()}
-        initial={{ status: 'want_to_read', format: 'none' }}
+        initial={{ status: 'want_to_read', format: 'none', ...mode.initial }}
         onSubmit={createBook}
         onCancel={() => setMode(null)}
       />
@@ -256,7 +267,7 @@ export function Library({ params }) {
       </Box>
       {mode?.type === 'confirm' ? (
         <Confirm
-          message={`Delete “${mode.book.title}” and all its highlights? This cannot be undone.`}
+          message={`Delete “${mode.book.title}” and all its highlights? (u undoes it)`}
           onYes={() => deleteBook(mode.book)}
           onNo={() => setMode(null)}
         />
@@ -344,6 +355,7 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
       if (key.downArrow || input === 'j') return setIndex((i) => moveIndex(i, 1, highlights.length));
       if (input === 'n') return setMode({ type: 'quote', quote: null });
       if (input === 'e') return setMode({ type: 'editBook' });
+      if (input === 'i') return setMode({ type: 'lookup' });
       if (input === 'v') return showCover(data.book.cover_image_url, data.book.title);
       if (input === 'D') return setMode({ type: 'confirmBook' });
       if (!selected) return;
@@ -358,6 +370,31 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
   if (!data) return <Text color={C.muted}>Loading…</Text>;
   const { book } = data;
   if (mode?.type === 'essay') return <QuoteToEssay quote={mode.quote} books={books} onDone={() => setMode(null)} />;
+  if (mode?.type === 'lookup') {
+    // Fill in what's missing: cover and ISBN always, title/author only if blank.
+    return (
+      <BookLookup
+        initialQuery={book.isbn || [book.title, book.author].filter(Boolean).join(' ')}
+        onPick={async (found) => {
+          const fields = {};
+          if (found.cover_image_url) fields.cover_image_url = found.cover_image_url;
+          if (found.isbn) fields.isbn = found.isbn;
+          if (!book.author && found.author) fields.author = found.author;
+          try {
+            const updated = Object.keys(fields).length ? await booksApi.updateBook(bookId, fields) : book;
+            setData((d) => ({ ...d, book: updated }));
+            onUpdated(updated);
+            setMode(null);
+            notify(`Updated from Open Library: ${Object.keys(fields).join(', ').replace(/_image_url/, '') || 'nothing new'}`, 'success');
+          } catch (err) {
+            notify(err.message, 'error');
+            setMode(null);
+          }
+        }}
+        onCancel={() => setMode(null)}
+      />
+    );
+  }
 
   if (mode?.type === 'editBook') {
     return <Form title="Edit Book" fields={bookFields()} initial={book} onSubmit={saveBook} onCancel={() => setMode(null)} />;
@@ -459,7 +496,7 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
       ) : null}
       {mode?.type === 'confirmBook' ? (
         <Confirm
-          message={`Delete “${book.title}” and all its highlights? This cannot be undone.`}
+          message={`Delete “${book.title}” and all its highlights? (u undoes it)`}
           onYes={() => onDelete(book)}
           onNo={() => setMode(null)}
         />
