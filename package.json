@@ -1,0 +1,35 @@
+{
+  "name": "magnus",
+  "version": "0.1.0",
+  "description": "Full-screen terminal companion to Life Tracker (tasks, routines, projects, library) plus a front door to the journal scripts.",
+  "author": "cmbaltimore44",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "magnus": "bin/magnus.js"
+  },
+  "scripts": {
+    "build": "node scripts/build.js",
+    "watch": "node scripts/build.js --watch",
+    "prepare": "npm run build",
+    "start": "npm run build && node bin/magnus.js",
+    "demo": "npm run build && MAGNUS_DEMO=1 node bin/magnus.js",
+    "test": "npm run build && node --test test/"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.1",
+    "ink": "^7.1.1",
+    "ink-big-text": "^2.0.0",
+    "ink-gradient": "^4.0.1",
+    "ink-text-input": "^6.0.0",
+    "react": "^19.3.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "ink-testing-library": "^4.0.0"
+  }
+}
