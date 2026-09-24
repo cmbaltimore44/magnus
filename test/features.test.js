@@ -173,3 +173,11 @@ test('book stats', () => {
   assert.deepEqual(st.byYear, [['2026', 1], ['2025', 1]]);
   assert.deepEqual(st.topAuthors, [['Eliot', 2]]);
 });
+
+import { fuzzyScore } from '../src/lib/fuzzy.js';
+
+test('palette fuzzy match prefers word starts', () => {
+  assert.ok(fuzzyScore('nb', 'Library New book') > fuzzyScore('nb', 'Journal Browse Entries'));
+  assert.equal(fuzzyScore('xyz', 'Library New book'), 0);
+  assert.ok(fuzzyScore('trg', 'Journal Triage Inbox') > 0);
+});

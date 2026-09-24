@@ -97,11 +97,11 @@ const layoutsFor = (quotes, books, width) =>
 
 export function Library({ params }) {
   const { navigate, offerUndo, notify, userId, contentHeight, columns } = useAppCtx();
-  const [tab, setTab] = useState(params?.tab === 'quotes' ? 'quotes' : 'books');
+  const [tab, setTab] = useState(['quotes', 'stats'].includes(params?.tab) ? params.tab : 'books');
   const [openBookId, setOpenBookId] = useState(params?.bookId || null);
   const [index, setIndex] = useState(0);
   const [collapsed, setCollapsed] = useState(() => new Set(getPref('library.collapsedGroups', ['finished', 'dnf'])));
-  const [mode, setMode] = useState(null);
+  const [mode, setMode] = useState(params?.new ? { type: params.new } : null); // palette: newBook | lookup
 
   const { data: books, setData: setBooks, reload } = useLoader(() => booksApi.listBooks());
 

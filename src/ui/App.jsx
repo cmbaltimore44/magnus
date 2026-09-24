@@ -22,6 +22,10 @@ import { Insights } from './views/Insights.jsx';
 import { Log } from './views/Log.jsx';
 import { QuickAdd } from './components/QuickAdd.jsx';
 import { Choice } from './components/Prompt.jsx';
+import { Palette } from './components/Palette.jsx';
+import { ITEMS as JOURNAL_ITEMS } from './views/Journal.jsx';
+import { signOut } from '../lib/auth.js';
+import { FAMILY } from '../lib/theme.js';
 import { useFocusTimer, formatRemaining } from './useFocusTimer.js';
 
 export const SECTIONS = [
@@ -106,6 +110,7 @@ export default function App({ gradient }) {
   const [dataVersion, setDataVersion] = useState(0);
   const dataChanged = useCallback(() => setDataVersion((v) => v + 1), []);
   const [focusMenuOpen, setFocusMenuOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [captureCount, setCaptureCount] = useState(0);
   const [hints, setHints] = useState('');
   const [status, setStatus] = useState(null);
@@ -169,7 +174,7 @@ export default function App({ gradient }) {
     () => ({
       userId: currentUserId(auth.session),
       searchOpen,
-      overlayOpen: searchOpen || quickAddOpen || focusMenuOpen,
+      overlayOpen: searchOpen || quickAddOpen || focusMenuOpen || paletteOpen,
       startFocus: focus.start,
       dataVersion,
       dataChanged,
@@ -211,10 +216,46 @@ export default function App({ gradient }) {
         }
       },
     }),
-    [auth.session, focus.start, focusMenuOpen, searchOpen, quickAddOpen, dataVersion, dataChanged, offerUndo, columns, rows, route.view, navigate, notify, suspendTerminal]
+    [auth.session, focus.start, focusMenuOpen, paletteOpen, searchOpen, quickAddOpen, dataVersion, dataChanged, offerUndo, columns, rows, route.view, navigate, notify, suspendTerminal]
   );
 
   const ready = auth.state === 'ready';
+
+  // Everything the palette (ctrl+p or :) can do.
+  const actions = useMemo(() => {
+    const list = [];
+    const add = (group, label, run, hint) => list.push({ id: `${group}:${label}`, group, label, run, hint });
+    add('Go', 'Home', () => navigate('home'), '0');
+    for (const s of SECTIONS) add('Go', s.label, () => navigate(s.view), s.digit);
+    add('Task', 'Quick add', () => setQuickAddOpen(true), 'a');
+    add('Task', 'New task (form)', () => navigate('board', { new: true }));
+    add('Search', 'Search everything', () => setSearchOpen(true), 'ctrl+k');
+    if (focus.timer) {
+      add('Focus', focus.timer.pausedAt ? 'Resume focus timer' : 'Pause focus timer', focus.togglePause, 'T');
+      add('Focus', 'Stop focus timer and log it', focus.stop);
+      add('Focus', 'Discard focus timer', focus.discard);
+    }
+    add('Project', 'New project', () => navigate('projects', { new: true }));
+    add('Library', 'New book', () => navigate('library', { new: 'newBook' }));
+    add('Library', 'Look up a book (ISBN / title)', () => navigate('library', { new: 'lookup' }));
+    add('Library', 'Book stats', () => navigate('library', { tab: 'stats' }));
+    for (const it of JOURNAL_ITEMS) add('Journal', it.label, () => navigate('journal', { item: it.key }));
+    add('Log', 'Log mood, sleep, weight or a workout', () => navigate('log'));
+    for (const fam of ['heather', 'lakeglow', 'beacon', 'hearth']) {
+      if (fam === FAMILY) continue;
+      add('Theme', `Switch theme to ${fam[0].toUpperCase()}${fam.slice(1)}`, async () => {
+        const res = await runCapture('magnus-theme', [fam]);
+        notify(res.ok ? `Theme → ${fam}. Restart Magnus for its accent color.` : res.stderr.trim() || 'magnus-theme failed', res.ok ? 'success' : 'error');
+      });
+    }
+    add('App', 'Undo last delete', runUndo, 'u');
+    add('App', 'Sign out', async () => {
+      await signOut();
+      setAuth({ state: 'login' });
+    });
+    add('App', 'Quit', () => exit(), 'q');
+    return list;
+  }, [navigate, focus.timer, focus.togglePause, focus.stop, focus.discard, notify, runUndo, exit]);
 
   useInput(
     (input, key) => {
@@ -222,17 +263,19 @@ export default function App({ gradient }) {
         setSearchOpen(true);
         return;
       }
+      if (key.ctrl && input === 'p') return setPaletteOpen(true);
       if (key.ctrl || key.meta) return;
       if (input === '/') return setSearchOpen(true);
       if (input === 'q') return exit();
       if (input === 'a') return setQuickAddOpen(true);
+      if (input === ':') return setPaletteOpen(true);
       if (input === 'u') return runUndo();
       if (input === 'T') return focus.timer ? setFocusMenuOpen(true) : notify('No focus timer running — press t on a task to start one', 'info');
       if (input === '0') return navigate('home');
       const section = SECTIONS.find((s) => s.digit === input);
       if (section) navigate(section.view);
     },
-    { isActive: ready && !searchOpen && !quickAddOpen && !focusMenuOpen && captureCount === 0 }
+    { isActive: ready && !searchOpen && !quickAddOpen && !focusMenuOpen && !paletteOpen && captureCount === 0 }
   );
 
   useInput(
@@ -265,11 +308,14 @@ export default function App({ gradient }) {
     // so closing search returns you exactly where you were.
     body = (
       <>
-        <Box display={searchOpen ? 'none' : 'flex'} flexDirection="column" flexGrow={1} flexShrink={1} flexBasis={0} minHeight={0} overflow="hidden">
+        <Box display={searchOpen || paletteOpen ? 'none' : 'flex'} flexDirection="column" flexGrow={1} flexShrink={1} flexBasis={0} minHeight={0} overflow="hidden">
           <View key={route.key} params={route.params} gradient={gradient} sections={SECTIONS} />
         </Box>
         {searchOpen ? <Search onClose={() => setSearchOpen(false)} /> : null}
         {quickAddOpen && !searchOpen ? <QuickAdd onClose={() => setQuickAddOpen(false)} /> : null}
+        {paletteOpen && !searchOpen ? (
+          <Palette actions={actions} onClose={() => setPaletteOpen(false)} height={rows - (route.view === 'home' ? 3 : 4)} width={columns - 4} />
+        ) : null}
         {focusMenuOpen && focus.timer ? (
           <Box flexShrink={0} flexDirection="column">
           <Choice

@@ -104,7 +104,12 @@ export function Board({ params }) {
   // Arriving from search / Today with a specific task: select it, maybe edit.
   const handledParams = useRef(false);
   useEffect(() => {
-    if (!data || handledParams.current || !params?.taskId) return;
+    if (!data || handledParams.current) return;
+    if (params?.new) {
+      handledParams.current = true;
+      return setMode({ type: 'form', task: null, status: 'todo' });
+    }
+    if (!params?.taskId) return;
     handledParams.current = true;
     const task = data.tasks.find((t) => t.id === params.taskId);
     if (!task) return notify('That task no longer exists.', 'error');

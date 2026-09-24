@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useViewInput } from '../context.js';
@@ -27,7 +27,7 @@ import { plural } from '../../lib/display.js';
 //
 // Items marked `tab: true` (starting an entry) open in a new Ghostty tab so
 // Magnus stays up in this one; elsewhere they take over this terminal.
-const ITEMS = [
+export const ITEMS = [
   { key: 't', label: "Today's Entry", desc: 'today [--mood --energy --sleep]', action: { run: 'today', tab: true, checkin: true } },
   { key: 'e', label: 'New Essay', desc: 'new-essay [--tag …] [--link …]', action: { run: 'new-essay', tab: true, tags: true } },
   { key: 'b', label: 'New Book Essay', desc: 'new-essay --book … [--tag …] [--link …]', action: { prompt: 'Book title:', run: 'new-essay', flag: '--book', tab: true, tags: true } },
@@ -54,7 +54,7 @@ function inboxPath() {
 
 const HINTS = 'press a letter or ↑↓ enter · esc home';
 
-export function Journal() {
+export function Journal({ params }) {
   const { navigate, notify, run, capture, contentHeight, columns } = useAppCtx();
   const [index, setIndex] = useState(0);
   const [mode, setMode] = useState(null); // {type:'prompt', item, step?, title?} | {type:'output', title, lines, offset}
@@ -148,6 +148,18 @@ export function Journal() {
     else if (a.prompt || a.search || a.capture || a.note) setMode({ type: 'prompt', item });
     else launch(item, '');
   };
+
+  // Arriving from the command palette with an item to run.
+  const handledParams = useRef(false);
+  useEffect(() => {
+    if (handledParams.current || !params?.item) return;
+    handledParams.current = true;
+    const item = ITEMS.find((it) => it.key === params.item);
+    if (item) {
+      setIndex(ITEMS.indexOf(item));
+      choose(item);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useViewInput(
     (input, key) => {

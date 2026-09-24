@@ -79,7 +79,7 @@ export function Projects({ params }) {
   const columns = layout.listColumns;
   const [index, setIndex] = useState(0);
   const [openId, setOpenId] = useState(params?.projectId || null);
-  const [mode, setMode] = useState(null);
+  const [mode, setMode] = useState(params?.new ? { type: 'new' } : null);
 
   const { data, setData, reload } = useLoader(async () => {
     const [projects, taskRows] = await Promise.all([projectsApi.listProjects(), projectTasksApi.listTaskCounts()]);
