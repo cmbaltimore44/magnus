@@ -84,3 +84,22 @@ every Magnus screen, and scoring each text/background pair.
 **Can't be themed:** Fresh's changed-line marker (hardcoded cornflower blue, a
 thin bar), and bat's `ansi` theme underlines `--highlight-line` instead of
 shading it.
+
+## Web app (Life Tracker)
+
+The same four themes are available in the Life Tracker web app, generated
+from these Ghostty files so both use identical colors:
+
+    npm run themes:web      # = node terminal-theme/tools/build-web.mjs ../LifeTracker
+
+This writes `themes.css` (CSS variables per theme and light/dark mode) and
+`js/palettes.js` (the picker's list) into the Life Tracker repo. Commit and
+push there to deploy. It also prints a contrast report: every text color on
+the page background, cards, sidebar and hover shades is >= 4.5:1, and button
+text on accent/danger colors is chosen for the best contrast.
+
+In the web app, the theme picker and the light/dark button (Auto → Light →
+Dark; Auto follows the phone/computer setting) are in the sidebar footer.
+Choices are saved per device. There's no sync with `magnus-theme`, by design.
+After adding a new family here, add it to the FAMILIES list in
+`tools/build-web.mjs` and rerun.

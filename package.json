@@ -16,7 +16,8 @@
     "prepare": "npm run build",
     "start": "npm run build && node bin/magnus.js",
     "demo": "npm run build && MAGNUS_DEMO=1 node bin/magnus.js",
-    "test": "npm run build && node --test test/"
+    "test": "npm run build && node --test test/",
+    "themes:web": "node terminal-theme/tools/build-web.mjs ../LifeTracker"
   },
   "engines": {
     "node": ">=20"
