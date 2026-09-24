@@ -87,6 +87,24 @@ for (const fam of FAMILIES) {
     // If contrast headroom leaves the lifted hover indistinguishable from the
     // cards, sink it darker instead (darker only raises text contrast).
     if (dark && contrast(hover, surface) < 1.08) hover = mix('#000000', g.bg, 0.38);
+    // Board columns tint the page with --surface-subtle; the current-book row
+    // with --accent-tint. Both as strong as allowed (3% / 8%) while every text
+    // color stays >= 4.5:1 on them.
+    // (It's translucent and sits on the page or on cards, so check both, with
+    // a little margin for the browser's own rounding when it blends.)
+    let subtleTo = dark ? '#ffffff' : '#000000';
+    const subtleOk = (a) => Math.min(...texts.flatMap((c) => [g.bg, surface].map((base) => contrast(c, mix(subtleTo, base, a))))) >= 4.55;
+    let subtleAlpha = 0.03;
+    while (subtleAlpha > 0 && !subtleOk(subtleAlpha)) subtleAlpha -= 0.0025;
+    subtleAlpha = Math.max(0, Math.round(subtleAlpha * 10000) / 10000);
+    // No headroom to lift (dark themes whose colors sit right at 4.5:1): sink
+    // the columns instead, which only raises contrast for light text.
+    if (dark && subtleAlpha < 0.02) {
+      subtleTo = '#000000';
+      subtleAlpha = 0.18;
+    }
+    const subtle = mix(subtleTo, g.bg, subtleAlpha);
+    const accentTint = safeShade(g.bg, r.accent, 0.08, texts);
     const sidebar = dark ? mix('#000000', g.bg, 0.22) : safeShade(g.bg, '#ffffff', 0.12, texts);
     const border = mix(g.fg, g.bg, dark ? 0.14 : 0.13);
     const accentHover = dark ? mix('#ffffff', r.accent, 0.14) : mix('#000000', r.accent, 0.14);
@@ -98,7 +116,8 @@ for (const fam of FAMILIES) {
       '--bg': g.bg,
       '--surface': surface,
       '--sidebar-bg': sidebar,
-      '--surface-subtle': dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+      '--surface-subtle': subtleTo === '#ffffff' ? `rgba(255,255,255,${subtleAlpha})` : `rgba(0,0,0,${subtleAlpha})`,
+      '--accent-tint': accentTint,
       '--border': border,
       '--text': g.fg,
       '--text-muted': r.muted,
@@ -121,9 +140,9 @@ for (const fam of FAMILIES) {
     const selector = dark ? `html[data-palette="${fam.key}"][data-theme="dark"]` : `html[data-palette="${fam.key}"]`;
     blocks.push(`/* ${fam.label} — ${mode} */\n${selector} {\n${Object.entries(vars).map(([k, v]) => `  ${k}: ${v};`).join('\n')}\n}`);
 
-    const worst = Math.min(...texts.flatMap((c) => [g.bg, surface, hover, sidebar].map((b) => contrast(c, b))));
+    const worst = Math.min(...texts.flatMap((c) => [g.bg, surface, hover, sidebar, subtle, accentTint].map((b) => contrast(c, b))));
     report.push(
-      `${fam.label.padEnd(12)} ${mode.padEnd(5)} text/muted/accent/danger/soon/success on bg, cards, sidebar, hover >= ${worst.toFixed(2)}:1; ` +
+      `${fam.label.padEnd(12)} ${mode.padEnd(5)} text/muted/accent/danger/soon/success on bg, cards, sidebar, hover, columns, tints >= ${worst.toFixed(2)}:1; ` +
         `button text on accent ${contrast(onAccent, r.accent).toFixed(1)}:1, on danger ${contrast(onDanger, r.error).toFixed(1)}:1`
     );
   }
