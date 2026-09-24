@@ -144,6 +144,9 @@ export function formatWeek({ monday, sunday, tasks, routines, completions, books
 
 // ---------- end of day (`magnus context --close`, used by `today --close`) ----------
 
+export const EVENING_START = '<!-- evening summary: refreshed by today --close -->';
+export const EVENING_END = '<!-- end evening summary -->';
+
 export async function loadClose(dateISO) {
   const [tasks, routines, completions, focus, logs] = await Promise.all([
     tasksApi.listTasks(),
@@ -165,7 +168,9 @@ export function formatClose({ tasks, routines, completions, focus, logs }, date)
   const focusMin = focus.filter((s) => localDate(s.started_at) === date).reduce((n, s) => n + s.minutes, 0);
   const workouts = logs.filter((e) => e.entry_date === date && e.metric === 'workout');
 
-  const out = ['## Evening', ''];
+  // The summary sits between markers so `today --close` can refresh it in
+  // place later without touching what you wrote under the prompts.
+  const out = ['## Evening', '', EVENING_START];
   out.push(`**Finished today (${done.length})**`, ...(done.length ? done.map((t) => `- ${oneLine(t.title)}`) : ['- nothing marked done']), '');
   if (routines.length) {
     out.push(`**Routines:** ${doneRoutines.length}/${routines.length}${missed.length ? ` · missed: ${missed.map((r) => oneLine(r.name)).join(', ')}` : ' · all done ✓'}`, '');
@@ -175,6 +180,7 @@ export function formatClose({ tasks, routines, completions, focus, logs }, date)
   if (workouts.length) extras.push(`Workout: ${workouts.map((w) => `${Number(w.value)} min${w.note ? ` ${oneLine(w.note)}` : ''}`).join(', ')}`);
   if (extras.length) out.push(...extras.map((e) => `- ${e}`), '');
   if (carry.length) out.push('**Carrying over**', ...carry.map((c) => `- ${c}`), '');
-  out.push('**What went well?**', '', '**What would I do differently?**', '');
+  if (out[out.length - 1] === '') out.pop();
+  out.push(EVENING_END, '', '**What went well?**', '', '**What would I do differently?**', '');
   return out.join('\n').replace(/\n+$/, '\n');
 }
