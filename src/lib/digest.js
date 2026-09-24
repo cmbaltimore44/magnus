@@ -168,6 +168,6 @@ export function formatClose({ tasks, routines, completions, focus, logs }, date)
   if (workouts.length) extras.push(`Workout: ${workouts.map((w) => `${Number(w.value)} min${w.note ? ` ${oneLine(w.note)}` : ''}`).join(', ')}`);
   if (extras.length) out.push(...extras.map((e) => `- ${e}`), '');
   if (carry.length) out.push('**Carrying over**', ...carry.map((c) => `- ${c}`), '');
-  out.push('**What went well?**', '', '**What would I do differently?**', '', '**First thing tomorrow:**', '');
+  out.push('**What went well?**', '', '**What would I do differently?**', '');
   return out.join('\n').replace(/\n+$/, '\n');
 }
