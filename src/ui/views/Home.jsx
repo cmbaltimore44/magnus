@@ -3,6 +3,7 @@ import { C } from '../../lib/theme.js';
 import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useViewInput } from '../context.js';
 import { Banner } from '../components/Banner.jsx';
+import { Starfield } from '../components/Starfield.jsx';
 
 const DESCRIPTIONS = {
   today: 'starred tasks, today’s routines, a quote',
@@ -20,7 +21,7 @@ const DESCRIPTIONS = {
 const HINTS = 'press a letter to open · ↑↓ enter · a quick add · ctrl+p or : actions · ctrl+k or / search · , settings · q quit';
 
 export function Home({ gradient, sections }) {
-  const { navigate, columns } = useAppCtx();
+  const { navigate, columns, contentHeight } = useAppCtx();
   const [index, setIndex] = useState(0);
   useHints(HINTS);
 
@@ -34,8 +35,15 @@ export function Home({ gradient, sections }) {
 
   const date = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
+  // Menu width: "› [x] Label     description"; the starfield takes what's left.
+  const menuWidth = 3 + 4 + 10 + Math.max(...sections.map((s) => (DESCRIPTIONS[s.view] || '').length));
+  const bannerWidth = columns >= 64 ? 60 : 30;
+  const leftWidth = Math.max(menuWidth, bannerWidth) + 3;
+  const fieldWidth = columns - 2 - leftWidth;
+
   return (
-    <Box flexDirection="column" paddingTop={1} paddingLeft={1}>
+    <Box flexDirection="row">
+    <Box flexDirection="column" paddingTop={1} paddingLeft={1} width={leftWidth} flexShrink={0}>
       <Banner gradient={gradient} columns={columns} />
       <Text color={C.muted}>{date}</Text>
       <Box flexDirection="column" marginTop={1}>
@@ -52,6 +60,8 @@ export function Home({ gradient, sections }) {
           </Box>
         ))}
       </Box>
+    </Box>
+    {fieldWidth >= 8 ? <Starfield width={fieldWidth} height={contentHeight + 1} /> : null}
     </Box>
   );
 }

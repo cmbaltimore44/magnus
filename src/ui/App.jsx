@@ -47,34 +47,50 @@ export const SECTIONS = [
   { view: 'lists', label: 'Lists', key: 'k', digit: null, component: Lists },
 ];
 
-function TabBar({ current, columns }) {
-  // Full labels when they fit; otherwise inactive tabs shrink to their digit.
-  const fullWidth = 8 + SECTIONS.reduce((n, s) => n + s.label.length + 5, 0);
-  const compact = fullWidth > columns - 2;
-  return (
-    <Box paddingX={1}>
-      <Text wrap="truncate-end">
-        <Text color={C.accent} bold>
-          MAGNUS{' '}
-        </Text>
-        {SECTIONS.map((s) => {
-          const active = current === s.view;
-          const label = !s.digit ? ` ${s.label} ` : compact && !active ? ` ${s.digit} ` : ` ${s.digit} ${s.label} `;
-          return (
-            <Text key={s.view}>
-              {' '}
-              {active ? (
-                <Text color={C.accent} bold inverse>
-                  {label}
-                </Text>
-              ) : (
-                <Text color={C.muted}>{label}</Text>
-              )}
-            </Text>
-          );
-        })}
+// The window frame's top edge, with the tab bar set into it:
+//   ╭─ MAGNUS  1 Today  2 Board … ───────╮
+// On Home it's a plain edge. The sides and bottom come from the frame Box.
+function TopEdge({ current, columns, showTabs }) {
+  const inner = columns - 2; // between ╭ and ╮
+  if (!showTabs) {
+    return (
+      <Text color={C.border}>
+        ╭{'─'.repeat(Math.max(0, inner))}╮
       </Text>
-    </Box>
+    );
+  }
+  // Full labels when they fit; otherwise inactive tabs shrink to their digit.
+  const labelFor = (s, compact) => (!s.digit ? ` ${s.label} ` : compact && current !== s.view ? ` ${s.digit} ` : ` ${s.digit} ${s.label} `);
+  const width = (compact) => 3 + 'MAGNUS '.length + SECTIONS.reduce((n, s) => n + 1 + labelFor(s, compact).length, 0) + 2;
+  const compact = width(false) > inner;
+  const used = Math.min(inner, width(compact));
+  return (
+    <Text wrap="truncate-end">
+      <Text color={C.border}>╭─ </Text>
+      <Text color={C.accent} bold>
+        MAGNUS{' '}
+      </Text>
+      {SECTIONS.map((s) => {
+        const active = current === s.view;
+        const label = labelFor(s, compact);
+        return (
+          <Text key={s.view}>
+            {' '}
+            {active ? (
+              <Text color={C.accent} bold inverse>
+                {label}
+              </Text>
+            ) : (
+              <Text color={C.muted}>{label}</Text>
+            )}
+          </Text>
+        );
+      })}
+      <Text color={C.border}>
+        {' '}
+        {'─'.repeat(Math.max(0, inner - used + 2))}╮
+      </Text>
+    </Text>
   );
 }
 
@@ -266,10 +282,11 @@ export default function App({ gradient }) {
       dataVersion,
       dataChanged,
       offerUndo,
-      columns,
+      columns: columns - 2, // inside the window frame
       rows,
       // tab bar (1) + footer (2), plus the view's own padding line
-      contentHeight: Math.max(6, rows - (route.view === 'home' ? 3 : 4)),
+      // frame top (with tabs) + footer (2) + frame bottom, plus the view's own padding line
+      contentHeight: Math.max(6, rows - 5),
       navigate,
       notify,
       setHints,
@@ -408,7 +425,7 @@ export default function App({ gradient }) {
         {searchOpen ? <Search onClose={() => setSearchOpen(false)} /> : null}
         {quickAddOpen && !searchOpen ? <QuickAdd onClose={() => setQuickAddOpen(false)} /> : null}
         {paletteOpen && !searchOpen ? (
-          <Palette actions={actions} onClose={() => setPaletteOpen(false)} height={rows - (route.view === 'home' ? 3 : 4)} width={columns - 4} />
+          <Palette actions={actions} onClose={() => setPaletteOpen(false)} height={rows - 5} width={columns - 6} />
         ) : null}
         {focusMenuOpen && focus.timer ? (
           <Box flexShrink={0} flexDirection="column">
@@ -430,11 +447,13 @@ export default function App({ gradient }) {
   return (
     <AppContext.Provider value={ctx}>
       <Box flexDirection="column" width={columns} height={rows}>
-        {ready && route.view !== 'home' ? <TabBar current={searchOpen ? null : route.view} columns={columns} /> : null}
-        <Box flexDirection="column" flexGrow={1} paddingX={1} overflow="hidden">
-          {body}
+        <TopEdge current={searchOpen ? null : route.view} columns={columns} showTabs={ready && route.view !== 'home'} />
+        <Box flexDirection="column" flexGrow={1} borderStyle="round" borderTop={false} borderColor={C.border}>
+          <Box flexDirection="column" flexGrow={1} paddingX={1} overflow="hidden">
+            {body}
+          </Box>
+          <Footer hints={ready ? hints : ''} status={status} columns={columns - 2} focus={ready ? focus.timer : null} summary={ready ? summary : null} connection={ready ? connection : null} />
         </Box>
-        <Footer hints={ready ? hints : ''} status={status} columns={columns} focus={ready ? focus.timer : null} summary={ready ? summary : null} connection={ready ? connection : null} />
       </Box>
     </AppContext.Provider>
   );
