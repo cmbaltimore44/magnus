@@ -41,7 +41,7 @@ discards the saved session.
 ## Keys
 
 Global: **1–9** jump to a section · **0** home · **ctrl+k** or **/** search ·
-**ctrl+p** or **:** command palette (every action by name: go to a section, new task/project/book, book lookup, any journal action, focus timer controls, switch theme, undo, sign out) · **a** quick add · **u** undo the last delete (for 10 s, restores children
+**ctrl+p** or **:** command palette (every action by name: go to a section, new task/project/book, book lookup, any journal action, focus timer controls, switch theme, undo, sign out) · **,** settings (theme, focus length, weight unit, journal entries in a new tab or here, start screen, sign out; saved per device in `prefs.json`) · **a** quick add · **u** undo the last delete (for 10 s, restores children
 too: a project's checklist, a book's quotes, a routine's history, a
 category's tasks) · **t** start a focus timer on the selected task (Today, Board, Upcoming) · **T** pause / stop / discard it · **q** quit · **esc** back. Each screen lists its own keys in the footer.
 

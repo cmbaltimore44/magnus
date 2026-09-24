@@ -16,7 +16,7 @@ const DESCRIPTIONS = {
   log: 'mood, energy, sleep, weight, workouts',
 };
 
-const HINTS = 'press a letter to open · ↑↓ enter · a quick add · ctrl+p or : actions · ctrl+k or / search · q quit';
+const HINTS = 'press a letter to open · ↑↓ enter · a quick add · ctrl+p or : actions · ctrl+k or / search · , settings · q quit';
 
 export function Home({ gradient, sections }) {
   const { navigate, columns } = useAppCtx();

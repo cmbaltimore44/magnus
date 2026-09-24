@@ -1,3 +1,4 @@
+import { getPref } from './prefs.js';
 import { execFile, execFileSync } from 'node:child_process';
 import os from 'node:os';
 import { cleanText } from './sanitize.js';
@@ -37,6 +38,7 @@ end run`;
 
 export function canOpenGhosttyTabs() {
   if (process.env.MAGNUS_JOURNAL_TABS === '0') return false;
+  if (process.env.MAGNUS_JOURNAL_TABS !== '1' && getPref('journalTabs', true) === false) return false;
   return process.platform === 'darwin' && (process.env.TERM_PROGRAM || '').toLowerCase() === 'ghostty';
 }
 

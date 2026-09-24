@@ -20,6 +20,8 @@ import { Search } from './views/Search.jsx';
 import { Upcoming } from './views/Upcoming.jsx';
 import { Insights } from './views/Insights.jsx';
 import { Log } from './views/Log.jsx';
+import { Settings } from './views/Settings.jsx';
+import { getPref } from '../lib/prefs.js';
 import { QuickAdd } from './components/QuickAdd.jsx';
 import { Choice } from './components/Prompt.jsx';
 import { Palette } from './components/Palette.jsx';
@@ -145,7 +147,10 @@ export default function App({ gradient }) {
   const { exit, suspendTerminal } = useApp();
   const { columns, rows } = useWindowSize();
   const [auth, setAuth] = useState({ state: 'loading' });
-  const [route, setRoute] = useState({ view: 'home', params: {}, key: 0 });
+  const [route, setRoute] = useState(() => {
+    const start = getPref('startView', 'home');
+    return { view: SECTIONS.some((s) => s.view === start) ? start : 'home', params: {}, key: 0 };
+  });
   const [searchOpen, setSearchOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   // Bumped whenever data changes outside the current view (quick add, live
@@ -220,6 +225,11 @@ export default function App({ gradient }) {
       searchOpen,
       overlayOpen: searchOpen || quickAddOpen || focusMenuOpen || paletteOpen,
       startFocus: focus.start,
+      email: auth.session?.user?.email,
+      signOut: async () => {
+        await signOut();
+        setAuth({ state: 'login' });
+      },
       dataVersion,
       dataChanged,
       offerUndo,
@@ -292,6 +302,7 @@ export default function App({ gradient }) {
         notify(res.ok ? `Theme → ${fam}. Restart Magnus for its accent color.` : res.stderr.trim() || 'magnus-theme failed', res.ok ? 'success' : 'error');
       });
     }
+    add('App', 'Settings', () => navigate('settings'), ',');
     add('App', 'Undo last delete', runUndo, 'u');
     add('App', 'Sign out', async () => {
       await signOut();
@@ -313,6 +324,7 @@ export default function App({ gradient }) {
       if (input === 'q') return exit();
       if (input === 'a') return setQuickAddOpen(true);
       if (input === ':') return setPaletteOpen(true);
+      if (input === ',') return navigate('settings');
       if (input === 'u') return runUndo();
       if (input === 'T') return focus.timer ? setFocusMenuOpen(true) : notify('No focus timer running — press t on a task to start one', 'info');
       if (input === '0') return navigate('home');
@@ -347,7 +359,7 @@ export default function App({ gradient }) {
   } else if (auth.state === 'login') {
     body = <Login gradient={gradient} onAuthenticated={(session) => setAuth({ state: 'ready', session })} />;
   } else {
-    const View = route.view === 'home' ? Home : SECTIONS.find((s) => s.view === route.view).component;
+    const View = route.view === 'home' ? Home : route.view === 'settings' ? Settings : SECTIONS.find((s) => s.view === route.view).component;
     // The current view stays mounted (just hidden) under the search overlay,
     // so closing search returns you exactly where you were.
     body = (
