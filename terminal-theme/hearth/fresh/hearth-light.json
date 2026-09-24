@@ -1,5 +1,5 @@
 {
-  "name": "life-tracker-light",
+  "name": "hearth-light",
   "extends": "builtin://light",
   "editor": {
     "bg": "Default",

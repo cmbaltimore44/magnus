@@ -7,7 +7,7 @@
 //   bat      – uses the terminal's ANSI colors, so it follows automatically
 //
 //   magnus-theme                 show the current family and the options
-//   magnus-theme <family>        switch (heather | lakeglow | beacon | life-tracker)
+//   magnus-theme <family>        switch (heather | lakeglow | beacon | hearth)
 //   magnus-theme install         copy this repo's theme files into ~/.config
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -29,7 +29,7 @@ export const FAMILIES = {
   heather: { label: 'Heather', light: 'Heather Light', dark: 'Heather Dark' },
   lakeglow: { label: 'Lakeglow', light: 'Lakeglow Light', dark: 'Lakeglow Dark' },
   beacon: { label: 'Beacon', light: 'Beacon Light', dark: 'Beacon Dark' },
-  'life-tracker': { label: 'Life Tracker', light: 'Life Tracker Light', dark: 'Life Tracker Dark' },
+  hearth: { label: 'Hearth', light: 'Hearth Light', dark: 'Hearth Dark' },
 };
 
 function current() {
@@ -111,7 +111,7 @@ function switchTo(family) {
 const arg = process.argv[2];
 try {
   if (!arg) {
-    const cur = current() || 'life-tracker';
+    const cur = current() || 'hearth';
     console.log(`Current: ${cur}${current() ? '' : ' (default)'}`);
     for (const [key, f] of Object.entries(FAMILIES)) console.log(`  ${key === cur ? '*' : ' '} ${key.padEnd(14)} ${f.label}`);
     console.log('\nUsage: magnus-theme <family> | magnus-theme install');

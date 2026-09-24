@@ -1,5 +1,5 @@
 {
-  "name": "life-tracker-dark",
+  "name": "hearth-dark",
   "extends": "builtin://dark",
   "editor": {
     "bg": "Default",

@@ -63,8 +63,8 @@ for multi-line text. Dates accept `2026-10-01`, `10/1`, `today`, `tomorrow`,
   (`src/lib/theme.js` maps accent/muted/danger/… to slots). Two theme
   families for Ghostty, Fresh and bat live in [`terminal-theme/`](terminal-theme/):
   **Heather**, **Lakeglow** (spring sunset over a lake), **Beacon**
-  (foggy late night in downtown Boston) and **Life Tracker** (the web app's
-  palette). Switch with `magnus-theme heather|lakeglow|beacon|life-tracker`. Light/dark follows
+  (foggy late night in downtown Boston) and **Hearth** (the web app's
+  original palette). Switch with `magnus-theme heather|lakeglow|beacon|hearth`. Light/dark follows
   macOS. The banner gradient asks the terminal for the family's two signature
   colors (OSC 4).
 - **Handing the terminal to scripts** (`today`, `new-essay`, `jsearch`,

@@ -28,7 +28,7 @@ exactly what `supabase/schema.sql` and `supabase/schema_002.sql` define:
   terminal color.
 - **Palette.** Terminal themes live in `terminal-theme/` (UI-only, no schema
   impact). The current family, Heather, no longer matches the web app's
-  warm palette; `life-tracker` (derived from `style.css`) is kept as a backup.
+  warm palette; `hearth` (derived from `style.css`) is kept as a backup.
   Retheming the web app to Heather would be a separate change in the
   Life Tracker repo.
 - **Web themes (UI-only, no schema change).** The web app now has the same

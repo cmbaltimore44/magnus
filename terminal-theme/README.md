@@ -9,12 +9,12 @@ Fresh follow macOS light/dark mode.
 | `heather` | Slate `#20242A` / Dust `#D2D4C8`, Charcoal highlights, Ash/Steel muted, Lilac accent, green, teal, plus added brick red, ochre and slate blue |
 | `lakeglow` | A spring sunset over a lake: twilight-lake `#1B1D30` / sunlit cream, coral sun, gold, rose and lavender sky, lake blues, new-leaf green. Light mode is a pale peach sky with deep-lake text |
 | `beacon` | A foggy late night in downtown Boston: blue-gray night `#1A1E25` / fog-gray text, sodium-streetlight orange, lamp-lit yellow, brick and taillight red, Green Line green, harbor teal, a hazy neon magenta. Light mode is a pale fog bank with deep-navy text |
-| `life-tracker` (backup) | The Life Tracker web app's warm palette (parchment / terracotta / amber) |
+| `hearth` | The Life Tracker web app's original warm palette (parchment / terracotta / amber), contrast-tuned |
 
 ## Switching
 
     magnus-theme                  # show the current family
-    magnus-theme heather          # or: lakeglow, beacon, life-tracker
+    magnus-theme heather          # or: lakeglow, beacon, hearth
     magnus-theme install          # (re)install these files into ~/.config
 
 Switching rewrites Ghostty's `theme = light:…,dark:…` line and reloads open
@@ -33,7 +33,7 @@ when they start.
 
 ## Color roles
 
-| Slot | Heather | Lakeglow | Beacon | Life Tracker |
+| Slot | Heather | Lakeglow | Beacon | Hearth |
 | ---- | ------- | -------- | ------ | ------------ |
 | red | brick (errors, overdue) | rose red | brick / taillight | danger red |
 | yellow | ochre (warnings, "soon") | gold | lamp-lit yellow | amber |
@@ -58,7 +58,7 @@ highlight direction, and which slots play which roles). It tunes each
 color's lightness only until it meets the contrast target (6.0:1 in dark
 mode, 4.8:1 in light by default), picks the strongest selection shade that
 keeps all text >= 4.5:1, writes the Ghostty and Fresh files, and prints a
-contrast report. `life-tracker` and `heather` predate the tool and have no
+contrast report. `hearth` and `heather` predate the tool and have no
 `palette.json`; their files are final. After building, run
 `magnus-theme install`, then add the family to `bin/magnus-theme.js` and
 `src/lib/theme.js` if it's new.
@@ -73,7 +73,7 @@ contrast report. `life-tracker` and `heather` predate the tool and have no
 - **Lakeglow, Beacon:** at least 6.0:1 on the background in dark mode, 5.5:1
   in light mode (raised so a visible selection fits), and at least 4.5:1 on
   the selection in both.
-- **Life Tracker:** at least 4.8:1 in both modes. Color 0 in each dark theme
+- **Hearth:** at least 4.8:1 in both modes. Color 0 in each dark theme
   is a near-background shade by design.
 - **Fresh:** highlights keep all text readable, and filled highlights (search,
   errors, diffs) keep text at 7:1 or better.
@@ -87,7 +87,7 @@ shading it.
 
 ## Web app (Life Tracker)
 
-The same four themes are available in the Life Tracker web app, generated
+The same four themes (Heather, Lakeglow, Beacon, Hearth) are available in the Life Tracker web app, generated
 from these Ghostty files so both use identical colors:
 
     npm run themes:web      # = node terminal-theme/tools/build-web.mjs ../LifeTracker
