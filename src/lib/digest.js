@@ -13,6 +13,7 @@ import * as logsApi from './data/logs.js';
 import { TIME_OF_DAY, TIME_OF_DAY_LABELS } from './display.js';
 import { addDays } from './data/completions.js';
 import { average, localDate, isoWeekMonday } from './stats.js';
+import { loadGoals } from './data/lists.js';
 
 function shortDate(iso) {
   return new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
@@ -88,18 +89,19 @@ export function formatDay({ tasks, routines, completions, projects, books, quote
 export async function loadWeek(weekLabel) {
   const monday = isoWeekMonday(weekLabel);
   const sunday = addDays(monday, 6);
-  const [tasks, routines, completions, books, focus, logs] = await Promise.all([
+  const [tasks, routines, completions, books, focus, logs, goals] = await Promise.all([
     tasksApi.listTasks(),
     routinesApi.listRoutines(),
     completionsApi.listCompletions(),
     booksApi.listBooks(),
     optional(focusApi.listFocusSessions(new Date(addDays(monday, -1) + 'T00:00:00').toISOString())),
     optional(logsApi.listLogs(monday)),
+    loadGoals(),
   ]);
-  return { monday, sunday, tasks, routines, completions, books, focus, logs };
+  return { monday, sunday, tasks, routines, completions, books, focus, logs, goals };
 }
 
-export function formatWeek({ monday, sunday, tasks, routines, completions, books, focus, logs }, today) {
+export function formatWeek({ monday, sunday, tasks, routines, completions, books, focus, logs, goals = [] }, today) {
   const end = sunday < today ? sunday : today; // a week in progress counts days so far
   const days = Math.max(1, Math.round((new Date(end + 'T00:00:00') - new Date(monday + 'T00:00:00')) / 86400000) + 1);
   const inWeek = (d) => d >= monday && d <= sunday;
@@ -132,6 +134,11 @@ export function formatWeek({ monday, sunday, tasks, routines, completions, books
   if (workouts.length) stats.push(`Workouts: ${workouts.length} (${workouts.reduce((n, e) => n + Number(e.value), 0)} min)`);
   if (stats.length) out.push(...stats.map((s) => `- ${s}`), '');
   if (finished.length) out.push(`**Books finished:** ${finished.map((b) => `_${oneLine(b.title)}_`).join(', ')}`, '');
+  // Goals (the "Goals" list): one reflection prompt each.
+  if (goals.length) {
+    out.push('## Goals', '');
+    for (const g of goals) out.push(`**${oneLine(g.text)}**`, '- How did I move toward this, this week?', '- Next step:', '');
+  }
   return out.join('\n').replace(/\n+$/, '\n');
 }
 

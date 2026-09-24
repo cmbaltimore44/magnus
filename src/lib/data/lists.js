@@ -52,3 +52,23 @@ export function cleanUrl(text) {
     throw new Error('Link must be an http(s) URL');
   }
 }
+
+// Goals live in a list named "Goals": unchecked items are active goals
+// (checked = achieved). Shown on Today and in the weekly review.
+export const GOALS_LIST = 'goals';
+
+export function activeGoals(lists, items) {
+  const list = lists.find((l) => l.name.trim().toLowerCase() === GOALS_LIST);
+  if (!list) return [];
+  return items.filter((i) => i.list_id === list.id && !i.done).sort((a, b) => a.sort_order - b.sort_order);
+}
+
+// Active goals, or [] when there's no Goals list / no Lists tables yet.
+export async function loadGoals() {
+  try {
+    const [lists, items] = await Promise.all([listLists(), listAllItems()]);
+    return activeGoals(lists, items);
+  } catch {
+    return [];
+  }
+}

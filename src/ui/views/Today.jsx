@@ -8,6 +8,7 @@ import * as routinesApi from '../../lib/data/routines.js';
 import * as completionsApi from '../../lib/data/completions.js';
 import * as quotesApi from '../../lib/data/quotes.js';
 import * as booksApi from '../../lib/data/books.js';
+import { loadGoals } from '../../lib/data/lists.js';
 import { TIME_OF_DAY, TIME_OF_DAY_LABELS, TASK_STATUSES, TASK_STATUS_LABELS } from '../../lib/display.js';
 import { TaskCard, taskCardHeight } from '../components/TaskCard.jsx';
 import { moveIndex, windowRange } from '../components/layout.js';
@@ -26,18 +27,19 @@ export function Today() {
   useHints(HINTS);
 
   const { data, setData, reload } = useLoader(async () => {
-    const [tasks, categories, routines, completions, books] = await Promise.all([
+    const [tasks, categories, routines, completions, books, goals] = await Promise.all([
       tasksApi.listTasks(),
       categoriesApi.listCategories(),
       routinesApi.listRoutines(),
       completionsApi.listCompletions(),
       booksApi.listBooks(),
+      loadGoals(),
     ]);
     if (featuredQuote === undefined) {
       featuredQuote = await quotesApi.pickRandomQuote();
       setQuote(featuredQuote);
     }
-    return { tasks, categories, routines, completions, books };
+    return { tasks, categories, routines, completions, books, goals };
   });
 
   const items = useMemo(() => {
@@ -131,10 +133,12 @@ export function Today() {
   const starredRows = (compact) =>
     1 + (starred.length ? starred.reduce((n, i) => n + taskCardHeight(i.task, { showNotes: false, compact }), 0) : 1);
   // date+margin (2), quote border (2) + margin (1), routines margin+header (2), 3 routine rows
-  const roomForQuote = (compact) => contentHeight - 2 - 3 - starredRows(compact) - 2 - 3;
+  // Goals strip under the date (one line) when there's a Goals list.
+  const goalRows = data.goals.length ? 1 : 0;
+  const roomForQuote = (compact) => contentHeight - 2 - goalRows - 3 - starredRows(compact) - 2 - 3;
   const compact = !wide && layout != null && layout.height > roomForQuote(false);
   const starredHeight = starredRows(compact);
-  const maxQuoteLines = Math.max(2, wide ? contentHeight - 4 : roomForQuote(compact));
+  const maxQuoteLines = Math.max(2, wide ? contentHeight - 4 - goalRows : roomForQuote(compact));
   if (layout && layout.height > maxQuoteLines) {
     const keep = maxQuoteLines - 1;
     layout.attrLines = [`… ${layout.height - keep} more lines — see Library (5)`];
@@ -142,7 +146,7 @@ export function Today() {
     layout.height = maxQuoteLines;
   }
   const quoteHeight = (layout ? layout.height : 1) + 2;
-  const routineBudget = Math.max(3, contentHeight - 2 - (wide ? 0 : quoteHeight + 1) - starredHeight - 2);
+  const routineBudget = Math.max(3, contentHeight - 2 - goalRows - (wide ? 0 : quoteHeight + 1) - starredHeight - 2);
 
   const routineLines = TIME_OF_DAY.flatMap((tod) => {
     const group = items.filter((i) => i.kind === 'routine' && i.routine.time_of_day === tod);
@@ -220,6 +224,19 @@ export function Today() {
   return (
     <Box flexDirection="column" height={contentHeight} overflow="hidden">
       <Text bold>{dateLabel}</Text>
+      {goalRows ? (
+        <Text wrap="truncate-end">
+          <Text color={C.accent} bold>
+            ◎ Goals{' '}
+          </Text>
+          {data.goals.map((g, i) => (
+            <Text key={g.id}>
+              {i ? <Text color={C.muted}> · </Text> : null}
+              {g.text}
+            </Text>
+          ))}
+        </Text>
+      ) : null}
       <Box marginTop={1} flexDirection={wide ? 'row' : 'column'}>
         {wide ? left : quoteBox}
         {wide ? quoteBox : left}

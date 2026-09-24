@@ -262,3 +262,20 @@ test('addWantToRead saves first, then fills in details', async () => {
   const offline = await addWantToRead('00000000-0000-4000-8000-000000000000', { isbn: '9999999999' }, [], { lookup: async () => { throw new Error('down'); } });
   assert.equal(offline.book.title, 'ISBN 9999999999');
 });
+
+import { activeGoals } from '../src/lib/data/lists.js';
+import { formatWeek } from '../src/lib/digest.js';
+
+test('goals come from the unchecked items of the "Goals" list, and reach the weekly review', () => {
+  const lists = [{ id: 'g', name: ' goals ' }, { id: 'x', name: 'Groceries' }];
+  const items = [
+    { id: 1, list_id: 'g', text: 'Internship 2027', done: false, sort_order: 1 },
+    { id: 2, list_id: 'g', text: 'Old goal', done: true, sort_order: 0 },
+    { id: 3, list_id: 'g', text: 'Half marathon', done: false, sort_order: 0 },
+    { id: 4, list_id: 'x', text: 'Milk', done: false, sort_order: 0 },
+  ];
+  assert.deepEqual(activeGoals(lists, items).map((g) => g.text), ['Half marathon', 'Internship 2027']);
+  assert.deepEqual(activeGoals([{ id: 'x', name: 'Groceries' }], items), []);
+  const md = formatWeek({ monday: '2026-09-21', sunday: '2026-09-27', tasks: [], routines: [], completions: new Map(), books: [], focus: [], logs: [], goals: activeGoals(lists, items) }, '2026-09-24');
+  assert.match(md, /## Goals\n\n\*\*Half marathon\*\*\n- How did I move toward this, this week\?\n- Next step:/);
+});
