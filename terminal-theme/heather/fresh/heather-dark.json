@@ -1,0 +1,500 @@
+{
+  "name": "heather-dark",
+  "extends": "builtin://dark",
+  "editor": {
+    "bg": "Default",
+    "fg": "Default",
+    "cursor": "Default",
+    "inactive_cursor": [
+      151,
+      163,
+      163
+    ],
+    "selection_bg": [
+      47,
+      57,
+      65
+    ],
+    "current_line_bg": [
+      39,
+      45,
+      53
+    ],
+    "line_number_fg": [
+      151,
+      163,
+      163
+    ],
+    "line_number_bg": "Default",
+    "diff_add_bg": [
+      42,
+      77,
+      63
+    ],
+    "diff_remove_bg": [
+      84,
+      65,
+      67
+    ],
+    "diff_add_highlight_bg": [
+      42,
+      77,
+      63
+    ],
+    "diff_remove_highlight_bg": [
+      84,
+      65,
+      67
+    ],
+    "diff_modify_bg": [
+      79,
+      69,
+      48
+    ],
+    "diff_add_collision_fg": "Default",
+    "diff_remove_collision_fg": "Default",
+    "diff_modify_collision_fg": "Default",
+    "ruler_bg": [
+      39,
+      45,
+      53
+    ],
+    "whitespace_indicator_fg": [
+      151,
+      163,
+      163
+    ],
+    "indent_rainbow_1": [
+      24,
+      177,
+      209
+    ],
+    "indent_rainbow_2": [
+      67,
+      182,
+      117
+    ],
+    "indent_rainbow_3": [
+      201,
+      153,
+      62
+    ],
+    "indent_rainbow_4": [
+      135,
+      164,
+      190
+    ],
+    "indent_rainbow_5": [
+      151,
+      163,
+      163
+    ],
+    "indent_rainbow_6": [
+      135,
+      164,
+      190
+    ],
+    "after_eof_bg": "Default",
+    "indentation_guide_fg": [
+      151,
+      163,
+      163
+    ],
+    "whitespace_indicator_selected_fg": [
+      210,
+      212,
+      200
+    ],
+    "bracket_match_fg": [
+      195,
+      172,
+      186
+    ],
+    "bracket_rainbow_1": [
+      195,
+      172,
+      186
+    ],
+    "bracket_rainbow_2": [
+      201,
+      153,
+      62
+    ],
+    "bracket_rainbow_3": [
+      67,
+      182,
+      117
+    ],
+    "bracket_rainbow_4": [
+      135,
+      164,
+      190
+    ],
+    "bracket_rainbow_5": [
+      135,
+      164,
+      190
+    ],
+    "bracket_rainbow_6": [
+      24,
+      177,
+      209
+    ],
+    "selection_modifier": []
+  },
+  "ui": {
+    "tab_active_fg": [
+      195,
+      172,
+      186
+    ],
+    "tab_active_bg": "Default",
+    "tab_inactive_fg": [
+      151,
+      163,
+      163
+    ],
+    "tab_inactive_bg": "Default",
+    "tab_separator_bg": "Default",
+    "tab_close_hover_fg": [
+      218,
+      141,
+      132
+    ],
+    "tab_hover_bg": [
+      39,
+      45,
+      53
+    ],
+    "menu_bg": "Default",
+    "menu_fg": "Default",
+    "menu_active_bg": [
+      47,
+      57,
+      65
+    ],
+    "menu_active_fg": "Default",
+    "menu_dropdown_bg": "Default",
+    "menu_dropdown_fg": "Default",
+    "menu_highlight_bg": [
+      47,
+      57,
+      65
+    ],
+    "menu_highlight_fg": "Default",
+    "menu_border_fg": [
+      151,
+      163,
+      163
+    ],
+    "menu_separator_fg": [
+      151,
+      163,
+      163
+    ],
+    "menu_hover_bg": [
+      39,
+      45,
+      53
+    ],
+    "menu_hover_fg": "Default",
+    "menu_disabled_fg": [
+      151,
+      163,
+      163
+    ],
+    "menu_disabled_bg": "Default",
+    "status_bar_fg": "Default",
+    "status_bar_bg": "Default",
+    "status_palette_fg": "Default",
+    "status_palette_bg": [
+      39,
+      45,
+      53
+    ],
+    "status_lsp_on_fg": "Default",
+    "status_lsp_on_bg": "Default",
+    "status_lsp_actionable_fg": "Default",
+    "status_lsp_actionable_bg": [
+      79,
+      69,
+      48
+    ],
+    "prompt_fg": "Default",
+    "prompt_bg": "Default",
+    "prompt_selection_fg": "Default",
+    "prompt_selection_bg": [
+      47,
+      57,
+      65
+    ],
+    "popup_border_fg": [
+      151,
+      163,
+      163
+    ],
+    "popup_bg": "Default",
+    "popup_selection_bg": [
+      47,
+      57,
+      65
+    ],
+    "popup_selection_fg": "Default",
+    "popup_text_fg": "Default",
+    "text_input_selection_bg": [
+      47,
+      57,
+      65
+    ],
+    "suggestion_bg": "Default",
+    "suggestion_selected_bg": [
+      47,
+      57,
+      65
+    ],
+    "help_bg": "Default",
+    "help_fg": "Default",
+    "help_key_fg": [
+      24,
+      177,
+      209
+    ],
+    "help_separator_fg": [
+      151,
+      163,
+      163
+    ],
+    "help_indicator_fg": [
+      218,
+      141,
+      132
+    ],
+    "help_indicator_bg": "Default",
+    "inline_code_bg": [
+      39,
+      45,
+      53
+    ],
+    "split_separator_fg": [
+      151,
+      163,
+      163
+    ],
+    "split_separator_hover_fg": [
+      195,
+      172,
+      186
+    ],
+    "scrollbar_track_fg": [
+      151,
+      163,
+      163
+    ],
+    "scrollbar_thumb_fg": [
+      151,
+      163,
+      163
+    ],
+    "scrollbar_track_hover_fg": [
+      151,
+      163,
+      163
+    ],
+    "scrollbar_thumb_hover_fg": [
+      151,
+      163,
+      163
+    ],
+    "compose_margin_bg": "Default",
+    "blame_header_fg": "Default",
+    "blame_header_bg": [
+      39,
+      45,
+      53
+    ],
+    "semantic_highlight_bg": "Default",
+    "tour_step_bg": [
+      39,
+      45,
+      53
+    ],
+    "terminal_bg": "Default",
+    "terminal_fg": "Default",
+    "status_warning_indicator_bg": [
+      79,
+      69,
+      48
+    ],
+    "status_warning_indicator_fg": "Default",
+    "status_error_indicator_bg": [
+      84,
+      65,
+      67
+    ],
+    "status_error_indicator_fg": "Default",
+    "status_warning_indicator_hover_bg": [
+      79,
+      69,
+      48
+    ],
+    "status_warning_indicator_hover_fg": "Default",
+    "status_error_indicator_hover_bg": [
+      84,
+      65,
+      67
+    ],
+    "status_error_indicator_hover_fg": "Default",
+    "tab_drop_zone_bg": [
+      47,
+      57,
+      65
+    ],
+    "tab_drop_zone_border": [
+      195,
+      172,
+      186
+    ],
+    "settings_selected_bg": [
+      47,
+      57,
+      65
+    ],
+    "settings_selected_fg": "Default",
+    "file_status_added_fg": [
+      67,
+      182,
+      117
+    ],
+    "file_status_modified_fg": [
+      201,
+      153,
+      62
+    ],
+    "file_status_deleted_fg": [
+      218,
+      141,
+      132
+    ],
+    "file_status_renamed_fg": [
+      24,
+      177,
+      209
+    ],
+    "file_status_untracked_fg": [
+      151,
+      163,
+      163
+    ],
+    "file_status_conflicted_fg": [
+      135,
+      164,
+      190
+    ],
+    "status_separator_fg": [
+      151,
+      163,
+      163
+    ],
+    "status_separator_bg": "Default",
+    "suggestion_fg": "Default"
+  },
+  "search": {
+    "match_bg": [
+      79,
+      69,
+      48
+    ],
+    "match_fg": "Default",
+    "label_bg": [
+      47,
+      57,
+      65
+    ],
+    "label_fg": "Default"
+  },
+  "diagnostic": {
+    "error_fg": [
+      218,
+      141,
+      132
+    ],
+    "error_bg": "Default",
+    "warning_fg": [
+      201,
+      153,
+      62
+    ],
+    "warning_bg": "Default",
+    "info_fg": [
+      135,
+      164,
+      190
+    ],
+    "info_bg": "Default",
+    "hint_fg": [
+      151,
+      163,
+      163
+    ],
+    "hint_bg": "Default"
+  },
+  "syntax": {
+    "keyword": {
+      "color": [
+        195,
+        172,
+        186
+      ],
+      "modifier": [
+        "bold"
+      ]
+    },
+    "string": [
+      67,
+      182,
+      117
+    ],
+    "comment": [
+      151,
+      163,
+      163
+    ],
+    "function": [
+      24,
+      177,
+      209
+    ],
+    "type": [
+      201,
+      153,
+      62
+    ],
+    "variable": "Default",
+    "variable_builtin": [
+      135,
+      164,
+      190
+    ],
+    "constant": [
+      135,
+      164,
+      190
+    ],
+    "operator": "Default",
+    "punctuation_bracket": [
+      151,
+      163,
+      163
+    ],
+    "punctuation_delimiter": [
+      151,
+      163,
+      163
+    ],
+    "escape": [
+      24,
+      177,
+      209
+    ]
+  }
+}

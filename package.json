@@ -7,7 +7,8 @@
   "private": true,
   "type": "module",
   "bin": {
-    "magnus": "bin/magnus.js"
+    "magnus": "bin/magnus.js",
+    "magnus-theme": "bin/magnus-theme.js"
   },
   "scripts": {
     "build": "node scripts/build.js",

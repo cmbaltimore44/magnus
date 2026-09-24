@@ -1,0 +1,25 @@
+# Heather Light — slate #20242a / Dust / Charcoal / Ash / Steel / Lilac / Green / Teal, plus brick red, ochre and slate blue.
+# Every text color is >= 4.8:1 on the background (WCAG AA is 4.5).
+# red = errors, yellow = ochre warnings, green = success, magenta = lilac accent, cyan = teal links.
+palette = 0=#20242a
+palette = 1=#9a342a
+palette = 2=#25623f
+palette = 3=#6f5110
+palette = 4=#385978
+palette = 5=#704c63
+palette = 6=#0d5e70
+palette = 7=#333f48
+palette = 8=#4f5959
+palette = 9=#8f3027
+palette = 10=#226241
+palette = 11=#6f500f
+palette = 12=#2f4f6b
+palette = 13=#6e465f
+palette = 14=#0d5f71
+palette = 15=#1d2b33
+background = #d2d4c8
+foreground = #20242a
+cursor-color = #20242a
+cursor-text = #d2d4c8
+selection-background = #f6f6f4
+selection-foreground = #20242a

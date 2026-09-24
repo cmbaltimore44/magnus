@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { handOff } from './shell.js';
+import { cleanText } from './sanitize.js';
 
 // Book covers via the kitty graphics protocol (supported by Ghostty).
 // Ink repaints would clobber an inline image, so covers are shown full-screen
@@ -17,6 +18,8 @@ export function supportsKittyGraphics() {
 
 // Download (or decode a data: URL) and normalize to PNG with macOS's built-in
 // `sips`, since the protocol's direct-transmission format is PNG.
+const MAX_COVER_BYTES = 25 * 1024 * 1024;
+
 export async function loadCoverPng(url) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'magnus-cover-'));
   try {
@@ -25,9 +28,12 @@ export async function loadCoverPng(url) {
     if (dataMatch) {
       bytes = Buffer.from(dataMatch[1], 'base64');
     } else {
+      if (!/^https?:\/\//i.test(url)) throw new Error('Cover URL must be http(s) or a data: URL');
       const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) throw new Error(`Cover download failed (HTTP ${res.status})`);
+      if (Number(res.headers.get('content-length')) > MAX_COVER_BYTES) throw new Error('Cover image is too large');
       bytes = Buffer.from(await res.arrayBuffer());
+      if (bytes.length > MAX_COVER_BYTES) throw new Error('Cover image is too large');
     }
     const src = path.join(dir, 'cover-src');
     const out = path.join(dir, 'cover.png');
@@ -56,7 +62,7 @@ export async function showCoverFullscreen(suspendTerminal, png, caption) {
     fs.writeSync(1, '\x1b[?1049h\x1b[2J\x1b[H\x1b[?25l');
     fs.writeSync(1, '\x1b[2;3H');
     writeKittyImage(png, { rows: Math.max(4, rows - 4) });
-    fs.writeSync(1, `\x1b[${rows};3H\x1b[1m${caption}\x1b[22m  \x1b[2m· press any key\x1b[22m`);
+    fs.writeSync(1, `\x1b[${rows};3H\x1b[1m${cleanText(caption, { keepNewlines: false })}\x1b[22m  \x1b[2m· press any key\x1b[22m`);
     spawnSync('bash', ['-c', 'read -rsn1'], { stdio: 'inherit' });
     fs.writeSync(1, '\x1b_Ga=d,d=A\x1b\\');
   });

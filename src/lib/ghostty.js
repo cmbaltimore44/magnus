@@ -1,5 +1,6 @@
 import { execFile, execFileSync } from 'node:child_process';
 import os from 'node:os';
+import { cleanText } from './sanitize.js';
 
 // Opens a command in a new Ghostty tab through Ghostty's AppleScript
 // dictionary (Ghostty 1.3+: `new tab ... with configuration {...}`), so the
@@ -59,9 +60,12 @@ export function openInGhosttyTab(cmd, args = []) {
   const resolved = resolveCommand(cmd);
   if (!resolved) return Promise.reject(new Error(`${cmd}: command not found`));
 
+  // The command line is typed into an interactive shell, so arguments must not
+  // carry control characters (or newlines) that the shell would act on.
+  const safeArgs = args.map((a) => cleanText(String(a), { keepNewlines: false }));
   const inner = [
     'started=$SECONDS',
-    [resolved, ...args].map(shq).join(' '),
+    [resolved, ...safeArgs].map(shq).join(' '),
     's=$?',
     'if [ $s -ne 0 ] && [ $((SECONDS - started)) -lt 3 ]; then echo; read -rsn1 -p "[exited with status $s — press any key to close this tab]"; fi',
   ].join('; ');

@@ -1,6 +1,7 @@
 import { render } from 'ink';
 import App from './ui/App.jsx';
 import { queryPalette } from './lib/palette.js';
+import { GRADIENT_SLOTS } from './lib/theme.js';
 import { signOut } from './lib/auth.js';
 import { supabase } from './lib/supabase.js';
 import { ALT_SCREEN_HOME } from './lib/shell.js';
@@ -38,15 +39,16 @@ if (!process.stdin.isTTY || !process.stdout.isTTY) {
 }
 
 // Colors come from the terminal theme. For the banner gradient, ask the
-// terminal what RGB its theme uses for bright red (Life Tracker terracotta)
-// and yellow (amber), so the gradient matches whatever theme is active.
-const palette = await queryPalette([9, 3]);
-const gradient = [palette[9], palette[3]].filter(Boolean);
+// terminal for the RGB of the active theme family's two signature slots
+// (pale lilac → lilac → rose, or terracotta → amber) so it matches
+// the real theme.
+const palette = await queryPalette(GRADIENT_SLOTS);
+const gradient = GRADIENT_SLOTS.map((slot) => palette[slot]).filter(Boolean);
 
 // Start from a cleared, homed alternate screen (see ALT_SCREEN_HOME).
 process.stdout.write(ALT_SCREEN_HOME);
 
-const instance = render(<App gradient={gradient.length === 2 ? gradient : null} />, {
+const instance = render(<App gradient={gradient.length === GRADIENT_SLOTS.length ? gradient : null} />, {
   alternateScreen: true,
   exitOnCtrlC: true,
 });

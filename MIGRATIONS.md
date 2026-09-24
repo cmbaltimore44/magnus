@@ -26,10 +26,11 @@ exactly what `supabase/schema.sql` and `supabase/schema_002.sql` define:
   app's own eight swatch hex values (`js/views/board.js` `COLORS`), so they
   look normal in the web app. Magnus shows each stored color as its nearest
   terminal color.
-- **Palette.** The Life Tracker Ghostty/Fresh themes (`terminal-theme/`) are
-  derived from the web app's `style.css` (UI-only, no schema impact). Light-mode
-  colors were darkened for contrast. If you change the web palette, regenerate
-  or hand-edit those theme files.
+- **Palette.** Terminal themes live in `terminal-theme/` (UI-only, no schema
+  impact). The current family, Heather, no longer matches the web app's
+  warm palette; `life-tracker` (derived from `style.css`) is kept as a backup.
+  Retheming the web app to Heather would be a separate change in the
+  Life Tracker repo.
 - **Rules mirrored from the web app:** max 3 starred tasks; moving a task to
   Done auto-unstars it; the routine-streak grace period; the heatmap's
   "today's routine count" denominator; quote attribution derived from the

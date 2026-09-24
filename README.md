@@ -22,9 +22,15 @@ After editing anything in `src/`, rebuild with `npm run build` (or leave
 ```sh
 magnus            # launch
 magnus --logout   # sign out + delete the Keychain item
+magnus-theme      # show/switch terminal theme family (see terminal-theme/)
 npm run demo      # sample in-memory data: no sign-in, nothing saved
 npm test          # unit tests (+ a Keychain round-trip on a throwaway item)
 ```
+
+Environment variables: `MAGNUS_DEMO=1` (sample data, nothing saved),
+`MAGNUS_KITTY=0|1` (force cover images off/on), `MAGNUS_JOURNAL_TABS=0`
+(start journal entries in this terminal instead of a new Ghostty tab), and
+`VISUAL`/`EDITOR` (editor for long notes; defaults to `fresh`).
 
 On first launch you sign in with an email code. The session is stored in the
 macOS Keychain (item `magnus-session`, via the built-in `security` CLI) and
@@ -54,11 +60,12 @@ for multi-line text. Dates accept `2026-10-01`, `10/1`, `today`, `tomorrow`,
 ## Design notes
 
 - **Colors come from the terminal theme.** Magnus uses named ANSI colors only
-  (`src/lib/theme.js` maps accent/muted/danger/… to slots). The Life Tracker
-  Ghostty themes in [`terminal-theme/`](terminal-theme/) give those slots the
-  web app's palette, and light/dark follows macOS. Fresh and bat are themed to
-  match. The banner gradient asks the terminal for its bright red and yellow
-  RGB (OSC 4), so it's terracotta → amber under those themes.
+  (`src/lib/theme.js` maps accent/muted/danger/… to slots). Two theme
+  families for Ghostty, Fresh and bat live in [`terminal-theme/`](terminal-theme/):
+  **Heather** (current) and **Life Tracker** (the web app's palette).
+  Switch with `magnus-theme heather|life-tracker`. Light/dark follows
+  macOS. The banner gradient asks the terminal for the family's two signature
+  colors (OSC 4).
 - **Handing the terminal to scripts** (`today`, `new-essay`, `jsearch`,
   `jbacklinks`, `$EDITOR`, cover view) goes through Ink 7's `suspendTerminal()`
   plus `spawnSync(…, { stdio: 'inherit' })`. Raw mode, the alternate screen and
@@ -80,4 +87,9 @@ for multi-line text. Dates accept `2026-10-01`, `10/1`, `today`, `tomorrow`,
   `sips`, and shows it full-screen via the kitty graphics protocol (Ghostty
   supports it). Any key returns. In the panels a text placeholder is shown,
   since Ink's repaints would wipe inline images.
+- **Untrusted text is sanitized.** Supabase responses (via a fetch wrapper),
+  journal script output, and the cover caption have terminal control
+  sequences stripped (`src/lib/sanitize.js`). Ink already drops most, but not
+  OSC 8 hyperlinks or CR/backspace overwrites. Arguments typed into a new
+  Ghostty tab are also stripped of control characters and newlines.
 - **Schema**: see [MIGRATIONS.md](MIGRATIONS.md). Currently no changes.

@@ -1,46 +1,64 @@
-# Life Tracker terminal theme
+# Terminal themes
 
-Copies of the theme files installed on this Mac, kept here so they're
-versioned. Magnus itself uses named ANSI colors and gets its RGB from
-whichever of these Ghostty themes is active.
+Two theme families for Ghostty + Fresh (+ bat and Magnus, which follow the
+terminal's colors). Each family has a light and a dark variant; Ghostty and
+Fresh follow macOS light/dark mode.
 
-| File | Installed at |
-| ---- | ------------ |
-| `ghostty/Life Tracker Dark`, `ghostty/Life Tracker Light` | `~/.config/ghostty/themes/` |
-| `fresh/themes/life-tracker-{dark,light}.json` | `~/.config/fresh/themes/` |
-| `fresh/init.ts` (picks the Fresh theme from macOS light/dark mode) | `~/.config/fresh/init.ts` |
+| Family | Look |
+| ------ | ---- |
+| `heather` (current) | Slate `#20242A` / Dust `#D2D4C8`, Charcoal highlights, Ash/Steel muted, Lilac accent, green, teal, plus added brick red, ochre and slate blue |
+| `life-tracker` (backup) | The Life Tracker web app's warm palette (parchment / terracotta / amber) |
+
+## Switching
+
+    magnus-theme                  # show the current family
+    magnus-theme heather     # or: magnus-theme life-tracker
+    magnus-theme install          # (re)install these files into ~/.config
+
+Switching rewrites Ghostty's `theme = light:…,dark:…` line and reloads open
+windows, sets Fresh's fallback theme, and records the family in
+`~/.config/magnus/terminal-theme`. Fresh (`init.ts`) and Magnus read that file
+when they start.
+
+## Files
+
+| Repo file | Installed at |
+| --------- | ------------ |
+| `<family>/ghostty/*` | `~/.config/ghostty/themes/` |
+| `<family>/fresh/*.json` | `~/.config/fresh/themes/` |
+| `fresh/init.ts` (picks `<family>-<dark\|light>`) | `~/.config/fresh/init.ts` |
 | `bat/config` (`--theme="ansi"`) | `~/.config/bat/config` |
 
-Ghostty config (`~/Library/Application Support/com.mitchellh.ghostty/config`):
+## Color roles
 
-    theme = light:Life Tracker Light,dark:Life Tracker Dark
+| Slot | Heather | Life Tracker |
+| ---- | ------------ | ------------ |
+| red | brick (errors, overdue) | danger red |
+| yellow | ochre (warnings, "soon") | amber |
+| green | green (success, code) | success green |
+| magenta | **lilac (accent)** | dusty rose |
+| cyan | teal (links) | sage teal |
+| bright red | light brick | **terracotta (accent)** |
+| bright black | Steel (muted text) | muted brown-gray |
 
-Fresh `~/.config/fresh/config.json` sets `"theme": "life-tracker-dark"` as the
-fallback if `init.ts` doesn't run.
-
-## Palette
-
-Colors are the web app's `style.css` palette. Terminal themes need 16 colors,
-so blue, magenta and cyan (not in the web palette) are dusty, warm-leaning
-additions. Slot meanings: red = danger, bright red = terracotta accent,
-yellow = amber, green = success, bright black = muted text.
+Magnus takes its accent from the family: magenta for Heather, bright red
+for Life Tracker (see `src/lib/theme.js`).
 
 ## Readability
 
-Every text color is at least 4.8:1 contrast on the background (WCAG AA is
-4.5:1), in both modes. The one exception is color 0 ("black") in the dark
-theme, which is a near-background shade. In the light theme, "white" and
-"bright white" are dark warm grays, so programs that print white text stay
-readable. The web app's own light-mode amber, muted and terracotta (2.7–3.7:1
-on parchment) were darkened, keeping the same hue.
+- **Heather dark:** every text color is at least 6.0:1 on the slate background and at least
+  4.5:1 on the selection/highlight shade, so a visible Charcoal-slate
+  selection fits under colored text.
+- **Heather light:** at least 4.8:1 on Dust. Lilac, Ash and Steel are
+  deepened (Lilac becomes plum-mauve).
+- **Life Tracker:** at least 4.8:1 in both modes. Color 0 in each dark theme
+  is a near-background shade by design.
+- **Fresh:** highlights keep all text readable, and filled highlights (search,
+  errors, diffs) keep text at 7:1 or better.
 
-The Fresh themes use exact hex colors. Highlights (current line, selection,
-popups) are shifted *away* from the text color, darker in dark mode and
-lighter in light mode, so colored text on a highlighted row keeps at least
-4.8:1. Filled highlights (search match, errors, diffs) keep text at 7.4:1 or
-better.
+Checked by rendering Fresh (Markdown, command palette, search), bat, and
+every Magnus screen, and scoring each text/background pair.
 
-Known leftovers that can't be themed: Fresh's changed-line marker is
-hardcoded cornflower blue (about 2.4:1 in light mode; a thin bar, not text),
-and bat's `ansi` theme marks `--highlight-line` with an underline instead of
-a background.
+**Can't be themed:** Fresh's changed-line marker (hardcoded cornflower blue, a
+thin bar), and bat's `ansi` theme underlines `--highlight-line` instead of
+shading it.

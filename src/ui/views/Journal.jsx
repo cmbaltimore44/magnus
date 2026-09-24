@@ -6,6 +6,7 @@ import { Prompt } from '../components/Prompt.jsx';
 import os from 'node:os';
 import path from 'node:path';
 import { canOpenGhosttyTabs, openInGhosttyTab } from '../../lib/ghostty.js';
+import { cleanText } from '../../lib/sanitize.js';
 
 // Front door to the journal scripts already on $PATH. Magnus doesn't
 // reimplement any of their logic — it just launches them, handing over the
@@ -76,17 +77,17 @@ export function Journal() {
       const text = value.trim();
       if (!text) return;
       const res = await capture('capture', [text]);
-      return notify(res.ok ? res.stdout.trim() || 'Captured.' : res.stderr.trim() || 'capture failed', res.ok ? 'success' : 'error');
+      return notify(cleanText(res.ok ? res.stdout.trim() || 'Captured.' : res.stderr.trim() || 'capture failed', { keepNewlines: false }), res.ok ? 'success' : 'error');
     }
     if (a.output) {
       const res = await capture(a.output, []);
-      const text = (res.stdout + (res.stderr ? `\n${res.stderr}` : '')).replace(/\s+$/, '');
+      const text = cleanText(res.stdout + (res.stderr ? `\n${res.stderr}` : '')).replace(/\s+$/, '');
       return setMode({ type: 'output', title: item.label, lines: text ? text.split('\n') : ['(no output)'], offset: 0 });
     }
     if (a.quick) {
       notify(`Running ${a.quick}…`, 'info');
       const res = await capture(a.quick, []);
-      return notify((res.ok ? res.stdout : res.stderr || res.stdout).trim() || `${a.quick} done`, res.ok ? 'success' : 'error');
+      return notify(cleanText((res.ok ? res.stdout : res.stderr || res.stdout).trim(), { keepNewlines: false }) || `${a.quick} done`, res.ok ? 'success' : 'error');
     }
   };
 

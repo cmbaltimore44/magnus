@@ -1,0 +1,25 @@
+# Heather Dark — slate #20242a / Dust / Charcoal / Ash / Steel / Lilac / Green / Teal, plus brick red, ochre and slate blue.
+# Every text color is >= 6.0:1 on the background (and >= 4.5:1 on the selection); color 0 is the near-background shade.
+# red = errors, yellow = ochre warnings, green = success, magenta = lilac accent, cyan = teal links.
+palette = 0=#333f48
+palette = 1=#da8d84
+palette = 2=#43b675
+palette = 3=#c9993e
+palette = 4=#87a4be
+palette = 5=#c3acba
+palette = 6=#18b1d1
+palette = 7=#b6bcb3
+palette = 8=#97a3a3
+palette = 9=#f4a597
+palette = 10=#6cc08f
+palette = 11=#e3bf72
+palette = 12=#9dbcd8
+palette = 13=#dcc6d3
+palette = 14=#6cc3d6
+palette = 15=#eceee4
+background = #20242a
+foreground = #d2d4c8
+cursor-color = #d2d4c8
+cursor-text = #20242a
+selection-background = #2f3941
+selection-foreground = #d2d4c8
