@@ -98,7 +98,14 @@ function seed() {
     if (d % 3 === 0) log_entries.push(row({ entry_date: iso(-d), metric: 'weight', value: 172 - d / 10, note: null }));
     if (d % 2 === 0) log_entries.push(row({ entry_date: iso(-d), metric: 'workout', value: 30 + (d % 4) * 10, note: d % 4 ? 'run' : 'lift' }));
   }
-  return { categories, tasks, routines, routine_completions, projects, project_tasks, books, quotes, focus_sessions, log_entries };
+  // schema_004: Lists.
+  const lists = [row({ name: 'Groceries', sort_order: 0 }), row({ name: 'Wish list', sort_order: 1 })];
+  const list_items = [
+    ...['Oat milk', 'Eggs', 'Spinach', 'Coffee beans'].map((text, i) => row({ list_id: lists[0].id, text, done: i === 2, url: null, price: null, sort_order: i })),
+    row({ list_id: lists[1].id, text: 'Noise-cancelling headphones', done: false, url: 'https://example.com/headphones', price: 249, sort_order: 0 }),
+    row({ list_id: lists[1].id, text: 'Hiking boots', done: false, url: null, price: 140, sort_order: 1 }),
+  ];
+  return { categories, tasks, routines, routine_completions, projects, project_tasks, books, quotes, focus_sessions, log_entries, lists, list_items };
 }
 
 // Same rule as schema_003's tasks_completed_at trigger.
@@ -224,6 +231,7 @@ class Query {
     const db = this.db;
     if (this.table === 'routines') db.routine_completions = db.routine_completions.filter((c) => !ids.has(c.routine_id));
     if (this.table === 'projects') db.project_tasks = db.project_tasks.filter((c) => !ids.has(c.project_id));
+    if (this.table === 'lists') db.list_items = db.list_items.filter((c) => !ids.has(c.list_id));
     if (this.table === 'books') db.quotes = db.quotes.filter((q) => !ids.has(q.book_id));
     if (this.table === 'tasks') db.focus_sessions.forEach((f) => ids.has(f.task_id) && (f.task_id = null));
     if (this.table === 'categories') db.tasks.forEach((t) => ids.has(t.category_id) && (t.category_id = null));

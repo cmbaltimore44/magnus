@@ -10,6 +10,7 @@ const CASCADES = {
   routines: [{ table: 'routine_completions', key: 'routine_id', kind: 'cascade' }],
   projects: [{ table: 'project_tasks', key: 'project_id', kind: 'cascade' }],
   books: [{ table: 'quotes', key: 'book_id', kind: 'cascade' }],
+  lists: [{ table: 'list_items', key: 'list_id', kind: 'cascade' }],
   categories: [{ table: 'tasks', key: 'category_id', kind: 'detach' }],
   tasks: [{ table: 'focus_sessions', key: 'task_id', kind: 'detach' }],
 };

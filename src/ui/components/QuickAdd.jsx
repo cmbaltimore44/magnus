@@ -5,7 +5,8 @@ import TextInput from 'ink-text-input';
 import { useAppCtx, useCapture } from '../context.js';
 import * as tasksApi from '../../lib/data/tasks.js';
 import * as categoriesApi from '../../lib/data/categories.js';
-import { parseQuickAdd, describeQuickAdd } from '../../lib/quickadd.js';
+import { parseQuickAdd, describeQuickAdd, findList } from '../../lib/quickadd.js';
+import * as listsApi from '../../lib/data/lists.js';
 import { cleanText } from '../../lib/sanitize.js';
 
 const MAX_STARRED = 3;
@@ -18,8 +19,8 @@ export function QuickAdd({ onClose, initial = '', onCreated }) {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    Promise.all([categoriesApi.listCategories(), tasksApi.listTasks()])
-      .then(([categories, tasks]) => setData({ categories, tasks }))
+    Promise.all([categoriesApi.listCategories(), tasksApi.listTasks(), listsApi.listLists().catch(() => [])])
+      .then(([categories, tasks, lists]) => setData({ categories, tasks, lists }))
       .catch((err) => notify(err.message, 'error'));
   }, [notify]);
 
@@ -36,6 +37,21 @@ export function QuickAdd({ onClose, initial = '', onCreated }) {
       const res = await capture('capture', [parsed.inbox]);
       const msg = res.ok ? 'Added to the journal inbox' : res.stderr.trim() || 'capture failed';
       return notify(cleanText(msg, { keepNewlines: false }), res.ok ? 'success' : 'error');
+    }
+    if (parsed.list != null) {
+      if (!data) return;
+      const list = findList(data.lists, parsed.list);
+      if (!list) return notify(parsed.list ? `No list named “${parsed.list}”` : 'Name a list: +groceries oat milk', 'error');
+      if (!parsed.text) return;
+      onClose();
+      try {
+        await listsApi.appendItem(userId, list.id, parsed.text);
+        notify(`Added “${parsed.text}” to ${list.name}`, 'success');
+        dataChanged();
+      } catch (err) {
+        notify(err.message, 'error');
+      }
+      return;
     }
     if (!parsed.title || !data) return;
     const { title, ...fields } = parsed;
@@ -55,7 +71,7 @@ export function QuickAdd({ onClose, initial = '', onCreated }) {
     }
   };
 
-  const preview = describeQuickAdd(parsed, data?.categories || []);
+  const preview = describeQuickAdd(parsed, data?.categories || [], data?.lists || []);
   return (
     <Box flexDirection="column" borderStyle="round" borderColor={C.accent} paddingX={1} flexShrink={0}>
       <Box>
@@ -65,7 +81,7 @@ export function QuickAdd({ onClose, initial = '', onCreated }) {
         <TextInput value={value} onChange={setValue} placeholder="renew passport fri !high #home *" onSubmit={submit} />
       </Box>
       <Text color={C.muted} wrap="truncate-end">
-        {preview || 'date (fri, +3, 10/1) · !high/!low · #category · * star · "> text" → journal inbox'}
+        {preview || 'date (fri, +3, 10/1) · !high/!low · #category · * star · "+list item" → a list · "> text" → journal inbox'}
       </Text>
     </Box>
   );

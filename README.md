@@ -55,6 +55,7 @@ category's tasks) · **t** start a focus timer on the selected task (Today, Boar
 | Upcoming | overdue, today, tomorrow, next 7 days — tasks by due date and projects by target date · space mark done · enter open |
 | Insights | tasks finished per week (8 weeks, from `completed_at`), routine consistency (30 days), focus minutes per week, mood/energy/sleep sparklines and workouts from the Log, writing streak, books this year · ↑↓ scrolls on narrow windows |
 | Log      | ←→ day · ↑↓ row · enter set mood/energy (1–5), hours slept, weight · n add a workout (`30 run`) · d clear (u undoes) · t back to today · a two-week table below. Mood/energy/sleep from `today` land here too |
+| Lists    | `k` from Home (no digit left) or the palette · lists on the left, the open list's items on the right (enter/esc on narrow windows) · space check · n add (stays open for the next item) · e edit text, link, price · o open link · c clear checked · d delete · K/J reorder · checked items sink to the bottom; prices total the unchecked ones |
 | Journal  | header: writing streak (consecutive days with a daily entry) and entries this month; a heatmap of entries per day sits beside the menu on wide windows (below it on tall ones) · t today (asks for mood, energy and hours slept once a day, e.g. `4 3 7.5`) · o close the day (`today --close`: adds an Evening section with tasks finished, routines, carry-overs and reflection prompts) · e new essay · b book essay · f film essay · s search (`#tag` = tag search) · g tags · k backlinks · v graph · c quick capture · **r triage inbox** one item at a time (t → task via quick add, n → note, e → essay, d delete, u undo, s skip) · i edit inbox.md in Fresh · e/b/f/n end with an optional tags / `[[links]]` prompt · n new note · x note from inbox · w weekly review (`jweek`) · l browse all entries (enter open, d move to Trash, tab type filter, f text filter) · d back up to drive (plug it in first) |
 
 **Focus timer**: one at a time, 25 minutes by default (Settings). The time
@@ -65,7 +66,7 @@ The timer survives quitting Magnus.
 **Quick add** (`a`, anywhere): one line becomes a task —
 `renew passport fri !high #home *` sets the due date (`today`, `tom`, weekday
 names, `+3`, `10/1`, `2026-10-01`), priority (`!high`/`!h`, `!low`), the category
-whose name starts with `home`, and a star. `> some thought` goes to the journal
+whose name starts with `home`, and a star. `+groceries oat milk` adds to a list (name or prefix). `> some thought` goes to the journal
 inbox instead. Anything that doesn't resolve stays in the title.
 
 **Offline mode**: every read is cached in `~/.config/magnus/cache.json`

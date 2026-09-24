@@ -14,6 +14,7 @@ const DESCRIPTIONS = {
   upcoming: 'overdue, today and the next 7 days',
   insights: 'tasks, routines, focus, mood and sleep trends',
   log: 'mood, energy, sleep, weight, workouts',
+  lists: 'groceries, wish list, anything you keep',
 };
 
 const HINTS = 'press a letter to open · ↑↓ enter · a quick add · ctrl+p or : actions · ctrl+k or / search · , settings · q quit';

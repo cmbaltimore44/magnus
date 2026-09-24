@@ -20,6 +20,7 @@ import { Search } from './views/Search.jsx';
 import { Upcoming } from './views/Upcoming.jsx';
 import { Insights } from './views/Insights.jsx';
 import { Log } from './views/Log.jsx';
+import { Lists } from './views/Lists.jsx';
 import { Settings } from './views/Settings.jsx';
 import { getPref } from '../lib/prefs.js';
 import { QuickAdd } from './components/QuickAdd.jsx';
@@ -42,6 +43,8 @@ export const SECTIONS = [
   { view: 'upcoming', label: 'Upcoming', key: 'w', digit: '7', component: Upcoming },
   { view: 'insights', label: 'Insights', key: 'i', digit: '8', component: Insights },
   { view: 'log', label: 'Log', key: 'g', digit: '9', component: Log },
+  // No digit left: k from Home, the palette, or quick add `+list item`.
+  { view: 'lists', label: 'Lists', key: 'k', digit: null, component: Lists },
 ];
 
 function TabBar({ current, columns }) {
@@ -56,7 +59,7 @@ function TabBar({ current, columns }) {
         </Text>
         {SECTIONS.map((s) => {
           const active = current === s.view;
-          const label = compact && !active ? ` ${s.digit} ` : ` ${s.digit} ${s.label} `;
+          const label = !s.digit ? ` ${s.label} ` : compact && !active ? ` ${s.digit} ` : ` ${s.digit} ${s.label} `;
           return (
             <Text key={s.view}>
               {' '}
@@ -308,7 +311,8 @@ export default function App({ gradient }) {
     const list = [];
     const add = (group, label, run, hint) => list.push({ id: `${group}:${label}`, group, label, run, hint });
     add('Go', 'Home', () => navigate('home'), '0');
-    for (const s of SECTIONS) add('Go', s.label, () => navigate(s.view), s.digit);
+    for (const s of SECTIONS) add('Go', s.label, () => navigate(s.view), s.digit || undefined);
+    add('List', 'New list', () => navigate('lists'));
     add('Task', 'Quick add', () => setQuickAddOpen(true), 'a');
     add('Task', 'New task (form)', () => navigate('board', { new: true }));
     add('Search', 'Search everything', () => setSearchOpen(true), 'ctrl+k');

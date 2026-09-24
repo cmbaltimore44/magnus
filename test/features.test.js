@@ -208,3 +208,27 @@ test('end-of-day Evening section', () => {
   assert.match(md, /\*\*Carrying over\*\*\n- Late \(overdue\)\n- Starred\n\n/);
   assert.doesNotMatch(md, /Someday|Yesterday/);
 });
+
+import { findList } from '../src/lib/quickadd.js';
+import { cleanUrl } from '../src/lib/data/lists.js';
+
+test('quick add +list and list helpers', () => {
+  assert.deepEqual(parseQuickAdd('+groceries oat milk', CATS, NOW), { list: 'groceries', text: 'oat milk' });
+  assert.equal(parseQuickAdd('+3 call mom', CATS, NOW).due_date, '2026-09-26'); // still a date
+  const lists = [{ id: 'g', name: 'Groceries' }, { id: 'w', name: 'Wish list' }, { id: 'gf', name: 'Gifts' }];
+  assert.equal(findList(lists, 'gro').id, 'g');
+  assert.equal(findList(lists, 'gifts').id, 'gf');
+  assert.equal(findList(lists, 'nope'), null);
+  assert.equal(cleanUrl('example.com/x'), 'https://example.com/x');
+  assert.equal(cleanUrl(''), null);
+  assert.throws(() => cleanUrl('javascript:alert(1)'), /http/);
+});
+
+test('undo restores a deleted list with its items', async () => {
+  const { data: lists } = await supabase.from('lists').select('*');
+  const n = (await supabase.from('list_items').select('*').eq('list_id', lists[0].id)).data.length;
+  const restore = await deleteWithUndo('lists', lists[0].id);
+  assert.equal((await supabase.from('list_items').select('*').eq('list_id', lists[0].id)).data.length, 0);
+  await restore();
+  assert.equal((await supabase.from('list_items').select('*').eq('list_id', lists[0].id)).data.length, n);
+});
