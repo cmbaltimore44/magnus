@@ -1,3 +1,5 @@
 node_modules/
 dist/
 .DS_Store
+art/*.png
+art/__pycache__/

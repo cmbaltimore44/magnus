@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -31,6 +32,24 @@ const FAMILY_ACCENTS = {
   beacon: { accent: 'redBright', gradientSlots: [12, 9, 11], gradientFallback: ['blueBright', 'redBright', 'yellowBright'] },
   hearth: { accent: 'redBright', gradientSlots: [9, 3], gradientFallback: ['redBright', 'yellow'] },
 };
+
+// Light or dark, the way Ghostty picks its light:/dark: theme: from the macOS
+// appearance (MAGNUS_APPEARANCE=light|dark overrides, e.g. for testing).
+let appearance;
+export function isLightAppearance() {
+  if (appearance === undefined) {
+    const forced = process.env.MAGNUS_APPEARANCE;
+    if (forced === 'light' || forced === 'dark') appearance = forced;
+    else {
+      try {
+        appearance = execFileSync('defaults', ['read', '-g', 'AppleInterfaceStyle'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() === 'Dark' ? 'dark' : 'light';
+      } catch {
+        appearance = 'light'; // the key is absent in light mode
+      }
+    }
+  }
+  return appearance === 'light';
+}
 
 export const FAMILY = FAMILY_ACCENTS[activeFamily()] ? activeFamily() : 'hearth';
 const F = FAMILY_ACCENTS[FAMILY];

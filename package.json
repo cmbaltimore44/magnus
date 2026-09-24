@@ -17,7 +17,8 @@
     "start": "npm run build && node bin/magnus.js",
     "demo": "npm run build && MAGNUS_DEMO=1 node bin/magnus.js",
     "test": "npm run build && node --test test/",
-    "themes:web": "node terminal-theme/tools/build-web.mjs ../LifeTracker"
+    "themes:web": "node terminal-theme/tools/build-web.mjs ../LifeTracker",
+    "art": "python3 art/export.py heron_sun_vignette src/ui/art/heronSun.js HERON_SUN"
   },
   "engines": {
     "node": ">=20"

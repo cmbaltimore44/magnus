@@ -4,6 +4,8 @@ import { Box, Text } from 'ink';
 import { useAppCtx, useHints, useViewInput } from '../context.js';
 import { Banner } from '../components/Banner.jsx';
 import { Starfield } from '../components/Starfield.jsx';
+import { PixelArt, pixelRows } from '../components/PixelArt.jsx';
+import { HERON_SUN, HERON_SUN_LEGEND } from '../art/heronSun.js';
 
 const DESCRIPTIONS = {
   today: 'starred tasks, today’s routines, a quote',
@@ -61,7 +63,28 @@ export function Home({ gradient, sections }) {
         ))}
       </Box>
     </Box>
-    {fieldWidth >= 8 ? <Starfield width={fieldWidth} height={contentHeight + 1} /> : null}
+    {fieldWidth >= 8 ? <RightPanel width={fieldWidth} height={contentHeight + 1} /> : null}
+    </Box>
+  );
+}
+
+// Home's right side: the starfield, with the heron crossing the sun set into
+// it when there's room (otherwise just the stars).
+function RightPanel({ width, height }) {
+  const art = HERON_SUN;
+  const rows = pixelRows(art);
+  if (width < art.width + 6 || height < rows + 2) return <Starfield width={width} height={height} />;
+  const top = Math.max(1, Math.floor((height - rows) / 2) - 1);
+  const left = Math.floor((width - art.width) / 2);
+  return (
+    <Box flexDirection="column" width={width} flexShrink={0}>
+      <Starfield width={width} height={top} seed={3} />
+      <Box flexDirection="row">
+        <Starfield width={left} height={rows} seed={5} />
+        <PixelArt art={art} legend={HERON_SUN_LEGEND} />
+        <Starfield width={width - left - art.width} height={rows} seed={9} />
+      </Box>
+      <Starfield width={width} height={height - top - rows} seed={11} />
     </Box>
   );
 }
