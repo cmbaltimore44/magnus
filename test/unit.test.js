@@ -11,6 +11,7 @@ import { dueStatus, sortForColumn, truncate } from '../src/lib/display.js';
 import { windowByHeight, windowRange, swapped } from '../src/ui/components/layout.js';
 import { parsePaletteReplies } from '../src/lib/palette.js';
 import { formatAttribution } from '../src/lib/data/quotes.js';
+import { tagLinkFlags } from '../src/lib/journal.js';
 
 test('theme tokens are named ANSI colors (the terminal theme supplies RGB)', () => {
   for (const [k, v] of Object.entries(C)) {
@@ -89,4 +90,35 @@ test('formatAttribution uses the current book title', () => {
   assert.equal(formatAttribution({ book_id: 'b1', attribution: 'p. 3' }, books), 'Middlemarch - p. 3');
   assert.equal(formatAttribution({ book_id: 'b1', attribution: null }, books), 'Middlemarch');
   assert.equal(formatAttribution({ book_id: null, attribution: '— Mary Oliver' }, books), '— Mary Oliver');
+});
+
+test('tagLinkFlags turns the tags/links answer into flags', () => {
+  assert.deepEqual(tagLinkFlags('idea Work #book [[pricing ideas]] [[2026-09-23]]'), [
+    '--tag', 'idea', '--tag', 'Work', '--tag', 'book', '--link', 'pricing ideas', '--link', '2026-09-23',
+  ]);
+  assert.deepEqual(tagLinkFlags(''), []);
+  assert.deepEqual(tagLinkFlags('  #  '), []);
+});
+
+test('journal browser helpers: parse jlist rows, find backlinks', async () => {
+  const { parseEntries, findBacklinks } = await import('../src/lib/journal.js');
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const rows = parseEntries('note\t2026-09-22\tPricing: ideas\tidea,work\tpricing-ideas\t/j/notes/pricing-ideas.md\n\ndaily\t2026-09-23\tDaily entry 2026-09-23\t\t2026-09-23\t/j/daily/x.md\n');
+  assert.equal(rows.length, 2);
+  assert.deepEqual(rows[0].tags, ['idea', 'work']);
+  assert.deepEqual(rows[1].tags, []);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'magnus-journal-'));
+  try {
+    fs.mkdirSync(path.join(dir, 'notes'));
+    fs.writeFileSync(path.join(dir, 'a.md'), 'see [[pricing-ideas]]');
+    fs.writeFileSync(path.join(dir, 'b.md'), 'see [[pricing-ideas|pricing]]');
+    fs.writeFileSync(path.join(dir, 'c.md'), 'see [[pricing-ideas-old]]');
+    const self = path.join(dir, 'notes', 'pricing-ideas.md');
+    fs.writeFileSync(self, 'self link [[pricing-ideas]]');
+    assert.deepEqual(findBacklinks('pricing-ideas', self, dir), ['a.md', 'b.md']);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

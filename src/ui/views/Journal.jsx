@@ -7,6 +7,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { canOpenGhosttyTabs, openInGhosttyTab } from '../../lib/ghostty.js';
 import { cleanText } from '../../lib/sanitize.js';
+import { tagLinkFlags } from '../../lib/journal.js';
+import { JournalBrowser } from './JournalBrowser.jsx';
 
 // Front door to the journal scripts already on $PATH. Magnus doesn't
 // reimplement any of their logic — it just launches them, handing over the
@@ -22,16 +24,21 @@ import { cleanText } from '../../lib/sanitize.js';
 // Magnus stays up in this one; elsewhere they take over this terminal.
 const ITEMS = [
   { key: 't', label: "Today's Entry", desc: 'today', action: { run: 'today', tab: true } },
-  { key: 'e', label: 'New Essay', desc: 'new-essay', action: { run: 'new-essay', tab: true } },
-  { key: 'b', label: 'New Book Essay', desc: 'new-essay --book', action: { prompt: 'Book title:', run: 'new-essay', flag: '--book', tab: true } },
-  { key: 'f', label: 'New Film Essay', desc: 'new-essay --film', action: { prompt: 'Film title:', run: 'new-essay', flag: '--film', tab: true } },
+  { key: 'e', label: 'New Essay', desc: 'new-essay [--tag …] [--link …]', action: { run: 'new-essay', tab: true, tags: true } },
+  { key: 'b', label: 'New Book Essay', desc: 'new-essay --book … [--tag …] [--link …]', action: { prompt: 'Book title:', run: 'new-essay', flag: '--book', tab: true, tags: true } },
+  { key: 'f', label: 'New Film Essay', desc: 'new-essay --film … [--tag …] [--link …]', action: { prompt: 'Film title:', run: 'new-essay', flag: '--film', tab: true, tags: true } },
   { key: 's', label: 'Search', desc: 'jsearch <text> · #tag → jsearch -t <tag>', action: { search: true } },
   { key: 'g', label: 'Tags', desc: 'jtags', action: { output: 'jtags' } },
   { key: 'k', label: 'Backlinks', desc: 'jbacklinks <slug>', action: { prompt: 'Slug:', run: 'jbacklinks', placeholder: 'note-slug' } },
   { key: 'v', label: 'Graph', desc: 'jgraph (opens in browser)', action: { quick: 'jgraph' } },
   { key: 'c', label: 'Quick Capture', desc: 'capture "…" → inbox.md', action: { capture: true } },
   { key: 'i', label: 'Triage Inbox', desc: 'fresh inbox.md', action: { run: 'fresh', tab: true, inbox: true } },
+  { key: 'n', label: 'New Note', desc: 'new-note "…" [--tag …] [--link …]', action: { note: true, run: 'new-note', tab: true, tags: true } },
+  { key: 'x', label: 'Note from Inbox', desc: 'new-note --from-inbox', action: { run: 'new-note', args: ['--from-inbox'], tab: true } },
+  { key: 'l', label: 'Browse Entries', desc: 'jlist · every daily/essay/note: open or delete', action: { browse: true } },
+  { key: 'd', label: 'Back Up to Drive', desc: 'journal-backup (plug in the drive first)', action: { backup: true } },
 ];
+
 
 // Same location the `capture` script appends to.
 function inboxPath() {
@@ -43,8 +50,8 @@ const HINTS = 'press a letter or ↑↓ enter · esc home';
 export function Journal() {
   const { navigate, notify, run, capture, contentHeight } = useAppCtx();
   const [index, setIndex] = useState(0);
-  const [mode, setMode] = useState(null); // {type:'prompt', item} | {type:'output', title, lines, offset}
-  useHints(mode?.type === 'output' ? '↑↓ scroll · esc back' : HINTS);
+  const [mode, setMode] = useState(null); // {type:'prompt', item, step?, title?} | {type:'output', title, lines, offset}
+  useHints(mode?.type === 'browse' ? null : mode?.type === 'output' ? '↑↓ scroll · esc back' : HINTS);
 
   const start = async (a, args) => {
     if (a.tab && canOpenGhosttyTabs()) {
@@ -61,7 +68,13 @@ export function Journal() {
   const launch = async (item, value) => {
     const a = item.action;
     if (a.inbox) return start(a, [inboxPath()]);
-    if (a.run && !a.prompt) return start(a, []);
+    if (a.backup) {
+      notify('Backing up the journal to the drive…', 'info');
+      const res = await capture('journal-backup', []);
+      const msg = cleanText((res.stdout.trim() || res.stderr.trim()).split('\n').pop() || '', { keepNewlines: false });
+      return notify(msg || (res.ok ? 'Journal backed up.' : 'Backup failed.'), res.ok ? 'success' : 'error');
+    }
+    if (a.run && !a.prompt) return start(a, a.args || []);
     if (a.run && a.prompt) {
       if (!value.trim()) return;
       return start(a, a.flag ? [a.flag, value.trim()] : [value.trim()]);
@@ -91,8 +104,25 @@ export function Journal() {
     }
   };
 
+  // Entries with `tags: true` end with an optional "Tags / links" step.
+  // New Note asks for its title first; book/film essays for the book/film
+  // title; New Essay goes straight to tags (new-essay asks for its own title).
+  const submitWithTags = (item, value) => {
+    const a = item.action;
+    if (mode.step !== 'tags') {
+      if (!value.trim()) return setMode(null);
+      const base = a.note ? [value.trim()] : [a.flag, value.trim()];
+      return setMode({ type: 'prompt', item, step: 'tags', base });
+    }
+    setMode(null);
+    start(a, [...(mode.base || []), ...tagLinkFlags(value)]);
+  };
+
   const choose = (item) => {
-    if (item.action.prompt || item.action.search || item.action.capture) setMode({ type: 'prompt', item });
+    const a = item.action;
+    if (a.tags && !a.prompt && !a.note) setMode({ type: 'prompt', item, step: 'tags', base: [] });
+    else if (a.browse) setMode({ type: 'browse' });
+    else if (a.prompt || a.search || a.capture || a.note) setMode({ type: 'prompt', item });
     else launch(item, '');
   };
 
@@ -120,6 +150,10 @@ export function Journal() {
     mode === null || mode.type === 'output'
   );
 
+  if (mode?.type === 'browse') {
+    return <JournalBrowser onBack={() => setMode(null)} openEntry={(file) => start({ run: 'fresh', tab: true }, [file])} />;
+  }
+
   if (mode?.type === 'output') {
     const size = contentHeight - 3;
     const from = Math.min(mode.offset, Math.max(0, mode.lines.length - size));
@@ -145,7 +179,21 @@ export function Journal() {
       ? { label: 'Search journal:', hint: 'text for full-text search · #tag for a tag search · esc cancel' }
       : promptItem.action.capture
         ? { label: 'Capture:', hint: 'appends a timestamped line to inbox.md · esc cancel' }
-        : { label: promptItem.action.prompt, placeholder: promptItem.action.placeholder }
+        : mode.step === 'tags'
+          ? {
+              label: 'Tags / links:',
+              placeholder: 'idea work [[some-slug]]',
+              hint:
+                'optional · space-separated tags, [[slug]] adds a Related link · enter to ' +
+                (promptItem.action.note ? 'create' : 'start (the script asks for the essay title)'),
+            }
+          : promptItem.action.note
+            ? { label: 'Note title:', hint: 'enter to continue · esc cancel' }
+            : {
+                label: promptItem.action.prompt,
+                placeholder: promptItem.action.placeholder,
+                hint: promptItem.action.tags ? 'enter to continue · esc cancel' : undefined,
+              }
     : null;
 
   return (
@@ -158,7 +206,7 @@ export function Journal() {
             <Text color={C.accent} bold>
               [{item.key}]
             </Text>{' '}
-            <Text bold={i === index}>{item.label.padEnd(16)}</Text>
+            <Text bold={i === index}>{item.label.padEnd(18)}</Text>
             <Text color={C.muted}>{item.desc}</Text>
           </Text>
         ))}
@@ -166,8 +214,10 @@ export function Journal() {
       {promptItem ? (
         <Box marginTop={1}>
           <Prompt
+            key={mode.step || 'first'}
             {...promptProps}
             onSubmit={(v) => {
+              if (promptItem.action.tags) return submitWithTags(promptItem, v);
               setMode(null);
               launch(promptItem, v);
             }}
