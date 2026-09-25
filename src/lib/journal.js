@@ -4,6 +4,7 @@ import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { cleanText } from './sanitize.js';
 import { toISO } from './data/completions.js';
+import { runCapture } from './shell.js';
 
 // Turns the "Tags / links" answer (New Note, New Essay, book/film essays)
 // into new-note / new-essay flags:
@@ -99,6 +100,29 @@ export function moveToTrash(file) {
   return new Promise((resolve, reject) => {
     execFile('trash', [file], (err, _stdout, stderr) => (err ? reject(new Error(String(stderr).trim() || err.message)) : resolve()));
   });
+}
+
+// ---------- captures from the phone ----------
+// An iOS Shortcut appends "YYYY-MM-DD HH:MM:SS text" lines to this iCloud
+// Drive file. Magnus never writes to it (so iCloud never sees two writers);
+// capture-batch remembers which lines it has already added.
+export function phoneQueuePath(home = os.homedir()) {
+  return path.join(home, 'Library', 'Mobile Documents', 'com~apple~CloudDocs', 'Magnus', 'inbox-queue.txt');
+}
+
+// Adds new phone captures to inbox.md. Returns how many were added (0 when
+// there's no queue file yet); throws if capture-batch fails.
+export async function importPhoneQueue(file = phoneQueuePath()) {
+  let text;
+  try {
+    text = await fs.promises.readFile(file, 'utf8'); // downloads it first if iCloud evicted it
+  } catch {
+    return 0;
+  }
+  if (!text.trim()) return 0;
+  const res = await runCapture('capture-batch', [], { input: text });
+  if (!res.ok) throw new Error(res.stderr.trim() || 'capture-batch failed');
+  return Number(/Captured (\d+)/.exec(res.stdout)?.[1] || 0);
 }
 
 // ---------- inbox.md (written by `capture`) ----------

@@ -30,6 +30,10 @@ import { ITEMS as JOURNAL_ITEMS } from './views/Journal.jsx';
 import { signOut } from '../lib/auth.js';
 import { FAMILY } from '../lib/theme.js';
 import { useFocusTimer, timerStatus, timerChoices } from './useFocusTimer.js';
+import { listTasks } from '../lib/data/tasks.js';
+import { listFocusSessions, recentLabels } from '../lib/data/focus.js';
+import { focusChoices, typedChoice } from '../lib/focusPicker.js';
+import { parseEntries } from '../lib/journal.js';
 import { useStatusSummary } from './useStatusSummary.js';
 import { useLiveUpdates } from './useLiveUpdates.js';
 
@@ -183,6 +187,7 @@ export default function App({ gradient }) {
   const dataChanged = useCallback(() => setDataVersion((v) => v + 1), []);
   const [focusMenuOpen, setFocusMenuOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [focusPicker, setFocusPicker] = useState(null); // focus timer: { actions, typed, switching } for the palette
   const [captureCount, setCaptureCount] = useState(0);
   const [hints, setHints] = useState('');
   const [status, setStatus] = useState(null);
@@ -274,7 +279,7 @@ export default function App({ gradient }) {
     () => ({
       userId: currentUserId(auth.session),
       searchOpen,
-      overlayOpen: searchOpen || quickAddOpen || focusMenuOpen || paletteOpen,
+      overlayOpen: searchOpen || quickAddOpen || focusMenuOpen || paletteOpen || !!focusPicker,
       startFocus: focus.start,
       email: auth.session?.user?.email,
       signOut: async () => {
@@ -322,10 +327,44 @@ export default function App({ gradient }) {
         }
       },
     }),
-    [auth.session, focus.start, focusMenuOpen, paletteOpen, searchOpen, quickAddOpen, dataVersion, dataChanged, offerUndo, columns, rows, route.view, navigate, notify, suspendTerminal]
+    [auth.session, focus.start, focusMenuOpen, paletteOpen, focusPicker, searchOpen, quickAddOpen, dataVersion, dataChanged, offerUndo, columns, rows, route.view, navigate, notify, suspendTerminal]
   );
 
   const ready = auth.state === 'ready';
+
+  // Focus timer: what to focus on (T to start, T → Switch task… to switch).
+  // Open tasks, recent labels, recent essays and notes, or anything typed.
+  const openFocusPicker = useCallback(async () => {
+    const timer = focus.timer;
+    const [tasks, sessions, jl] = await Promise.all([
+      listTasks().catch(() => []),
+      listFocusSessions(new Date(Date.now() - 60 * 86400000).toISOString()).catch(() => []),
+      runCapture('jlist', ['--tsv']),
+    ]);
+    const choices = focusChoices({
+      tasks: tasks.filter((t) => t.status !== 'done'),
+      labels: recentLabels(sessions),
+      entries: jl.ok ? parseEntries(jl.stdout) : [],
+      timer,
+    });
+    const pick = timer ? focus.switchTo : focus.start;
+    const action = (c) => ({ ...c, run: () => pick(c.to) });
+    setFocusPicker({ actions: choices.map(action), typed: (q) => (typedChoice(q, choices) ? action(typedChoice(q, choices)) : null), switching: !!timer });
+  }, [focus.timer, focus.switchTo, focus.start]);
+
+  const timerAction = useCallback(
+    (key) =>
+      ({
+        pause: focus.togglePause,
+        advance: focus.advance,
+        extend: focus.extend,
+        stop: focus.stop,
+        discard: focus.discard,
+        switch: openFocusPicker,
+        unassign: () => focus.switchTo(null),
+      })[key](),
+    [focus.togglePause, focus.advance, focus.extend, focus.stop, focus.discard, focus.switchTo, openFocusPicker]
+  );
 
   // Everything the palette (ctrl+p or :) can do.
   const actions = useMemo(() => {
@@ -338,12 +377,10 @@ export default function App({ gradient }) {
     add('Task', 'New task (form)', () => navigate('board', { new: true }));
     add('Search', 'Search everything', () => setSearchOpen(true), 'ctrl+k');
     if (focus.timer) {
-      for (const c of timerChoices(focus.timer)) {
-        const fn = { pause: focus.togglePause, advance: focus.advance, extend: focus.extend, stop: focus.stop, discard: focus.discard }[c.key];
-        add('Focus', c.label, fn, 'T');
-      }
+      for (const c of timerChoices(focus.timer)) add('Focus', c.label, () => timerAction(c.key), 'T');
     } else {
-      add('Focus', 'Start a focus timer (no task)', () => focus.start(null), 'T');
+      add('Focus', 'Start a focus timer… (a task, an essay, anything)', openFocusPicker, 'T');
+      add('Focus', 'Start a focus timer (nothing in particular)', () => focus.start(null));
     }
     add('Project', 'New project', () => navigate('projects', { new: true }));
     add('Library', 'New book', () => navigate('library', { new: 'newBook' }));
@@ -367,7 +404,7 @@ export default function App({ gradient }) {
     });
     add('App', 'Quit', () => exit(), 'q');
     return list;
-  }, [navigate, focus.timer, focus.start, focus.togglePause, focus.advance, focus.extend, focus.stop, focus.discard, notify, runUndo, exit]);
+  }, [navigate, focus.timer, focus.start, timerAction, openFocusPicker, notify, runUndo, exit]);
 
   useInput(
     (input, key) => {
@@ -383,12 +420,12 @@ export default function App({ gradient }) {
       if (input === ':') return setPaletteOpen(true);
       if (input === ',') return navigate('settings');
       if (input === 'u') return runUndo();
-      if (input === 'T') return focus.timer ? setFocusMenuOpen(true) : focus.start(null); // t on a task starts one for that task
+      if (input === 'T') return focus.timer ? setFocusMenuOpen(true) : openFocusPicker(); // t on a task starts one for that task
       if (input === '0') return navigate('home');
       const section = SECTIONS.find((s) => s.digit === input);
       if (section) navigate(section.view);
     },
-    { isActive: ready && !searchOpen && !quickAddOpen && !focusMenuOpen && !paletteOpen && captureCount === 0 }
+    { isActive: ready && !searchOpen && !quickAddOpen && !focusMenuOpen && !paletteOpen && !focusPicker && captureCount === 0 }
   );
 
   useInput(
@@ -421,13 +458,24 @@ export default function App({ gradient }) {
     // so closing search returns you exactly where you were.
     body = (
       <>
-        <Box display={searchOpen || paletteOpen ? 'none' : 'flex'} flexDirection="column" flexGrow={1} flexShrink={1} flexBasis={0} minHeight={0} overflow="hidden">
+        <Box display={searchOpen || paletteOpen || focusPicker ? 'none' : 'flex'} flexDirection="column" flexGrow={1} flexShrink={1} flexBasis={0} minHeight={0} overflow="hidden">
           <View key={route.key} params={route.params} gradient={gradient} sections={SECTIONS} />
         </Box>
         {searchOpen ? <Search onClose={() => setSearchOpen(false)} /> : null}
         {quickAddOpen && !searchOpen ? <QuickAdd onClose={() => setQuickAddOpen(false)} /> : null}
         {paletteOpen && !searchOpen ? (
           <Palette actions={actions} onClose={() => setPaletteOpen(false)} height={rows - 5} width={columns - 6} />
+        ) : null}
+        {focusPicker && !searchOpen ? (
+          <Palette
+            actions={focusPicker.actions}
+            typed={focusPicker.typed}
+            onClose={() => setFocusPicker(null)}
+            height={rows - 5}
+            width={columns - 6}
+            placeholder={`${focusPicker.switching ? 'switch the focus timer to' : 'focus on'}… a task, or type anything (job apps, an essay…)`}
+            empty="Nothing matches."
+          />
         ) : null}
         {focusMenuOpen && focus.timer ? (
           <Box flexShrink={0} flexDirection="column">
@@ -436,7 +484,7 @@ export default function App({ gradient }) {
             options={timerChoices(focus.timer)}
             onPick={(opt) => {
               setFocusMenuOpen(false);
-              ({ pause: focus.togglePause, advance: focus.advance, extend: focus.extend, stop: focus.stop, discard: focus.discard })[opt.key]();
+              timerAction(opt.key);
             }}
             onCancel={() => setFocusMenuOpen(false)}
           />

@@ -9,7 +9,11 @@ import * as P from '../lib/pomodoro.js';
 // on a task. It survives quitting Magnus (prefs.json). When a phase is up it
 // rings, posts a macOS notification and waits for you: start the next phase
 // or add 5 minutes. Focus minutes are logged to focus_sessions when you
-// leave a focus phase.
+// leave a focus phase, or switch task in the middle of one.
+
+// “Draft Q4” / “job apps”, or "no task".
+const named = (title) => (title ? `“${title}”` : 'no task');
+const titleOf = (to) => (to?.id ? to.title : to?.label) || null;
 
 const nextName = (phase) => (phase === 'focus' ? 'next focus round' : P.PHASE_LABELS[phase].toLowerCase());
 
@@ -49,7 +53,8 @@ export function useFocusTimer({ userId, notify, dataChanged }) {
     async (entry) => {
       if (!entry) return false;
       try {
-        await focusApi.createFocusSession(userId, entry.taskId, entry.startedAt, entry.minutes);
+        const row = await focusApi.createFocusSession(userId, entry.taskId, entry.startedAt, entry.minutes, entry.label);
+        if (row?.labelDropped) notify(`Focus logged without its label “${entry.label}”: run supabase/schema_005.sql to keep labels`, 'error');
         dataChanged();
         return true;
       } catch (err) {
@@ -83,12 +88,31 @@ export function useFocusTimer({ userId, notify, dataChanged }) {
     return () => clearInterval(id);
   }, [timer, userId, setTimer, notify]);
 
+  // Keep the clock and round, change what it's on: a task { id, title },
+  // a label { label }, or null for nothing.
+  const switchTo = useCallback(
+    async (to = null) => {
+      const t = timerRef.current;
+      if (!t) return;
+      if (P.sameTarget(t, to)) return notify(to ? `Already focusing on ${named(titleOf(to))}` : 'Not focusing on anything in particular already', 'info');
+      const { timer: next, log: entry } = P.switchTask(t, to, Date.now());
+      setTimer(next);
+      const logged = await log(entry);
+      const when = t.phase === 'focus' && t.status === 'running' ? 'Now focusing on' : 'Next focus round: on';
+      notify(`${when} ${named(next.title)}${logged ? ` · logged ${entry.minutes} min to ${named(t.title)}` : ''}`, 'success');
+    },
+    [notify, setTimer, log]
+  );
+
   const start = useCallback(
-    async (task = null) => {
-      if (timerRef.current) return notify('A timer is already running (T for its controls)', 'error');
+    async (to = null) => {
+      // t on a task while a timer runs switches the timer to it.
+      if (timerRef.current) return to ? switchTo(to) : notify('A timer is already running (T for its controls)', 'error');
       const s = pomodoroSettings();
-      setTimer(P.startFocus(task, s, Date.now()));
+      const next = P.startFocus(to, s, Date.now());
+      setTimer(next);
       let sofar = '';
+      const task = to?.id ? to : null;
       if (task) {
         try {
           const total = await focusApi.focusMinutesForTask(task.id);
@@ -97,9 +121,9 @@ export function useFocusTimer({ userId, notify, dataChanged }) {
           // no schema_003 yet: the timer still runs
         }
       }
-      notify(`Focus: ${s.focus} min${task ? ` on “${task.title}”` : ''}${sofar} · T for pause / skip / +5 / stop`, 'success');
+      notify(`Focus: ${s.focus} min${next.title ? ` on ${named(next.title)}` : ''}${sofar} · T for pause / skip / +5 / stop`, 'success');
     },
-    [notify, setTimer]
+    [notify, setTimer, switchTo]
   );
 
   const togglePause = useCallback(() => {
@@ -138,7 +162,7 @@ export function useFocusTimer({ userId, notify, dataChanged }) {
     notify('Timer discarded (nothing logged)', 'info');
   }, [setTimer, notify]);
 
-  return { timer, start, togglePause, extend, advance, stop, discard };
+  return { timer, start, switchTo, togglePause, extend, advance, stop, discard };
 }
 
 // Status bar text, e.g. "◷ 18:24 Focus 2/4 · Draft Q4" or "⏰ Break over — T".
@@ -157,14 +181,24 @@ export function timerChoices(t) {
     return [
       { key: 'advance', label: `Start the ${next}` },
       { key: 'extend', label: 'Add 5 minutes' },
+      ...switchChoices(t),
       { key: 'stop', label: t.phase === 'focus' ? 'Stop (and log the focus time)' : 'Stop' },
     ];
   }
   return [
     { key: 'pause', label: t.pausedAt ? 'Resume' : 'Pause' },
+    ...switchChoices(t),
     { key: 'advance', label: `Skip to the ${next}${t.phase === 'focus' ? ' (logs the time so far)' : ''}` },
     { key: 'extend', label: 'Add 5 minutes' },
     { key: 'stop', label: t.phase === 'focus' ? 'Stop and log the time so far' : 'Stop' },
     { key: 'discard', label: 'Discard (log nothing)' },
+  ];
+}
+
+function switchChoices(t) {
+  const during = t.phase === 'focus' && t.status === 'running';
+  return [
+    { key: 'switch', label: during ? 'Switch task… (logs the time so far to this one)' : 'Switch task…' },
+    ...(t.taskId || t.label ? [{ key: 'unassign', label: during ? 'Focus on no task (logs the time so far)' : 'Focus on no task' }] : []),
   ];
 }

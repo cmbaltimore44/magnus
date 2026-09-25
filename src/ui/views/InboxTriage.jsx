@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Text } from 'ink';
 import { C } from '../../lib/theme.js';
 import { useAppCtx, useHints, useViewInput } from '../context.js';
 import { Prompt } from '../components/Prompt.jsx';
 import { QuickAdd } from '../components/QuickAdd.jsx';
 import { TagPrompt } from '../components/TagPrompt.jsx';
-import { readInbox, findInboxLine, removeInboxLine, restoreInboxLine, tagLinkFlags } from '../../lib/journal.js';
+import { readInbox, findInboxLine, removeInboxLine, restoreInboxLine, tagLinkFlags, importPhoneQueue } from '../../lib/journal.js';
 import { truncate } from '../../lib/display.js';
 
 // Walk inbox.md one item at a time and send each somewhere:
@@ -23,7 +23,14 @@ export function InboxTriage({ onBack, start }) {
   useHints(mode ? null : HINTS);
 
   const item = items[Math.min(index, items.length - 1)];
-  const reload = () => setItems(readInbox());
+  // Reload also picks up anything captured on the phone since.
+  const reload = () =>
+    importPhoneQueue()
+      .catch((err) => notify(`Couldn't add phone captures: ${err.message}`, 'error'))
+      .finally(() => setItems(readInbox()));
+  useEffect(() => {
+    reload();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const drop = (it) => {
     setItems((list) => list.filter((x) => x.raw !== it.raw));
     setMode(null);

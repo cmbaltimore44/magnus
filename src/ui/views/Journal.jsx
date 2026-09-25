@@ -12,7 +12,7 @@ import { tagLinkFlags, checkinFlags, todayEntryHasCheckin } from '../../lib/jour
 import { JournalBrowser } from './JournalBrowser.jsx';
 import { InboxTriage } from './InboxTriage.jsx';
 import { CalendarHeatmap } from '../components/Heatmap.jsx';
-import { parseEntries, writingStreak, entriesByDate } from '../../lib/journal.js';
+import { parseEntries, writingStreak, entriesByDate, importPhoneQueue } from '../../lib/journal.js';
 import { todayISO } from '../../lib/data/completions.js';
 import { plural } from '../../lib/display.js';
 
@@ -66,6 +66,11 @@ export function Journal({ params }) {
     // Writing streak + heatmap; refreshed whenever we come back to the menu.
     if (mode !== null) return;
     capture('jlist', ['--tsv']).then((res) => setEntries(res.ok ? parseEntries(res.stdout) : []));
+    // New captures from the phone's iCloud queue land in inbox.md.
+    importPhoneQueue().then(
+      (n) => n && notify(`${plural(n, 'capture')} from your phone added to the inbox`, 'success'),
+      (err) => notify(`Couldn't add phone captures: ${err.message}`, 'error'),
+    );
   }, [mode === null]); // eslint-disable-line react-hooks/exhaustive-deps
   useHints(mode?.type === 'browse' || mode?.type === 'triage' ? null : mode?.type === 'output' ? '↑↓ scroll · esc back' : HINTS);
 

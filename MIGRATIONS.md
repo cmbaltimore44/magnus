@@ -75,6 +75,18 @@ Before schema_003, Magnus used exactly what `supabase/schema.sql` and
   `~/.config/magnus/prefs.json`, the counterpart of the web app's
   `localStorage`. It never touches Supabase.
 
+## 2026-09-25 — Focus labels (`supabase/schema_005.sql`)
+Why: the focus timer can focus on something that isn't a task (job apps, an
+essay or note, anything typed), and the time should keep saying what it was
+for, in Insights and later.
+SQL (run in Supabase SQL editor): `supabase/schema_005.sql` in the Life Tracker repo:
+    alter table focus_sessions
+      add column label text check (label is null or char_length(label) between 1 and 120);
+Web app follow-up: same feature (type a label in the focus picker, recent
+labels, label on the pill, focus by task/label in Insights).
+Backward compatible with the current web app? yes — the column is optional.
+Until it's run, both apps still log labelled focus time, without the label.
+
 ## Template for future entries
 
 ```

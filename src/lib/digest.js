@@ -12,7 +12,7 @@ import * as focusApi from './data/focus.js';
 import * as logsApi from './data/logs.js';
 import { TIME_OF_DAY, TIME_OF_DAY_LABELS } from './display.js';
 import { addDays } from './data/completions.js';
-import { average, localDate, isoWeekMonday } from './stats.js';
+import { average, localDate, isoWeekMonday, focusByWhat } from './stats.js';
 import { loadGoals } from './data/lists.js';
 
 function shortDate(iso) {
@@ -126,7 +126,12 @@ export function formatWeek({ monday, sunday, tasks, routines, completions, books
     out.push('');
   }
   const stats = [];
-  if (focusMin) stats.push(`Focus: ${Math.floor(focusMin / 60)}h ${focusMin % 60}m`);
+  if (focusMin) {
+    // The top three things the focus time went to (tasks or labels).
+    const hm = (m) => (m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`);
+    const top = focusByWhat(focus, tasks, end, days).slice(0, 3).map((f) => `${oneLine(f.name)} ${hm(f.minutes)}`);
+    stats.push(`Focus: ${Math.floor(focusMin / 60)}h ${focusMin % 60}m${top.length ? ` (${top.join(' · ')})` : ''}`);
+  }
   const fmt = (v, digits = 1) => (v == null ? null : v.toFixed(digits).replace(/\.0$/, ''));
   if (avg('mood') != null) stats.push(`Mood avg: ${fmt(avg('mood'))}/5`);
   if (avg('energy') != null) stats.push(`Energy avg: ${fmt(avg('energy'))}/5`);

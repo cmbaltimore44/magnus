@@ -291,3 +291,53 @@ test('tag suggestions: prefix first, then most used', () => {
   assert.deepEqual(suggestTags('', listed, counts, 3), ['notebook', 'book', 'idea']);
   assert.deepEqual(suggestTags('zz', listed, counts), []);
 });
+
+import { importPhoneQueue, phoneQueuePath, readInbox } from '../src/lib/journal.js';
+
+test('phone captures: the iCloud queue is added to inbox.md once, with capture times', { skip: !fs.existsSync(path.join(os.homedir(), 'bin', 'capture-batch')) && 'needs ~/bin/capture-batch' }, async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'magnus-phone-'));
+  const saved = { JOURNAL_DIR: process.env.JOURNAL_DIR, PATH: process.env.PATH };
+  process.env.JOURNAL_DIR = path.join(dir, 'journal');
+  process.env.PATH = `${path.join(os.homedir(), 'bin')}:${process.env.PATH}`;
+  try {
+    assert.ok(phoneQueuePath('/h').endsWith('/h/Library/Mobile Documents/com~apple~CloudDocs/Magnus/inbox-queue.txt'));
+    const queue = path.join(dir, 'inbox-queue.txt');
+    assert.equal(await importPhoneQueue(queue), 0); // no file yet
+    const today = new Date().toISOString().slice(0, 10);
+    fs.writeFileSync(queue, `${today} 08:01:12 call the dentist\n${today} 09:15:00 essay on attention\n`);
+    assert.equal(await importPhoneQueue(queue), 2);
+    assert.deepEqual(readInbox().map((i) => [i.when, i.text]), [[`${today} 08:01`, 'call the dentist'], [`${today} 09:15`, 'essay on attention']]);
+    // Triaged away, then the (unchanged) queue is read again: nothing comes back.
+    fs.writeFileSync(path.join(process.env.JOURNAL_DIR, 'inbox.md'), '# Inbox\n\n');
+    fs.appendFileSync(queue, `${today} 12:00:00 new one\n`);
+    assert.equal(await importPhoneQueue(queue), 1);
+    assert.deepEqual(readInbox().map((i) => i.text), ['new one']);
+    assert.equal(fs.readFileSync(queue, 'utf8').split('\n').length, 4); // the phone's file is never modified
+  } finally {
+    for (const [k, v] of Object.entries(saved)) if (v === undefined) delete process.env[k]; else process.env[k] = v;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+import { focusByWhat } from '../src/lib/stats.js';
+
+test('focus by task or label, in Insights and the weekly review', () => {
+  const at = (d) => `${d}T15:00:00`; // local time, so localDate keeps the day
+  const tasks = [{ id: 't1', title: 'Draft Q4', status: 'todo' }];
+  const focus = [
+    { task_id: 't1', started_at: at('2026-09-22'), minutes: 50 },
+    { task_id: null, label: 'job apps', started_at: at('2026-09-23'), minutes: 45 },
+    { task_id: null, label: 'Job apps', started_at: at('2026-09-24'), minutes: 45 }, // same label, other case
+    { task_id: null, label: null, started_at: at('2026-09-24'), minutes: 10 },
+    { task_id: 'gone', started_at: at('2026-09-24'), minutes: 5 },
+    { task_id: null, label: 'old', started_at: at('2026-08-01'), minutes: 99 },
+  ];
+  assert.deepEqual(focusByWhat(focus, tasks, '2026-09-24', 30), [
+    { name: 'Job apps', minutes: 90 }, // the latest spelling
+    { name: 'Draft Q4', minutes: 50 },
+    { name: 'no task', minutes: 10 },
+    { name: 'a deleted task', minutes: 5 },
+  ]);
+  const md = formatWeek({ monday: '2026-09-21', sunday: '2026-09-27', tasks, routines: [], completions: new Map(), books: [], focus, logs: [] }, '2026-09-24');
+  assert.match(md, /- Focus: 2h 35m \(Job apps 1h 30m · Draft Q4 50m · no task 10m\)/);
+});

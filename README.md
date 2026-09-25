@@ -53,20 +53,29 @@ category's tasks) · **t** start a Pomodoro on the selected task (Today, Board, 
 | Projects | enter open · n new · s cycle status · d delete → in a project: space toggle item · n add · d delete item · K/J reorder · e edit · D delete project |
 | Library  | tab Books → **Want to Read** (a queue: one line per book in your order, first three "Up next"; n rapid add `Title by Author` or an ISBN; K/J reorder; f filter; **s start reading** sets Currently Reading and today's start date, u undoes; `?` = still missing an author or cover — open it and press i) → Quotes → **Stats** (finished this year, ratings, days to finish, per year, by format, repeat authors) · enter open a book / fold a group · **i look up a book on Open Library** by ISBN or title/author and start a New Book prefilled (title, author, ISBN, cover) · n new → in a book: n add highlight · enter edit · f favorite · **w send a quote to an essay** (append to an existing essay, or start a new book essay with the quote on the clipboard) · e edit book · i fill in the cover/ISBN/author from Open Library · v view cover · D delete · Quotes tab: F favorites only |
 | Upcoming | overdue, today, tomorrow, next 7 days — tasks by due date and projects by target date · space mark done · enter open |
-| Insights | tasks finished per week (8 weeks, from `completed_at`), routine consistency (30 days), focus minutes per week, mood/energy/sleep sparklines and workouts from the Log, writing streak, books this year · ↑↓ scrolls on narrow windows |
+| Insights | tasks finished per week (8 weeks, from `completed_at`), routine consistency (30 days), focus minutes per week and by task or label (30 days), mood/energy/sleep sparklines and workouts from the Log, writing streak, books this year · ↑↓ scrolls on narrow windows |
 | Log      | ←→ day · ↑↓ row · enter set mood/energy (1–5), hours slept, weight · n add a workout (`30 run`) · d clear (u undoes) · t back to today · a two-week table below. Mood/energy/sleep from `today` land here too |
 | Today    | under the date, **◎ Goals**: the unchecked items of a list named *Goals* (make it in Lists; check a goal off when you reach it). The weekly review (`jweek`) gets a Goals section with reflection prompts for each |
 | Lists    | `k` from Home (no digit left) or the palette · lists on the left, the open list's items on the right (enter/esc on narrow windows) · space check · n add (stays open for the next item) · e edit text, link, price · o open link · c clear checked · d delete · K/J reorder · checked items sink to the bottom; prices total the unchecked ones |
-| Journal  | header: writing streak (consecutive days with a daily entry) and entries this month; a heatmap of entries per day sits beside the menu on wide windows (below it on tall ones) · t today (asks for mood, energy and hours slept once a day, e.g. `4 3 7.5`) · o close the day (`today --close`: adds an Evening section with tasks finished, routines, carry-overs and reflection prompts; run it again to refresh the summary, your answers are kept) · e new essay · b book essay · f film essay · s search (`#tag` = tag search) · g tags · k backlinks · v graph · c quick capture · **r triage inbox** one item at a time (t → task via quick add, n → note, e → essay, d delete, u undo, s skip) · i edit inbox.md in Fresh · e/b/f/n end with an optional tags / `[[links]]` prompt that suggests tags from TAGS.md and the ones you use (tab completes) · j tag today's entry (`jtag` checklist) · n new note · x note from inbox · w weekly review (`jweek`) · l browse all entries (enter open, t tags, d move to Trash, tab type filter, f text filter) · d back up to drive (plug it in first) |
+| Journal  | header: writing streak (consecutive days with a daily entry) and entries this month; a heatmap of entries per day sits beside the menu on wide windows (below it on tall ones) · t today (asks for mood, energy and hours slept once a day, e.g. `4 3 7.5`) · o close the day (`today --close`: adds an Evening section with tasks finished, routines, carry-overs and reflection prompts; run it again to refresh the summary, your answers are kept) · e new essay · b book essay · f film essay · s search (`#tag` = tag search) · g tags · k backlinks · v graph · c quick capture · **r triage inbox** one item at a time (t → task via quick add, n → note, e → essay, d delete, u undo, s skip) · captures from the phone (a Shortcut appending to `iCloud Drive/Magnus/inbox-queue.txt`) move into inbox.md via `capture-batch` whenever the Journal tab or triage opens · i edit inbox.md in Fresh · e/b/f/n end with an optional tags / `[[links]]` prompt that suggests tags from TAGS.md and the ones you use (tab completes) · j tag today's entry (`jtag` checklist) · n new note · x note from inbox · w weekly review (`jweek`) · l browse all entries (enter open, t tags, d move to Trash, tab type filter, f text filter) · d back up to drive (plug it in first) |
 
-**Focus timer (Pomodoro)**: `t` on a task (Today, Board, Upcoming) or `T`
-anywhere starts a focus round: 25 min focus, 5 min break, and a 15 min long
+**Focus timer (Pomodoro)**: `t` on a task (Today, Board, Upcoming) starts a
+focus round on it; `T` anywhere asks what to focus on (a task, a recent
+label, a recent essay or note, or type anything: "job apps"; enter on the
+first row just starts). A round is 25 min focus, 5 min break, and a 15 min long
 break after every 4 rounds (all adjustable in Settings). When a phase ends,
 Magnus rings, posts a macOS notification and waits: `T` → start the next
 phase or add 5 minutes. While it runs, `T` pauses/resumes, skips to the next
 phase, adds 5 minutes, stops or discards. Focus minutes (≥1, pauses and
 waiting excluded) are logged to `focus_sessions` when you leave a focus
-round. The timer survives quitting Magnus; the status bar shows it.
+round, with the task or label (labels need `schema_005.sql`; before it,
+the time is saved without one). The timer survives quitting Magnus; the
+status bar shows it.
+**Switching task** keeps the clock and the round count: `t` on another task
+while a timer runs, or `T` → *Switch task…* (the same list: tasks, labels,
+essays and notes, or type a new label) or *Focus on no task*. Mid-round,
+the minutes so far are logged to the old one and the rest go to the new
+one. In a break, it sets what the next round is on.
 
 **Quick add** (`a`, anywhere): one line becomes a task —
 `renew passport fri !high #home *` sets the due date (`today`, `tom`, weekday

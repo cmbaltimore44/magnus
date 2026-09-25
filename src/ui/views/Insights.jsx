@@ -9,7 +9,7 @@ import * as booksApi from '../../lib/data/books.js';
 import * as focusApi from '../../lib/data/focus.js';
 import * as logsApi from '../../lib/data/logs.js';
 import { todayISO, addDays } from '../../lib/data/completions.js';
-import { completedByWeek, focusByWeek, routineRates, metricSeries, average, sparkline, bookStats } from '../../lib/stats.js';
+import { completedByWeek, focusByWeek, focusByWhat, routineRates, metricSeries, average, sparkline, bookStats } from '../../lib/stats.js';
 import { parseEntries, writingStreak } from '../../lib/journal.js';
 import { truncate } from '../../lib/display.js';
 
@@ -73,7 +73,7 @@ export function Insights() {
     if (key.escape) return navigate('home');
     if (input === 'R') return reload();
     if (key.upArrow || input === 'k') return setOffset((o) => Math.max(0, o - 1));
-    if (key.downArrow || input === 'j') return setOffset((o) => Math.min(4, o + 1));
+    if (key.downArrow || input === 'j') return setOffset((o) => Math.min(5, o + 1));
   });
 
   if (!data) return <Text color={C.muted}>Loading…</Text>;
@@ -86,6 +86,8 @@ export function Insights() {
 
   const done = completedByWeek(data.tasks, today, 8);
   const focus = focusByWeek(data.focus.rows, today, 8);
+  const focusWhat = focusByWhat(data.focus.rows, data.tasks, today, 30);
+  const whatWidth = Math.min(20, Math.max(6, ...focusWhat.slice(0, 6).map((f) => f.name.length)));
   const rates = routineRates(data.routines, data.completions, today, 30).sort((a, b) => b.rate - a.rate);
   const nameWidth = Math.min(22, Math.max(6, ...rates.map((r) => r.routine.name.length)));
   const series = ['mood', 'energy', 'sleep'].map((m) => ({ m, values: metricSeries(data.logs.rows, m, today, 30).map((d) => d.value) }));
@@ -137,6 +139,13 @@ export function Insights() {
           {workouts.filter(Boolean).length} · {workouts.reduce((n, v) => n + (v || 0), 0)} min
         </Text>
       </Text>
+    </Panel>,
+    <Panel key="focusWhat" title="Focus by task or label · last 30 days" width={colWidth}>
+      {focusWhat.length ? (
+        <Bars rows={focusWhat.slice(0, 6).map((f) => ({ label: truncate(f.name, whatWidth).padEnd(whatWidth), n: f.minutes }))} width={Math.max(5, colWidth - whatWidth - 12)} unit=" min" />
+      ) : (
+        <Text color={C.muted}>No focus time yet (T starts a timer).</Text>
+      )}
     </Panel>,
     <Panel key="writing" title="Writing & reading" width={colWidth}>
       {data.entries ? (

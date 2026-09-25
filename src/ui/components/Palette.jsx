@@ -8,19 +8,27 @@ import { truncate } from '../../lib/display.js';
 import { fuzzyScore } from '../../lib/fuzzy.js';
 
 // ctrl+p: every action by name. actions: [{ id, label, group, run }]
-export function Palette({ actions, onClose, height, width }) {
+// Also the focus timer's picker (placeholder/empty change the wording).
+// typed(query) → an extra row for the text itself (e.g. "Focus on “job apps”"):
+// first when nothing contains what's typed, last otherwise, so enter still
+// picks a real match.
+export function Palette({ actions, onClose, height, width, placeholder = 'type an action…', empty = 'No matching action.', typed }) {
   useCapture();
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
 
   const results = useMemo(() => {
     if (!query.trim()) return actions;
-    return actions
+    const found = actions
       .map((a) => ({ a, s: fuzzyScore(query, `${a.group} ${a.label}`) }))
       .filter((x) => x.s > 0)
       .sort((x, y) => y.s - x.s)
       .map((x) => x.a);
-  }, [actions, query]);
+    const extra = typed?.(query);
+    if (!extra) return found;
+    const q = query.trim().toLowerCase();
+    return found.some((a) => a.label.toLowerCase().includes(q)) ? [...found, extra] : [extra, ...found];
+  }, [actions, query, typed]);
   const current = Math.min(active, Math.max(0, results.length - 1));
 
   useInput((_input, key) => {
@@ -50,12 +58,12 @@ export function Palette({ actions, onClose, height, width }) {
             setQuery(v);
             setActive(0);
           }}
-          placeholder="type an action…"
+          placeholder={placeholder}
           onSubmit={run}
         />
       </Box>
       <Box flexDirection="column" marginTop={1}>
-        {results.length === 0 ? <Text color={C.muted}>No matching action.</Text> : null}
+        {results.length === 0 ? <Text color={C.muted}>{empty}</Text> : null}
         {results.slice(start, end).map((a, i) => {
           const sel = start + i === current;
           return (

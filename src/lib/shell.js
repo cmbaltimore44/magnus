@@ -63,9 +63,10 @@ export async function runInteractive(suspendTerminal, cmd, args = [], { pause = 
 }
 
 // Non-interactive commands (jtags, jgraph, capture): capture output instead.
-export function runCapture(cmd, args = []) {
+// `input`, if given, is written to the command's stdin.
+export function runCapture(cmd, args = [], { input } = {}) {
   return new Promise((resolve) => {
-    execFile(cmd, args, { maxBuffer: 16 * 1024 * 1024 }, (error, stdout, stderr) => {
+    const child = execFile(cmd, args, { maxBuffer: 16 * 1024 * 1024 }, (error, stdout, stderr) => {
       resolve({
         ok: !error,
         code: error ? (error.code ?? 1) : 0,
@@ -73,6 +74,10 @@ export function runCapture(cmd, args = []) {
         stderr: String(stderr || '') || (error && error.code === 'ENOENT' ? `${cmd}: command not found` : ''),
       });
     });
+    if (input != null) {
+      child.stdin.on('error', () => {}); // the command may exit (or not exist) before reading it all
+      child.stdin.end(input);
+    }
   });
 }
 
