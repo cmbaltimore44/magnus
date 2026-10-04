@@ -178,6 +178,34 @@ function cachedRows(reads, url) {
   return [...byId.values()];
 }
 
+// Offline, a read that was never made before (the next page of a big table,
+// a date window that has moved on since yesterday, one random quote) is
+// answered from every row the cache has for that table, filtered, ordered
+// and paged the way the server would. Best effort, like the rest of offline
+// mode; null when the cache knows nothing about the table.
+export function answerFromCache(reads, url) {
+  const q = parseQuery(url);
+  const rows = new Map();
+  let known = false;
+  for (const entry of Object.values(reads)) {
+    if (parseQuery(entry.url).table !== q.table) continue;
+    known = true;
+    const list = Array.isArray(entry.body) ? entry.body : entry.body ? [entry.body] : [];
+    for (const r of list) {
+      const k = r.id ?? JSON.stringify(r);
+      rows.set(k, { ...rows.get(k), ...r });
+    }
+  }
+  if (!known) return null;
+  let out = [...rows.values()].filter((r) => rowMatches(r, q.filters));
+  for (const { col, desc } of [...q.order].reverse()) out.sort((a, b) => (desc ? -1 : 1) * cmp(a[col], b[col]));
+  const params = new URL(url).searchParams;
+  const offset = Number(params.get('offset') || 0);
+  const limit = params.get('limit');
+  out = out.slice(offset, limit == null ? undefined : offset + Number(limit));
+  return out.map((r) => project(r, q.select));
+}
+
 // ---------- the fetch wrapper ----------
 
 function headerValue(headers, name) {
@@ -285,9 +313,15 @@ export function makeOfflineFetch(baseFetch, { store = createOfflineStore(), getT
         }
         return res;
       } catch (err) {
-        if (!isNetworkError(err) || !reads[key]) throw err;
+        if (!isNetworkError(err)) throw err;
+        if (reads[key]) {
+          setOffline(true);
+          return jsonResponse(reads[key].body, 200, accept);
+        }
+        const rows = method === 'GET' ? answerFromCache(reads, url) : null;
+        if (!rows) throw err;
         setOffline(true);
-        return jsonResponse(reads[key].body, 200, accept);
+        return jsonResponse(accept === OBJECT ? rows[0] ?? null : rows, 200, accept);
       }
     }
 

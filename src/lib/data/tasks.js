@@ -1,13 +1,18 @@
 // Mirrors Life Tracker js/data/tasks.js — same table, same queries.
 import { supabase } from '../supabase.js';
+import { fetchAll } from './paging.js';
 
+// Every task, in pages (finished tasks stay in the table, so it keeps growing).
 export async function listTasks() {
-  const { data, error } = await supabase
-    .from('tasks')
-    .select('*')
-    .order('sort_order', { ascending: true });
-  if (error) throw error;
-  return data;
+  return fetchAll(() => supabase.from('tasks').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true }));
+}
+
+// Only tasks that aren't done: for the status bar, which refreshes every
+// 5 minutes and shouldn't download the whole history each time.
+export async function listOpenTasks() {
+  return fetchAll(() =>
+    supabase.from('tasks').select('*').neq('status', 'done').order('sort_order', { ascending: true }).order('id', { ascending: true })
+  );
 }
 
 export async function createTask(userId, fields, sortOrder) {

@@ -119,6 +119,10 @@ function stampCompleted(task, previousStatus) {
   }
 }
 
+// Like a Supabase project's default "max rows": a select returns at most
+// this many rows, silently. Tests seed past it to check paging.
+export const DEMO_MAX_ROWS = 1000;
+
 class Query {
   constructor(db, table) {
     this.db = db;
@@ -129,9 +133,20 @@ class Query {
     this.cols = '*';
     this.payload = null;
     this.isSingle = false;
+    this.from = 0;
+    this.to = null;
+    this.count = null; // 'exact' → also return the total number of matching rows
+    this.head = false; // count only, no rows
   }
-  select(cols = '*') {
+  select(cols = '*', { count = null, head = false } = {}) {
     this.cols = cols;
+    this.count = count;
+    this.head = head;
+    return this;
+  }
+  range(from, to) {
+    this.from = from;
+    this.to = to;
     return this;
   }
   order(col, { ascending = true } = {}) {
@@ -148,6 +163,14 @@ class Query {
   }
   lte(col, value) {
     this.filters.push((r) => r[col] != null && r[col] <= value);
+    return this;
+  }
+  lt(col, value) {
+    this.filters.push((r) => r[col] != null && r[col] < value);
+    return this;
+  }
+  neq(col, value) {
+    this.filters.push((r) => r[col] !== value);
     return this;
   }
   in(col, values) {
@@ -221,12 +244,19 @@ class Query {
         });
       }
     }
+    let total = null;
+    if (this.op === 'select') {
+      total = result.length;
+      const end = Math.min(this.to == null ? Infinity : this.to + 1, this.from + DEMO_MAX_ROWS);
+      result = result.slice(this.from, end);
+    }
+    if (this.head) return { data: null, count: total, error: null };
     result = result.map((r) => this.project(r));
     if (this.isSingle) {
       if (result.length !== 1) return { data: null, error: { message: 'JSON object requested, multiple (or no) rows returned' } };
       return { data: result[0], error: null };
     }
-    return { data: result, error: null };
+    return { data: result, error: null, ...(this.count ? { count: total } : {}) };
   }
   cascade(doomed) {
     const ids = new Set([...doomed].map((r) => r.id));

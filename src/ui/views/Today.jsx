@@ -36,7 +36,7 @@ export function Today() {
       loadGoals(),
     ]);
     if (featuredQuote === undefined) {
-      featuredQuote = await quotesApi.pickRandomQuote();
+      featuredQuote = await quotesApi.pickRandomQuote().catch(() => null); // no quote rather than no Today
       setQuote(featuredQuote);
     }
     return { tasks, categories, routines, completions, books, goals };

@@ -18,9 +18,10 @@ export function useStatusSummary(ready, dataVersion) {
       try {
         const today = completionsApi.todayISO();
         const [tasks, routines, completions, jlist] = await Promise.all([
-          tasksApi.listTasks(),
+          // Only what the bar shows: open tasks and today's check-offs.
+          tasksApi.listOpenTasks(),
           routinesApi.listRoutines(),
-          completionsApi.listCompletions(),
+          completionsApi.listCompletions({ since: today, extendStreaks: false, today }),
           runCapture('jlist', ['--tsv', '--type', 'daily']),
         ]);
         if (!live) return;

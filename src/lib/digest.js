@@ -40,7 +40,7 @@ export async function loadDay() {
     completionsApi.listCompletions(),
     projectsApi.listProjects(),
     booksApi.listBooks(),
-    quotesApi.pickRandomQuote(),
+    quotesApi.pickRandomQuote().catch(() => null),
   ]);
   return { tasks, routines, completions, projects, books, quote };
 }
