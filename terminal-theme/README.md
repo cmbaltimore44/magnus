@@ -103,4 +103,20 @@ In the web app, the theme picker and the light/dark button (Auto → Light →
 Dark; Auto follows the phone/computer setting) are in the sidebar footer.
 Choices are saved per device. There's no sync with `magnus-theme`, by design.
 After adding a new family here, add it to the FAMILIES list in
-`tools/build-web.mjs` and rerun.
+`tools/colors.mjs` (shared by the web and Obsidian generators) and rerun both.
+
+## Obsidian
+
+The same four themes are installed into the journal vault as Obsidian themes:
+
+    npm run themes:obsidian   # = node terminal-theme/tools/build-obsidian.mjs [vault]  (default $JOURNAL_DIR or ~/journal)
+
+This writes `.obsidian/themes/<Family>/` (a `theme.css` with light and dark,
+and a `manifest.json`) for each family. Pick one in Obsidian under Settings →
+Appearance → Themes; **Default** there goes back to Obsidian's own theme, and
+Obsidian's "Base color scheme" setting chooses light, dark or the system's.
+The colors are the web app's (`tools/colors.mjs`), mapped onto Obsidian's
+variables; Obsidian's deliberately faint text (labels, inactive tabs,
+unresolved links) is raised to the muted color so everything stays >= 4.5:1.
+It prints a contrast report. Rerun after changing a family's colors, then
+switch to Default and back in Obsidian (or restart it) to reload.
