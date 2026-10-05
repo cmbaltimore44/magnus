@@ -125,6 +125,24 @@ export async function importPhoneQueue(file = phoneQueuePath()) {
   return Number(/Captured (\d+)/.exec(res.stdout)?.[1] || 0);
 }
 
+// ---------- the journal editor ----------
+// Same setting as the ~/bin scripts: $JOURNAL_EDITOR = fresh (the default),
+// obsidian (the ~/journal vault) or nvim (the nvim-journal config).
+export const JOURNAL_EDITORS = ['fresh', 'obsidian', 'nvim'];
+
+export function journalEditor(env = process.env) {
+  const e = String(env.JOURNAL_EDITOR || '').trim().toLowerCase();
+  return JOURNAL_EDITORS.includes(e) ? e : 'fresh';
+}
+
+// How to open an entry: an obsidian:// URL, or a terminal command.
+export function entryOpener(file, editor = journalEditor(), env = process.env) {
+  const abs = path.resolve(file);
+  if (editor === 'obsidian') return { url: `obsidian://open?path=${encodeURIComponent(abs)}` };
+  if (editor === 'nvim') return { cmd: 'env', args: [`NVIM_APPNAME=${env.NVIM_APPNAME || 'nvim-journal'}`, 'nvim', abs] };
+  return { cmd: 'fresh', args: [abs] };
+}
+
 // ---------- inbox.md (written by `capture`) ----------
 
 export function inboxPath(dir = journalDir()) {

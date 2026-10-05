@@ -31,9 +31,10 @@ import { signOut } from '../lib/auth.js';
 import { FAMILY } from '../lib/theme.js';
 import { useFocusTimer, timerStatus, timerChoices } from './useFocusTimer.js';
 import { listTasks } from '../lib/data/tasks.js';
+import path from 'node:path';
 import { listFocusSessions, recentLabels } from '../lib/data/focus.js';
 import { focusChoices, typedChoice } from '../lib/focusPicker.js';
-import { parseEntries } from '../lib/journal.js';
+import { parseEntries, journalEditor, entryOpener } from '../lib/journal.js';
 import { useStatusSummary } from './useStatusSummary.js';
 import { useLiveUpdates } from './useLiveUpdates.js';
 
@@ -301,7 +302,10 @@ export default function App({ gradient }) {
       run: (cmd, args, opts) => runInteractive(suspendTerminal, cmd, args, opts),
       capture: (cmd, args) => runCapture(cmd, args),
       // A new Ghostty tab when possible (Magnus stays up here), else this terminal.
+      // A script that ends by opening the editor. With Obsidian it just hands
+      // the file over, so it runs right here (no tab to flash open and shut).
       openTab: async (cmd, args = []) => {
+        if (journalEditor() === 'obsidian') return runInteractive(suspendTerminal, cmd, args, { pause: 'failed' });
         if (canOpenGhosttyTabs()) {
           try {
             return await openInGhosttyTab(cmd, args);
@@ -310,6 +314,22 @@ export default function App({ gradient }) {
           }
         }
         return runInteractive(suspendTerminal, cmd, args);
+      },
+      // Open a journal file in the journal editor ($JOURNAL_EDITOR).
+      openEntry: async (file) => {
+        const how = entryOpener(file);
+        if (how.url) {
+          const res = await runCapture('open', [how.url]);
+          return res.ok ? notify(`Opened ${path.basename(file)} in Obsidian`, 'success') : notify(`Couldn't open Obsidian: ${res.stderr.trim() || 'is it installed?'}`, 'error');
+        }
+        if (canOpenGhosttyTabs()) {
+          try {
+            return await openInGhosttyTab(how.cmd, how.args);
+          } catch (err) {
+            notify(`Couldn't open a Ghostty tab (${err.message}) — running here instead`, 'error');
+          }
+        }
+        return runInteractive(suspendTerminal, how.cmd, how.args);
       },
       editText: (initial) => editText(suspendTerminal, initial),
       showCover: async (url, caption) => {

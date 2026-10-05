@@ -57,7 +57,8 @@ export async function runInteractive(suspendTerminal, cmd, args = [], { pause = 
     result = spawnSync(cmd, args, { stdio: 'inherit' });
     const failed = Boolean(result.error) || result.status !== 0;
     if (result.error) fs.writeSync(1, `\n${cmd}: ${result.error.message}\n`);
-    if (pause === true || (pause === 'auto' && (failed || Date.now() - started < 1500))) waitForKey();
+    // 'auto': after a failure or a run too quick to read; 'failed': only after a failure.
+    if (pause === true || (pause === 'failed' && failed) || (pause === 'auto' && (failed || Date.now() - started < 1500))) waitForKey();
   });
   return result;
 }

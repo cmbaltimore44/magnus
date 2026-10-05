@@ -20,7 +20,7 @@ export function quoteMarkdown(quote, books) {
 // Send a quote to an essay: append it to an existing essay, or start a new
 // one (the quote goes to the clipboard, since new-essay opens the editor itself).
 export function QuoteToEssay({ quote, books, onDone }) {
-  const { capture, notify, openTab, contentHeight, columns } = useAppCtx();
+  const { capture, notify, openTab, openEntry, contentHeight, columns } = useAppCtx();
   const [essays, setEssays] = useState(null);
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export function QuoteToEssay({ quote, books, onDone }) {
     } catch (err) {
       return notify(`Couldn't add the quote: ${err.message}`, 'error');
     }
-    await openTab('fresh', [opt.entry.path]);
+    await openEntry(opt.entry.path);
     notify(`Added the quote to “${opt.entry.title}”`, 'success');
   };
 

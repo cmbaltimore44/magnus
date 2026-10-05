@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { canOpenGhosttyTabs, openInGhosttyTab } from '../../lib/ghostty.js';
 import { cleanText } from '../../lib/sanitize.js';
-import { tagLinkFlags, checkinFlags, todayEntryHasCheckin } from '../../lib/journal.js';
+import { tagLinkFlags, checkinFlags, todayEntryHasCheckin, journalEditor } from '../../lib/journal.js';
 import { JournalBrowser } from './JournalBrowser.jsx';
 import { InboxTriage } from './InboxTriage.jsx';
 import { CalendarHeatmap } from '../components/Heatmap.jsx';
@@ -40,7 +40,7 @@ export const ITEMS = [
   { key: 'v', label: 'Graph', desc: 'jgraph (opens in browser)', action: { quick: 'jgraph' } },
   { key: 'c', label: 'Quick Capture', desc: 'capture "…" → inbox.md', action: { capture: true } },
   { key: 'r', label: 'Triage Inbox', desc: 'each item → task · note · essay · delete', action: { triage: true } },
-  { key: 'i', label: 'Edit Inbox', desc: 'fresh inbox.md', action: { run: 'fresh', tab: true, inbox: true } },
+  { key: 'i', label: 'Edit Inbox', desc: 'inbox.md in the journal editor', action: { run: 'fresh', tab: true, inbox: true } },
   { key: 'n', label: 'New Note', desc: 'new-note "…" [--tag …] [--link …]', action: { note: true, run: 'new-note', tab: true, tags: true } },
   { key: 'x', label: 'Note from Inbox', desc: 'new-note --from-inbox', action: { run: 'new-note', args: ['--from-inbox'], tab: true } },
   { key: 'w', label: 'Weekly Review', desc: 'jweek → reviews/YYYY-Www.md', action: { run: 'jweek', tab: true } },
@@ -58,7 +58,7 @@ function inboxPath() {
 const HINTS = 'press a letter or ↑↓ enter · esc home';
 
 export function Journal({ params }) {
-  const { navigate, notify, run, capture, contentHeight, columns } = useAppCtx();
+  const { navigate, notify, run, capture, openEntry, contentHeight, columns } = useAppCtx();
   const [index, setIndex] = useState(0);
   const [mode, setMode] = useState(null); // {type:'prompt', item, step?, title?} | {type:'output', title, lines, offset}
   const [entries, setEntries] = useState(null);
@@ -75,6 +75,10 @@ export function Journal({ params }) {
   useHints(mode?.type === 'browse' || mode?.type === 'triage' ? null : mode?.type === 'output' ? '↑↓ scroll · esc back' : HINTS);
 
   const start = async (a, args) => {
+    // Opening a file: in the journal editor ($JOURNAL_EDITOR).
+    if (a.run === 'fresh') return openEntry(args[0]);
+    // With Obsidian the scripts just hand the file over: run them here.
+    if (journalEditor() === 'obsidian') return run(a.run, args, { pause: 'failed' });
     if (a.tab && canOpenGhosttyTabs()) {
       try {
         await openInGhosttyTab(a.run, args);

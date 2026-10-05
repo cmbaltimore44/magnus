@@ -341,3 +341,16 @@ test('focus by task or label, in Insights and the weekly review', () => {
   const md = formatWeek({ monday: '2026-09-21', sunday: '2026-09-27', tasks, routines: [], completions: new Map(), books: [], focus, logs: [] }, '2026-09-24');
   assert.match(md, /- Focus: 2h 35m \(Job apps 1h 30m · Draft Q4 50m · no task 10m\)/);
 });
+
+import { journalEditor, entryOpener } from '../src/lib/journal.js';
+
+test('JOURNAL_EDITOR picks how entries open (same values as the ~/bin scripts)', () => {
+  assert.equal(journalEditor({}), 'fresh');
+  assert.equal(journalEditor({ JOURNAL_EDITOR: ' Obsidian ' }), 'obsidian');
+  assert.equal(journalEditor({ JOURNAL_EDITOR: 'nvim' }), 'nvim');
+  assert.equal(journalEditor({ JOURNAL_EDITOR: 'emacs' }), 'fresh');
+  const file = '/Users/me/journal/essays/on attention.md';
+  assert.deepEqual(entryOpener(file, 'obsidian'), { url: 'obsidian://open?path=%2FUsers%2Fme%2Fjournal%2Fessays%2Fon%20attention.md' });
+  assert.deepEqual(entryOpener(file, 'nvim', {}), { cmd: 'env', args: ['NVIM_APPNAME=nvim-journal', 'nvim', file] });
+  assert.deepEqual(entryOpener(file, 'fresh'), { cmd: 'fresh', args: [file] });
+});

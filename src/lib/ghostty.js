@@ -73,7 +73,7 @@ export function openInGhosttyTab(cmd, args = []) {
   ].join('; ');
   const command = `/bin/bash -c ${shq(inner)}`;
 
-  const env = ['PATH', 'JOURNAL_DIR', 'EDITOR', 'VISUAL', 'LANG']
+  const env = ['PATH', 'JOURNAL_DIR', 'JOURNAL_EDITOR', 'NVIM_APPNAME', 'EDITOR', 'VISUAL', 'LANG']
     .filter((k) => process.env[k])
     .map((k) => `${k}=${process.env[k]}`);
 
