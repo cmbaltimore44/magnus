@@ -33,11 +33,13 @@ async function session() {
 
 export async function runSubcommand(name, args) {
   // Scripts wait on us; never hang them on a stalled network.
-  // `magnus tutor` streams answers and may start the backend: no 12 s limit there.
-  const timer = name === 'tutor' ? null : setTimeout(() => {
+  // `magnus tutor` streams answers and may start the backend: no limit there. `magnus timer`
+  // writes the timer first and logs focus time after, so give a slow sign-in room to finish.
+  const limit = name === 'tutor' ? null : name === 'timer' ? 25000 : 12000;
+  const timer = limit && setTimeout(() => {
     process.stderr.write(`magnus ${name}: timed out\n`);
     process.exit(1);
-  }, 12000);
+  }, limit);
   try {
     if (name === 'timer') return await runTimer(args);
     if (name === 'tutor') return await runTutor(args);

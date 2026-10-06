@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { randomBytes } from 'node:crypto';
 import { DEFAULTS, settingsFrom } from './pomodoro.js';
 
 export const SCHEMA = 1;
@@ -55,10 +56,22 @@ function migrateFromPrefs() {
     const prefs = JSON.parse(fs.readFileSync(path.join(dir(), 'prefs.json'), 'utf8'));
     const d = empty({ focus: prefs.focusMinutes, short: prefs.breakMinutes, long: prefs.longBreakMinutes, every: prefs.longBreakEvery });
     d.timer = migrateTimer(prefs.focusTimer ?? null);
+    d.fromPrefs = 'focusTimer' in prefs;
     return d;
   } catch {
     return empty();
   }
+}
+
+function ensureDir() {
+  fs.mkdirSync(dir(), { recursive: true, mode: 0o700 });
+}
+
+// A fresh, unpredictable temp name opened with O_EXCL ('wx'), so a planted symlink can't redirect the write.
+function writeExclusive(file, data) {
+  const tmp = `${file}.${process.pid}.${randomBytes(6).toString('hex')}.tmp`;
+  fs.writeFileSync(tmp, data, { mode: 0o600, flag: 'wx' });
+  fs.renameSync(tmp, file);
 }
 
 function sleep(ms) {
@@ -67,19 +80,26 @@ function sleep(ms) {
 
 function withLock(fn) {
   if (inMemory()) return fn();
-  fs.mkdirSync(dir(), { recursive: true });
+  ensureDir();
   const lock = lockDir();
+  const token = `${process.pid}.${randomBytes(6).toString('hex')}`;
   const deadline = Date.now() + 3000;
   for (;;) {
     try {
-      fs.mkdirSync(lock);
+      fs.mkdirSync(lock, { mode: 0o700 });
+      fs.writeFileSync(path.join(lock, 'owner'), token);
       break;
     } catch (err) {
       if (err.code !== 'EEXIST') throw err;
       try {
-        if (Date.now() - fs.statSync(lock).mtimeMs > 5000) fs.rmSync(lock, { recursive: true, force: true }); // stale
+        if (Date.now() - fs.statSync(lock).mtimeMs > 5000) {
+          // Stale: rename it away first. Only one waiter's rename succeeds, so two can't both "break" it.
+          const aside = `${lock}.stale.${token}`;
+          fs.renameSync(lock, aside);
+          fs.rmSync(aside, { recursive: true, force: true });
+        }
       } catch {
-        // gone already
+        // gone already, or another waiter took it
       }
       if (Date.now() > deadline) throw new Error('timer file is locked by another Magnus');
       sleep(15);
@@ -88,7 +108,25 @@ function withLock(fn) {
   try {
     return fn();
   } finally {
-    fs.rmSync(lock, { recursive: true, force: true });
+    try {
+      // Only remove the lock if it's still ours.
+      if (fs.readFileSync(path.join(lock, 'owner'), 'utf8') === token) fs.rmSync(lock, { recursive: true, force: true });
+    } catch {
+      // already gone
+    }
+  }
+}
+
+function clearPrefsTimer() {
+  // After migrating, drop the old copy so a deleted timer.json never resurrects a stale timer.
+  const file = path.join(dir(), 'prefs.json');
+  try {
+    const prefs = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (!('focusTimer' in prefs)) return;
+    delete prefs.focusTimer;
+    writeExclusive(file, JSON.stringify(prefs, null, 2));
+  } catch {
+    // best effort
   }
 }
 
@@ -105,11 +143,10 @@ function writeAtomic(d) {
       // nothing to move aside
     }
   }
-  const { corrupt, ...clean } = d;
+  const { corrupt, fromPrefs, ...clean } = d;
   void corrupt;
-  const tmp = `${file}.${process.pid}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(clean, null, 2), { mode: 0o600 });
-  fs.renameSync(tmp, file);
+  writeExclusive(file, JSON.stringify(clean, null, 2));
+  if (fromPrefs) clearPrefsTimer();
 }
 
 /**
@@ -155,10 +192,8 @@ export function setAlerts(mode, by = 'cli') {
 export function writeHeartbeat() {
   if (inMemory()) return;
   try {
-    fs.mkdirSync(dir(), { recursive: true });
-    const tmp = `${tuiFile()}.tmp`;
-    fs.writeFileSync(tmp, JSON.stringify({ pid: process.pid, heartbeat_at: Date.now() }));
-    fs.renameSync(tmp, tuiFile());
+    ensureDir();
+    writeExclusive(tuiFile(), JSON.stringify({ pid: process.pid, heartbeat_at: Date.now() }));
   } catch {
     // best effort
   }
@@ -198,7 +233,7 @@ export function watchTimerFile(onChange) {
   if (inMemory()) return () => {};
   let watcher;
   try {
-    fs.mkdirSync(dir(), { recursive: true });
+    ensureDir();
     watcher = fs.watch(dir(), (_, name) => {
       if (name === 'timer.json') onChange();
     });

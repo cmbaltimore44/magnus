@@ -78,7 +78,7 @@ export async function ensureTutor() {
 export const api = {
   courses: () => fetchJson(`${tutorUrl()}/api/courses`),
   review: () => fetchJson(`${tutorUrl()}/api/review`).catch(() => []),
-  sessions: (course) => fetchJson(`${tutorUrl()}/api/sessions?limit=8${course ? `&course=${course}` : ''}`),
+  sessions: (course) => fetchJson(`${tutorUrl()}/api/sessions?limit=8${course ? `&course=${encodeURIComponent(course)}` : ''}`),
   createSession: (course, mode, title) => fetchJson(`${tutorUrl()}/api/sessions`, { method: 'POST', body: JSON.stringify({ course, mode, title }) }),
   scan: () => fetchJson(`${tutorUrl()}/api/library/scan`, { method: 'POST', body: '{}' }),
 };
@@ -108,7 +108,10 @@ export async function ask(text, { course = null, sessionId = null, onText = () =
 
 /** Open the web app (optionally at a path like /session/12) in the default browser. */
 export function openWeb(p = '/') {
-  return new Promise((resolve) => execFile('open', [`${tutorUrl()}${p}`], (err) => resolve(!err)));
+  const url = `${tutorUrl()}${p.startsWith('/') ? p : `/${p}`}`;
+  // Only ever hand `open` a local http URL (never something it could read as an option or a file).
+  if (!/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?\//.test(url)) return Promise.resolve(false);
+  return new Promise((resolve) => execFile('open', [url], (err) => resolve(!err)));
 }
 
 /** The focus-round label for a problem-set session, e.g. "office hours: E&M PSet 3". */

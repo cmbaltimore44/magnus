@@ -37,7 +37,9 @@ export function planAction(name, t, to, settings, now) {
       return { change: true, timer, entry, message: (logged) => [`${when} ${named(timer.title)}${logged ? ` · logged ${entry.minutes} min to ${named(t.title)}` : ''}`, 'success'] };
     }
     case 'pause':
-      if (!t || t.status !== 'running' || t.pausedAt) return none(t ? 'Already paused' : 'No timer running');
+      if (!t) return none('No timer running');
+      if (t.status === 'ended') return none("Time's up: start the next phase or add 5 minutes");
+      if (t.pausedAt) return none('Already paused');
       return { change: true, timer: P.togglePause(t, now), entry: null, message: () => null };
     case 'resume':
       if (!t || !t.pausedAt) return none(t ? 'Not paused' : 'No timer running');
@@ -64,7 +66,7 @@ export function planAction(name, t, to, settings, now) {
       if (!t) return none('No timer running');
       return { change: true, timer: null, entry: null, message: () => ['Timer discarded (nothing logged)', 'info'] };
     case 'end': {
-      // Time's up on a running phase (the TUI's tick, or a CLI command noticing it).
+      // Time's up on a running phase (the TUI's tick; other actions settle this in runAction).
       if (!P.isDue(t, now)) return none('');
       const next = nextName(P.nextPhaseOf(t, settings).phase);
       const what = t.phase === 'focus' ? `${P.phaseLabel(t, settings)} done${t.title ? ` — ${t.title}` : ''}` : `${P.PHASE_LABELS[t.phase]} over`;
@@ -82,9 +84,14 @@ export function planAction(name, t, to, settings, now) {
 export async function runAction(name, to, { settings, log, by = 'tui', now = Date.now() }) {
   let plan;
   const file = updateTimerFile((cur) => {
-    const t = migrate(cur.timer);
+    let t = migrate(cur.timer);
+    // A phase that ran out while no TUI was ticking is over: settle that first, exactly as
+    // the TUI would have, so `magnus timer add5` / `skip` / `switch` act on the same state.
+    const settled = name !== 'end' && P.isDue(t, now);
+    if (settled) t = P.endPhase(t);
     plan = planAction(name, t, to, settings, now);
-    return plan.change ? { timer: plan.timer, settings } : undefined;
+    if (plan.change) return { timer: plan.timer, settings };
+    return settled ? { timer: t, settings } : undefined;
   }, by);
   const logged = plan.entry ? await log(plan.entry) : false;
   return { file, plan, logged, message: plan.message(logged) };

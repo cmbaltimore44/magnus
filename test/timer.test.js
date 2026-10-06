@@ -1,7 +1,7 @@
 // The shared focus timer: timer.json store, `magnus timer` ≡ TUI keys, and
 // changes made outside the TUI showing up in it.
 import './_demo.js';
-import { test, beforeEach } from 'node:test';
+import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -26,6 +26,10 @@ beforeEach(() => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), 'magnus-timer-'));
   process.env.XDG_CONFIG_HOME = dir;
   process.env.MAGNUS_TIMER_FILES = '1'; // real files (in a temp dir) instead of demo memory
+});
+
+afterEach(() => {
+  fs.rmSync(dir, { recursive: true, force: true }); // don't leave temp dirs behind
 });
 
 const cli = (...args) => run(process.execPath, [BIN, 'timer', ...args], { env: { ...process.env } });
@@ -139,6 +143,31 @@ test('the TUI picks up a change made by `magnus timer` within about a second', a
   } finally {
     ui.unmount();
   }
+});
+
+test('with no TUI open, an overdue phase is settled before a command, like the TUI tick', async () => {
+  const start = Date.now() - 35 * M;
+  updateTimerFile(() => ({ timer: P.startFocus({ label: 'x' }, S, start) }));
+  await cli('add5');
+  const t = readTimerFile().timer;
+  assert.equal(t.status, 'running');
+  assert.ok(P.remainingMs(t, Date.now()) > 4.5 * M && P.remainingMs(t, Date.now()) <= 5 * M);
+  updateTimerFile(() => ({ timer: P.startFocus({ label: 'x' }, S, start) }));
+  const { stdout } = await cli('pause');
+  assert.match(stdout, /Time's up/);
+  assert.equal(readTimerFile().timer.status, 'ended');
+  assert.equal(readTimerFile().timer.pausedAt, null);
+});
+
+test('migration clears the old prefs copy once timer.json exists', () => {
+  fs.mkdirSync(path.join(dir, 'magnus'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'magnus', 'prefs.json'), JSON.stringify({ focusTimer: P.startFocus({ label: 'old' }, S, 0), focusMinutes: 25 }));
+  updateTimerFile(() => ({ alerts: 'web' }));
+  const prefs = JSON.parse(fs.readFileSync(path.join(dir, 'magnus', 'prefs.json'), 'utf8'));
+  assert.equal('focusTimer' in prefs, false);
+  assert.equal(readTimerFile().timer.label, 'old');
+  fs.rmSync(timerFile());
+  assert.equal(readTimerFile().timer, null, 'a deleted timer.json does not resurrect the old timer');
 });
 
 test('alerts: no double ringing', () => {

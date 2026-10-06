@@ -42,8 +42,10 @@ export function Tutor({ params = {} }) {
     if (!alive) return;
     try {
       const [cs, rv] = await Promise.all([tutor.api.courses(), tutor.api.review()]);
-      setCourses(cs);
-      setReview(rv);
+      // Names and concepts come from another app: strip control sequences before they reach the terminal.
+      const clean = (v) => cleanText(String(v ?? ''), { keepNewlines: false });
+      setCourses(cs.map((c) => ({ ...c, name: clean(c.name), title: clean(c.title), slug: c.slug })));
+      setReview(rv.map((r) => ({ ...r, concept: clean(r.concept), course: clean(r.course), reason: clean(r.reason) })));
     } catch (err) {
       notify(`Tutor: ${err.message}`, 'error');
     }
@@ -132,7 +134,7 @@ export function Tutor({ params = {} }) {
       if (key.leftArrow && courses.length) return setCi((i) => (i - 1 + courses.length) % courses.length);
       if (key.rightArrow && courses.length) return setCi((i) => (i + 1) % courses.length);
       if (key.upArrow) return setIndex((i) => Math.max(0, i - 1));
-      if (key.downArrow) return setIndex((i) => Math.min(MENU.length + review.length - 1, i + 1));
+      if (key.downArrow) return setIndex((i) => Math.min(MENU.length + Math.min(review.length, Math.max(3, contentHeight - MENU.length - 8)) - 1, i + 1));
       if (key.return) {
         if (index < MENU.length) return run(MENU[index].key);
         const r = review[index - MENU.length];
@@ -151,6 +153,7 @@ export function Tutor({ params = {} }) {
   const status = up === null ? '…' : up ? '● running' : '○ not running (starts when you use it)';
   const width = Math.max(30, columns - 6);
   const answerLines = answer ? Math.max(4, contentHeight - 8) : 0;
+  const shownReview = review.slice(0, Math.max(3, contentHeight - MENU.length - 8));
   const lines = answer ? answer.text.split('\n') : [];
   const visible = answer && lines.length > answerLines ? lines.slice(-answerLines) : lines;
 
@@ -189,7 +192,7 @@ export function Tutor({ params = {} }) {
           {!!review.length && (
             <Box flexDirection="column" marginTop={1}>
               <Text color={C.muted}>To review (t or enter → quick add a task)</Text>
-              {review.slice(0, Math.max(3, contentHeight - MENU.length - 8)).map((r, j) => {
+              {shownReview.map((r, j) => {
                 const i = MENU.length + j;
                 return (
                   <Box key={`${r.course}-${r.concept}`}>

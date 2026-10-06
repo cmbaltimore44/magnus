@@ -2,6 +2,7 @@
 // terminal, or stop it. The tutor itself lives in the magnus-tutor repo.
 import { spawnSync } from 'node:child_process';
 import * as tutor from './lib/tutor.js';
+import { cleanText } from './lib/sanitize.js';
 
 export const TUTOR_HELP = `magnus tutor — Magnus Tutor (local study tutor)
 
@@ -35,7 +36,8 @@ export async function runTutor(args) {
     }
     const q = words.join(' ').trim();
     if (!q) throw new Error('magnus tutor ask "your question"');
-    const sid = await tutor.ask(q, { course, onText: (t) => process.stdout.write(t) });
+    // Model text is untrusted: strip terminal control sequences (OSC 52 clipboard writes, OSC 8 links, …).
+    const sid = await tutor.ask(q, { course, onText: (t) => process.stdout.write(cleanText(t, { keepNewlines: true })) });
     process.stdout.write(`\n(open in the web app: ${tutor.tutorUrl()}/session/${sid})\n`);
     return 0;
   }
