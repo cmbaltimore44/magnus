@@ -119,6 +119,17 @@ esc cancels. On a Notes field, **ctrl+e** opens `$VISUAL`/`$EDITOR` (or `fresh`)
 for multi-line text. Dates accept `2026-10-01`, `10/1`, `today`, `tomorrow`,
 `+3`, `fri`, or blank to clear.
 
+**Dictating quotes**: in a quote or highlight form, **ctrl+d** on the Quote
+field records from the mic (Enter stops, Esc cancels) and transcribes it
+offline with Whisper through `~/bin/dictate`. Whisper gets the book's title,
+author and existing quotes as hints, so names and coined words come out
+right. Spoken "comma", "period", "em dash", "new paragraph" and so on become
+punctuation. Dictating again adds to the end, so a long passage can be read
+in pieces. Saving pairs the clip with the final text in
+`~/.local/share/dictate/corpus` (training data for tuning Whisper to your
+voice later). Setup: `brew install whisper-cpp sox`, plus the model from
+`dictate --help`.
+
 ## Design notes
 
 - **Colors come from the terminal theme.** Magnus uses named ANSI colors only

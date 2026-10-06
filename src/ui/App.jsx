@@ -6,6 +6,7 @@ import { truncate } from '../lib/display.js';
 import { restoreSession, currentUserId } from '../lib/auth.js';
 import { supabase, offlineFetch } from '../lib/supabase.js';
 import { runInteractive, runCapture, editText } from '../lib/shell.js';
+import { dictate } from '../lib/dictate.js';
 import { canOpenGhosttyTabs, openInGhosttyTab } from '../lib/ghostty.js';
 import { loadCoverPng, showCoverFullscreen, supportsKittyGraphics } from '../lib/kitty.js';
 import { Login } from './views/Login.jsx';
@@ -332,6 +333,7 @@ export default function App({ gradient }) {
         return runInteractive(suspendTerminal, how.cmd, how.args);
       },
       editText: (initial) => editText(suspendTerminal, initial),
+      dictate: (prompt) => dictate(suspendTerminal, prompt),
       showCover: async (url, caption) => {
         if (!url) return notify('This book has no cover image URL.', 'info');
         if (!supportsKittyGraphics()) {

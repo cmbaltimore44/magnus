@@ -4,11 +4,14 @@ import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import { useAppCtx, useCapture } from '../context.js';
 import { parseDateInput } from '../../lib/dates.js';
+import { saveCorpusText } from '../../lib/dictate.js';
 
 // Generic record editor.
 // Field types:
 //   text      single-line input
-//   longtext  notes — edited inline when single-line, or in $EDITOR (ctrl+e)
+//   longtext  notes — edited inline when single-line, or in $EDITOR (ctrl+e).
+//             With `dictatePrompt: (values) => hints`, ctrl+d records speech
+//             (~/bin/dictate) and appends the text; see lib/dictate.js.
 //   date      free-form date text, parsed on save (see lib/dates.js)
 //   select    options: [{ value, label, color? }], cycled with ←/→
 //   toggle    boolean, toggled with space or ←/→
@@ -40,13 +43,16 @@ const DATE_HINT = 'YYYY-MM-DD, 10/1, today, tomorrow, +3, fri — blank clears';
 
 export function Form({ title, fields, initial = {}, onSubmit, onCancel }) {
   useCapture();
-  const { editText } = useAppCtx();
+  const { editText, dictate } = useAppCtx();
   const [values, setValues] = useState(() =>
     Object.fromEntries(fields.map((f) => [f.key, toEditable(f, initial[f.key] ?? f.default)]))
   );
   const [focus, setFocus] = useState(0);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  // Field key → dictated clip ID, kept only while the field holds exactly one
+  // clip's text, so the saved text can be paired with that clip's audio.
+  const [clips, setClips] = useState({});
 
   const field = fields[focus];
   const setValue = (key, value) => setValues((prev) => ({ ...prev, [key]: value }));
@@ -67,6 +73,9 @@ export function Form({ title, fields, initial = {}, onSubmit, onCancel }) {
     setError(null);
     try {
       await onSubmit(out);
+      for (const [key, clipId] of Object.entries(clips)) {
+        if (clipId && out[key]) saveCorpusText(clipId, out[key]);
+      }
     } catch (err) {
       setError(err.message || String(err));
       setBusy(false);
@@ -96,6 +105,18 @@ export function Form({ title, fields, initial = {}, onSubmit, onCancel }) {
         // (and overwrite the stray "e") once the editor returns.
         const original = values[field.key];
         editText(original).then((edited) => setValue(field.key, edited ?? original));
+        return;
+      }
+
+      if (field.dictatePrompt && key.ctrl && input === 'd') {
+        // Same stray-keystroke dance as ctrl+e. New text goes after what's
+        // already there, so a long quote can be read in pieces.
+        const original = values[field.key];
+        const k = field.key;
+        dictate(field.dictatePrompt(values)).then((heard) => {
+          setValue(k, heard ? [String(original).trimEnd(), heard.text].filter(Boolean).join(' ') : original);
+          if (heard) setClips((prev) => ({ ...prev, [k]: String(original).trim() ? null : heard.clipId }));
+        });
         return;
       }
 
@@ -171,7 +192,7 @@ export function Form({ title, fields, initial = {}, onSubmit, onCancel }) {
         {busy
           ? 'Saving…'
           : `↑↓ field · ${field.type === 'select' || field.type === 'toggle' ? '←→ change · ' : ''}${
-              field.type === 'longtext' ? 'ctrl+e editor · ' : ''
+              field.type === 'longtext' ? `${field.dictatePrompt ? 'ctrl+d dictate · ' : ''}ctrl+e editor · ` : ''
             }enter save · esc cancel`}
       </Text>
     </Box>

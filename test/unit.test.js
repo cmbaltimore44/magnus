@@ -12,6 +12,7 @@ import { windowByHeight, windowRange, swapped } from '../src/ui/components/layou
 import { parsePaletteReplies } from '../src/lib/palette.js';
 import { formatAttribution } from '../src/lib/data/quotes.js';
 import { tagLinkFlags } from '../src/lib/journal.js';
+import { quotePrompt, saveCorpusText } from '../src/lib/dictate.js';
 
 test('theme tokens are named ANSI colors (the terminal theme supplies RGB)', () => {
   for (const [k, v] of Object.entries(C)) {
@@ -119,6 +120,36 @@ test('journal browser helpers: parse jlist rows, find backlinks', async () => {
     fs.writeFileSync(self, 'self link [[pricing-ideas]]');
     assert.deepEqual(findBacklinks('pricing-ideas', self, dir), ['a.md', 'b.md']);
   } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('quotePrompt: book first, then its quotes, within the length cap', () => {
+  const book = { title: 'Pride and Prejudice', author: 'Jane Austen' };
+  assert.equal(quotePrompt(null, []), '');
+  assert.equal(quotePrompt(book, []), 'Pride and Prejudice by Jane Austen.');
+  const quotes = [{ quote_text: 'It is a truth\nuniversally acknowledged.' }, { quote_text: 'x'.repeat(900) }, { quote_text: 'Short.' }];
+  assert.equal(quotePrompt(book, quotes), 'Pride and Prejudice by Jane Austen. It is a truth universally acknowledged. Short.');
+});
+
+test('saveCorpusText pairs only existing clips with safe IDs', async () => {
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'magnus-dictate-'));
+  const before = process.env.DICTATE_DIR;
+  process.env.DICTATE_DIR = dir;
+  try {
+    fs.mkdirSync(path.join(dir, 'corpus'));
+    fs.writeFileSync(path.join(dir, 'corpus', '20261005-201628.wav'), '');
+    saveCorpusText('20261005-201628', 'Final text.');
+    saveCorpusText('../escape', 'nope');
+    saveCorpusText('20990101-000000', 'no clip');
+    assert.equal(fs.readFileSync(path.join(dir, 'corpus', '20261005-201628.txt'), 'utf8'), 'Final text.\n');
+    assert.deepEqual(fs.readdirSync(path.join(dir, 'corpus')).sort(), ['20261005-201628.txt', '20261005-201628.wav']);
+  } finally {
+    if (before == null) delete process.env.DICTATE_DIR;
+    else process.env.DICTATE_DIR = before;
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });

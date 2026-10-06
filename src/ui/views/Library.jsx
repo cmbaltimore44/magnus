@@ -12,6 +12,7 @@ import { addWantToRead, needsDetails } from '../../lib/bookQuickAdd.js';
 import { parseBookText } from '../../lib/quickadd.js';
 import * as booksApi from '../../lib/data/books.js';
 import * as quotesApi from '../../lib/data/quotes.js';
+import { quotePrompt } from '../../lib/dictate.js';
 import {
   BOOK_STATUSES,
   BOOK_STATUS_LABELS,
@@ -70,7 +71,14 @@ const bookFields = () => [
 
 // Book highlights ask for a page; standalone quotes pick a book (or none) and
 // take a freer attribution — same split as the web app's quote modal.
-function quoteFields(context, books) {
+// Dictation hints come from the quote's book (the open book, or the one picked
+// in the form) and its existing quotes.
+function quoteFields(context, books, { bookId, quotes = [] } = {}) {
+  const dictatePrompt = (values) => {
+    const id = context === 'book' ? bookId : values.book_id;
+    const book = books.find((b) => b.id === id);
+    return quotePrompt(book, id ? quotes.filter((q) => q.book_id === id) : quotes.slice(0, 5));
+  };
   return [
     ...(context === 'book'
       ? []
@@ -82,7 +90,7 @@ function quoteFields(context, books) {
             options: [{ value: null, label: '(standalone quote, no book)' }, ...books.map((b) => ({ value: b.id, label: b.title }))],
           },
         ]),
-    { key: 'quote_text', label: 'Quote', type: 'longtext', required: true },
+    { key: 'quote_text', label: 'Quote', type: 'longtext', required: true, dictatePrompt },
     {
       key: 'attribution',
       label: context === 'book' ? 'Page / location' : 'Attribution',
@@ -457,7 +465,7 @@ function BookDetail({ bookId, books, focusQuoteId, onBack, onUpdated, onDelete }
     return (
       <Form
         title={mode.quote ? 'Edit Highlight' : `New Highlight — ${book.title}`}
-        fields={quoteFields('book', books)}
+        fields={quoteFields('book', books, { bookId, quotes: data.highlights })}
         initial={mode.quote || {}}
         onSubmit={(fields) => actions.save(mode.quote, { ...fields, book_id: bookId })}
         onCancel={() => setMode(null)}
@@ -614,7 +622,7 @@ function QuotesBrowser({ books, focusQuoteId, onSwitchTab }) {
     return (
       <Form
         title={mode.quote ? 'Edit Quote' : 'New Quote'}
-        fields={quoteFields('standalone', books)}
+        fields={quoteFields('standalone', books, { quotes })}
         initial={mode.quote || {}}
         onSubmit={(fields) => actions.save(mode.quote, fields)}
         onCancel={() => setMode(null)}
