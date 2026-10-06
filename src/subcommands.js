@@ -9,8 +9,9 @@ import { parseDateInput } from './lib/dates.js';
 import { isoWeek } from './lib/stats.js';
 import { loadDay, formatDay, loadWeek, formatWeek, loadClose, formatClose } from './lib/digest.js';
 import * as logsApi from './lib/data/logs.js';
+import { runTimer } from './timerCommand.js';
 
-export const SUBCOMMANDS = ['context', 'log'];
+export const SUBCOMMANDS = ['context', 'log', 'timer'];
 
 function parseFlags(args, known) {
   const out = {};
@@ -36,6 +37,7 @@ export async function runSubcommand(name, args) {
     process.exit(1);
   }, 12000);
   try {
+    if (name === 'timer') return await runTimer(args);
     if (name === 'context') {
       const close = args.includes('--close');
       const flags = parseFlags(args.filter((a) => a !== '--close'), ['date', 'week']);

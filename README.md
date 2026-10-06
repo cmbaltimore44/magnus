@@ -70,7 +70,14 @@ phase, adds 5 minutes, stops or discards. Focus minutes (≥1, pauses and
 waiting excluded) are logged to `focus_sessions` when you leave a focus
 round, with the task or label (labels need `schema_005.sql`; before it,
 the time is saved without one). The timer survives quitting Magnus; the
-status bar shows it.
+status bar shows it. It lives in `~/.config/magnus/timer.json` (versioned,
+written atomically) and is shared with **`magnus timer`**
+(`status [--json] | start [--task ID | --label "…"] | pause | resume | skip |
+add5 | switch | stop | discard | alerts | minutes`), which runs the same code as
+the `t`/`T` keys, logs focus time the same way, and works with or without the
+TUI open; changes made there show up in the status bar within a second.
+Magnus Tutor displays and controls the timer through these commands (contract:
+`magnus-tutor/docs/timer-contract.md`).
 **Switching task** keeps the clock and the round count: `t` on another task
 while a timer runs, or `T` → *Switch task…* (the same list: tasks, labels,
 essays and notes, or type a new label) or *Focus on no task*. Mid-round,
