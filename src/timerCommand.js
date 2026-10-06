@@ -8,6 +8,7 @@ import * as focusApi from './lib/data/focus.js';
 import { runAction, snapshot } from './lib/timerActions.js';
 import { readTimerFile, setAlerts, tuiAlive } from './lib/timerStore.js';
 import { logFocus, pomodoroSettings } from './ui/useFocusTimer.js';
+import { cleanText } from './lib/sanitize.js';
 
 export const TIMER_HELP = `magnus timer — the focus timer (shared with the TUI and Magnus Tutor)
 
@@ -109,7 +110,7 @@ export async function runTimer(args) {
   });
   if (r.message) messages.push(r.message);
   print(f, r.file, { logged: r.logged && r.plan.entry ? { minutes: r.plan.entry.minutes } : null, message: messages.map((m) => m[0]).join(' · ') || null });
-  if (!f.json) for (const [text] of messages) process.stdout.write(text + '\n');
+  if (!f.json) for (const [text] of messages) process.stdout.write(cleanText(text, { keepNewlines: false }) + '\n');
   const failed = messages.some(([, level]) => level === 'error');
   return failed && !r.plan.change ? 1 : 0;
 }
@@ -121,6 +122,8 @@ function clock(ms) {
 
 export function statusLine(s) {
   if (!s.active) return 'No timer running';
+  // Labels can come from the tutor web app: never print control sequences to the terminal.
+  s = { ...s, title: s.title ? cleanText(s.title, { keepNewlines: false }) : s.title };
   if (s.status === 'ended') return `⏰ ${s.phase_label} ${s.phase === 'focus' ? 'done' : 'over'}${s.title ? ` · ${s.title}` : ''}`;
   return `${s.paused ? '⏸' : s.phase === 'focus' ? '◷' : '☕'} ${clock(s.remaining_ms)} ${s.phase_label}${s.title ? ` · ${s.title}` : ''}`;
 }

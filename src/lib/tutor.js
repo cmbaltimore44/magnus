@@ -8,6 +8,7 @@ import path from 'node:path';
 import { execFile, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { getPref } from './prefs.js';
+import { cleanText } from './sanitize.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -42,7 +43,7 @@ async function fetchJson(url, opts = {}, timeout = 4000) {
   const t = setTimeout(() => ctl.abort(), timeout);
   try {
     const r = await fetch(url, { ...opts, signal: ctl.signal, headers: { 'content-type': 'application/json', ...(opts.headers || {}) } });
-    if (!r.ok) throw new Error((await r.text()).slice(0, 200) || r.statusText);
+    if (!r.ok) throw new Error(cleanText((await r.text()).slice(0, 200), { keepNewlines: false }) || r.statusText); // server text is untrusted
     return await r.json();
   } finally {
     clearTimeout(t);
@@ -94,7 +95,7 @@ export async function ask(text, { course = null, sessionId = null, onText = () =
     body: JSON.stringify({ text, course, session_id: sessionId }),
     signal,
   });
-  if (!r.ok) throw new Error((await r.text()).slice(0, 200) || r.statusText);
+  if (!r.ok) throw new Error(cleanText((await r.text()).slice(0, 200), { keepNewlines: false }) || r.statusText); // server text is untrusted
   const sid = Number(r.headers.get('x-session-id')) || sessionId;
   const reader = r.body.getReader();
   const dec = new TextDecoder();

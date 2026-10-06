@@ -10,6 +10,7 @@ import { isoWeek } from './lib/stats.js';
 import { loadDay, formatDay, loadWeek, formatWeek, loadClose, formatClose } from './lib/digest.js';
 import * as logsApi from './lib/data/logs.js';
 import { runTimer } from './timerCommand.js';
+import { cleanText } from './lib/sanitize.js';
 import { runTutor } from './tutorCommand.js';
 
 export const SUBCOMMANDS = ['context', 'log', 'timer', 'tutor'];
@@ -82,7 +83,7 @@ export async function runSubcommand(name, args) {
     return 1;
   } catch (err) {
     const hint = logsApi.isMissingSchema(err) ? ' (run supabase/schema_003.sql)' : '';
-    process.stderr.write(`magnus ${name}: ${err.message}${hint}\n`);
+    process.stderr.write(`magnus ${name}: ${cleanText(String(err.message), { keepNewlines: false })}${hint}\n`);
     return 1;
   } finally {
     clearTimeout(timer);
