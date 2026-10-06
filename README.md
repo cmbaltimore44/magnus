@@ -84,6 +84,18 @@ essays and notes, or type a new label) or *Focus on no task*. Mid-round,
 the minutes so far are logged to the old one and the rest go to the new
 one. In a break, it sets what the next round is on.
 
+**Tutor** (`o` from Home, or the palette's *Tutor:* actions): the front door to
+[Magnus Tutor](../magnus-tutor), a separate local study tutor. Ask a question and
+the answer streams in place (math as LaTeX text; `w` opens the conversation in the
+web app, `f` asks a follow-up). *Start problem-set session* labels a focus round
+`office hours: <course> <pset>` (switching the running round if there is one) and
+opens the web app on that session. Also: open the web app, ingest new PDFs, new
+course from a syllabus, a journal note for the session, and concepts to review
+(`t` → quick add `review: … !low +2`). From a shell: `magnus tutor` (start it and
+open the web app), `magnus tutor ask "…" [--course em]`, `magnus tutor stop`. The
+tutor starts on demand (`tutor start`) and never touches Supabase. It's found via
+`$MAGNUS_TUTOR_BIN`, the `tutorCommand` pref, or `../magnus-tutor/.venv/bin/tutor`.
+
 **Quick add** (`a`, anywhere): one line becomes a task —
 `renew passport fri !high #home *` sets the due date (`today`, `tom`, weekday
 names, `+3`, `10/1`, `2026-10-01`), priority (`!high`/`!h`, `!low`), the category

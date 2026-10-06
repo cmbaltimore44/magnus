@@ -24,6 +24,9 @@ Journal plumbing (used by the ~/bin scripts; print Markdown or nothing):
 Focus timer (shared with the TUI and Magnus Tutor; magnus timer --help):
   magnus timer status|start|pause|resume|skip|add5|switch|stop|discard [--json]
 
+Magnus Tutor (magnus tutor --help):
+  magnus tutor [ask "question" [--course SLUG] | stop]
+
 Environment:
   MAGNUS_DEMO=1     run against in-memory sample data (no sign-in, nothing saved)
   MAGNUS_KITTY=0|1  force kitty-graphics cover images off/on

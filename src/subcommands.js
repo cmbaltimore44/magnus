@@ -10,8 +10,9 @@ import { isoWeek } from './lib/stats.js';
 import { loadDay, formatDay, loadWeek, formatWeek, loadClose, formatClose } from './lib/digest.js';
 import * as logsApi from './lib/data/logs.js';
 import { runTimer } from './timerCommand.js';
+import { runTutor } from './tutorCommand.js';
 
-export const SUBCOMMANDS = ['context', 'log', 'timer'];
+export const SUBCOMMANDS = ['context', 'log', 'timer', 'tutor'];
 
 function parseFlags(args, known) {
   const out = {};
@@ -32,12 +33,14 @@ async function session() {
 
 export async function runSubcommand(name, args) {
   // Scripts wait on us; never hang them on a stalled network.
-  const timer = setTimeout(() => {
+  // `magnus tutor` streams answers and may start the backend: no 12 s limit there.
+  const timer = name === 'tutor' ? null : setTimeout(() => {
     process.stderr.write(`magnus ${name}: timed out\n`);
     process.exit(1);
   }, 12000);
   try {
     if (name === 'timer') return await runTimer(args);
+    if (name === 'tutor') return await runTutor(args);
     if (name === 'context') {
       const close = args.includes('--close');
       const flags = parseFlags(args.filter((a) => a !== '--close'), ['date', 'week']);

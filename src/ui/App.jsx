@@ -22,6 +22,8 @@ import { Upcoming } from './views/Upcoming.jsx';
 import { Insights } from './views/Insights.jsx';
 import { Log } from './views/Log.jsx';
 import { Lists } from './views/Lists.jsx';
+import { Tutor } from './views/Tutor.jsx';
+import * as tutorLib from '../lib/tutor.js';
 import { Settings } from './views/Settings.jsx';
 import { getPref } from '../lib/prefs.js';
 import { QuickAdd } from './components/QuickAdd.jsx';
@@ -51,6 +53,8 @@ export const SECTIONS = [
   { view: 'log', label: 'Log', key: 'g', digit: '9', component: Log },
   // No digit left: k from Home, the palette, or quick add `+list item`.
   { view: 'lists', label: 'Lists', key: 'k', digit: null, component: Lists },
+  // Magnus Tutor (separate local app): o from Home, or the palette.
+  { view: 'tutor', label: 'Tutor', key: 'o', digit: null, component: Tutor },
 ];
 
 // The window frame's top edge, with the tab bar set into it:
@@ -411,6 +415,33 @@ export default function App({ gradient }) {
     add('Library', 'Want to Read', () => navigate('library', { tab: 'want' }));
     for (const it of JOURNAL_ITEMS) add('Journal', it.label, () => navigate('journal', { item: it.key }));
     add('Log', 'Log mood, sleep, weight or a workout', () => navigate('log'));
+    add('Tutor', 'Tutor: ask a question', () => navigate('tutor', { mode: 'ask' }));
+    add('Tutor', 'Tutor: start problem-set session', () => navigate('tutor', { mode: 'pset' }));
+    add('Tutor', 'Tutor: open web app', async () => {
+      try {
+        await tutorLib.ensureTutor();
+        await tutorLib.openWeb('/');
+      } catch (err) {
+        notify(err.message, 'error');
+      }
+    });
+    add('Tutor', 'Tutor: ingest notes', async () => {
+      try {
+        await tutorLib.ensureTutor();
+        const r = await tutorLib.api.scan();
+        notify(r.queued?.length ? `Tutor: ingesting ${r.queued.length} new PDF(s)` : 'Tutor: no new PDFs in the course folders', 'success');
+      } catch (err) {
+        notify(err.message, 'error');
+      }
+    });
+    add('Tutor', 'Tutor: new course', async () => {
+      try {
+        await tutorLib.ensureTutor();
+        await tutorLib.openWeb('/courses/new');
+      } catch (err) {
+        notify(err.message, 'error');
+      }
+    });
     for (const fam of ['heather', 'lakeglow', 'beacon', 'hearth']) {
       if (fam === FAMILY) continue;
       add('Theme', `Switch theme to ${fam[0].toUpperCase()}${fam.slice(1)}`, async () => {
