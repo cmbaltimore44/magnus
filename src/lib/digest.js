@@ -1,6 +1,6 @@
-// Markdown digests of Life Tracker data for the journal scripts:
+// Markdown digests of Magnus data for the journal scripts:
 //   `magnus context`              → the "Today" section `today` adds to a new daily entry
-//   `magnus context --week W`     → the Life Tracker half of `jweek`'s weekly review
+//   `magnus context --week W`     → the Magnus half of `jweek`'s weekly review
 // Pure formatting lives in formatDay/formatWeek (unit-tested); loadDay/loadWeek fetch.
 import * as tasksApi from './data/tasks.js';
 import * as routinesApi from './data/routines.js';
@@ -112,7 +112,7 @@ export function formatWeek({ monday, sunday, tasks, routines, completions, books
   const workouts = weekLogs.filter((e) => e.metric === 'workout');
   const finished = books.filter((b) => b.status === 'finished' && b.finished_date && inWeek(b.finished_date));
 
-  const out = ['## Life Tracker', ''];
+  const out = ['## Magnus', ''];
   out.push(`**Tasks finished (${done.length})**`);
   out.push(...(done.length ? done.map((t) => `- ${oneLine(t.title)}`) : ['- none recorded']), '');
   if (routines.length) {

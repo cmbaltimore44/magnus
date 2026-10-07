@@ -1,4 +1,4 @@
-// Lists (schema_004 `lists` / `list_items`). Mirrors Life Tracker js/data/lists.js.
+// Lists (schema_004 `lists` / `list_items`). Mirrors Magnus Web js/data/lists.js.
 import { supabase } from '../supabase.js';
 import { unwrap } from './_unwrap.js';
 

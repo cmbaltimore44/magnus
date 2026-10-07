@@ -1,6 +1,6 @@
 // Delete with undo: snapshot a row plus whatever the delete cascades to,
 // delete it, and return a function that puts everything back with the same
-// ids. Mirrors Life Tracker js/undo.js.
+// ids. Mirrors Magnus Web js/undo.js.
 import { supabase } from './supabase.js';
 import { unwrap } from './data/_unwrap.js';
 import { isMissingSchema } from './data/logs.js';

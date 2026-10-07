@@ -1,5 +1,56 @@
+# Build output and dependencies
 node_modules/
 dist/
-.DS_Store
+coverage/
+*.tsbuildinfo
+
+# Art previews
 art/*.png
 art/__pycache__/
+__pycache__/
+*.pyc
+
+# Secrets: never commit keys or tokens (the Supabase anon key in
+# src/lib/config.js is public by design; a service_role key must never be here)
+.env
+.env.*
+!.env.example
+*.local
+.npmrc
+*.pem
+*.key
+*.p12
+*.mobileprovision
+service-account*.json
+supabase/.temp/
+.vercel/
+
+# Personal data that normally lives in ~/.config/magnus or the journal;
+# ignored here in case a copy lands in the checkout
+/prefs.json
+/cache.json
+/timer.json
+/inbox*.md
+/inbox-queue.txt
+*.sqlite
+*.sqlite3
+*.db
+*.wav
+*.m4a
+*.mp3
+*.dump
+*.backup
+*.csv
+backups/
+exports/
+
+# Logs and editor/OS clutter
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+.claude/

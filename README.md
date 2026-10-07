@@ -1,17 +1,62 @@
 # Magnus
 
-A full-screen terminal companion to Life Tracker (tasks, routines, projects, and
-the book/quote library). It talks to the same Supabase project and tables as the
-web app, so the two are always in sync. It is also a front door to the journal
-scripts on your `$PATH`.
+A full-screen terminal companion to [Magnus Web](https://github.com/cmbaltimore44/magnus-web)
+(tasks, routines, projects, lists, a daily log, and the book/quote library). It
+talks to the same Supabase project and tables as the web app, so the two are
+always in sync. It also has a shared focus timer, a front door to
+[Magnus Tutor](https://github.com/cmbaltimore44/magnus-tutor), and a front door
+to a set of journal scripts on your `$PATH`.
+
+Magnus is a personal tool, published as-is. It's built for the author's own
+setup, so some features depend on things outside this repo (see
+[Optional companions](#optional-companions)); everything else works on its own.
+
+## Requirements
+
+- **macOS.** The session is stored in the Keychain (`security` CLI); covers use
+  `sips`; notifications and Ghostty tabs use AppleScript.
+- **Node.js 20+.**
+- **A Supabase project** with the Magnus Web schema (see below), or none at
+  all for the demo.
+- A terminal with true color. [Ghostty](https://ghostty.org) is recommended
+  (new tabs for journal entries, kitty graphics for book covers).
 
 ## Install
 
 ```sh
+git clone https://github.com/cmbaltimore44/magnus.git
+cd magnus
 npm install
 npm run build    # JSX → dist/ (npm 11 skips the "prepare" auto-build unless approved)
 npm link         # puts `magnus` on your PATH (symlink to this checkout)
+npm run demo     # try it on sample in-memory data: no account, nothing saved
 ```
+
+### Your own Supabase project
+
+Magnus ships pointing at the author's Supabase project, which doesn't allow
+new sign-ups. To use it for real:
+
+1. Create a Supabase project and run the Magnus Web repo's
+   [`supabase/schema.sql`](https://github.com/cmbaltimore44/magnus-web/tree/main/supabase)
+   and then `schema_002.sql` … `schema_006.sql` in the SQL editor, in order.
+   They create every table with Row Level Security (each user sees only their
+   own rows).
+2. Create your user under *Authentication → Users → Add user* (Magnus only
+   signs existing users in; it never creates accounts), and turn off new
+   sign-ups under *Authentication → Sign In / Providers*.
+3. Point Magnus at your project (*Project Settings → API*):
+
+   ```sh
+   export MAGNUS_SUPABASE_URL=https://<your-project>.supabase.co
+   export MAGNUS_SUPABASE_ANON_KEY=<your anon key>
+   ```
+
+   The anon key is safe to expose: access is enforced by Row Level Security,
+   not by keeping the key secret. Never use the `service_role` key here.
+
+Deploy the [Magnus Web](https://github.com/cmbaltimore44/magnus-web) web
+app against the same project for the phone/browser side.
 
 After editing anything in `src/`, rebuild with `npm run build` (or leave
 `npm run watch` running). `npm link` points at this folder, so the rebuilt
@@ -27,7 +72,8 @@ npm run demo      # sample in-memory data: no sign-in, nothing saved
 npm test          # unit tests (+ a Keychain round-trip on a throwaway item)
 ```
 
-Environment variables: `MAGNUS_DEMO=1` (sample data, nothing saved),
+Environment variables: `MAGNUS_SUPABASE_URL`/`MAGNUS_SUPABASE_ANON_KEY` (your
+Supabase project), `MAGNUS_DEMO=1` (sample data, nothing saved),
 `MAGNUS_KITTY=0|1` (force cover images off/on), `MAGNUS_JOURNAL_TABS=0`
 (start journal entries in this terminal instead of a new Ghostty tab), and
 `VISUAL`/`EDITOR` (editor for long notes; defaults to `fresh`).
@@ -77,7 +123,8 @@ add5 | switch | stop | discard | alerts | minutes`), which runs the same code as
 the `t`/`T` keys, logs focus time the same way, and works with or without the
 TUI open; changes made there show up in the status bar within a second.
 Magnus Tutor displays and controls the timer through these commands (contract:
-`magnus-tutor/docs/timer-contract.md`).
+[`docs/timer-contract.md`](https://github.com/cmbaltimore44/magnus-tutor/blob/main/docs/timer-contract.md)
+in the Magnus Tutor repo).
 **Switching task** keeps the clock and the round count: `t` on another task
 while a timer runs, or `T` → *Switch task…* (the same list: tasks, labels,
 essays and notes, or type a new label) or *Focus on no task*. Mid-round,
@@ -85,7 +132,8 @@ the minutes so far are logged to the old one and the rest go to the new
 one. In a break, it sets what the next round is on.
 
 **Tutor** (`o` from Home, or the palette's *Tutor:* actions): the front door to
-[Magnus Tutor](../magnus-tutor), a separate local study tutor. Ask a question and
+[Magnus Tutor](https://github.com/cmbaltimore44/magnus-tutor), a separate local study tutor
+(optional; install it separately). Ask a question and
 the answer streams in place (math as LaTeX text; `w` opens the conversation in the
 web app, `f` asks a follow-up). *Start problem-set session* labels a focus round
 `office hours: <course> <pset>` (switching the running round if there is one) and
@@ -94,7 +142,8 @@ course from a syllabus, a journal note for the session, and concepts to review
 (`t` → quick add `review: … !low +2`). From a shell: `magnus tutor` (start it and
 open the web app), `magnus tutor ask "…" [--course em]`, `magnus tutor stop`. The
 tutor starts on demand (`tutor start`) and never touches Supabase. It's found via
-`$MAGNUS_TUTOR_BIN`, the `tutorCommand` pref, or `../magnus-tutor/.venv/bin/tutor`.
+`$MAGNUS_TUTOR_BIN`, the `tutorCommand` pref, or a `magnus-tutor` checkout next to
+this one (`../magnus-tutor/.venv/bin/tutor`).
 
 **Quick add** (`a`, anywhere): one line becomes a task —
 `renew passport fri !high #home *` sets the due date (`today`, `tom`, weekday
@@ -186,3 +235,23 @@ voice later). Setup: `brew install whisper-cpp sox`, plus the model from
   OSC 8 hyperlinks or CR/backspace overwrites. Arguments typed into a new
   Ghostty tab are also stripped of control characters and newlines.
 - **Schema**: see [MIGRATIONS.md](MIGRATIONS.md). Currently no changes.
+
+## Optional companions
+
+These aren't part of this repo. Without them, the related actions show
+"command not found" and everything else keeps working.
+
+- **Journal scripts** on your `$PATH`: `today`, `new-essay`, `jsearch`,
+  `jbacklinks`, `jtag`, `jweek`, `capture-batch`, writing Markdown into
+  `$JOURNAL_DIR` (default `~/journal`). The Journal tab and journal palette
+  actions call them; they're the author's personal scripts and aren't published.
+- **Dictation**: `~/bin/dictate`, a wrapper around `whisper-cpp` and `sox`,
+  for ctrl+d in quote fields. Also personal and unpublished.
+- **[Magnus Tutor](https://github.com/cmbaltimore44/magnus-tutor)** for the
+  Tutor section.
+- **Fresh** as the default editor (set
+  `VISUAL`/`EDITOR` to use another), Ghostty for tabs and covers.
+
+## License
+
+[MIT](LICENSE).

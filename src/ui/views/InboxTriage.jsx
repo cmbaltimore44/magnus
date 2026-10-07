@@ -9,7 +9,7 @@ import { readInbox, findInboxLine, removeInboxLine, restoreInboxLine, tagLinkFla
 import { truncate } from '../../lib/display.js';
 
 // Walk inbox.md one item at a time and send each somewhere:
-//   t → a Life Tracker task (quick add, prefilled)   n → a note (new-note --from-inbox-line)
+//   t → a task (quick add, prefilled)          n → a note (new-note --from-inbox-line)
 //   e → an essay (new-essay "title")                 d → delete (u undoes)
 //   s / → skip   ← back
 // The item leaves the inbox once it has somewhere to live.

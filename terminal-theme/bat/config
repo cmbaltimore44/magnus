@@ -1,4 +1,4 @@
-# Use the terminal's 16 ANSI colors, so bat follows the Life Tracker
+# Use the terminal's 16 ANSI colors, so bat follows the Magnus Web
 # Ghostty themes (light and dark) automatically. Highlighted lines
 # (e.g. jsearch/jbacklinks previews) are shown underlined.
 --theme="ansi"

@@ -1,6 +1,6 @@
 // Supabase returns at most 1,000 rows per request (the project's "max rows"
 // setting) and silently drops the rest, so any table that can grow past that
-// is read page by page. Mirrors Life Tracker js/data/paging.js.
+// is read page by page. Mirrors Magnus Web js/data/paging.js.
 //
 // `build` returns a fresh query for each page (a query can only run once).
 // Its order must be total (end with a unique column, e.g. id) so rows can't

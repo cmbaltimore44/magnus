@@ -493,7 +493,7 @@ export default function App({ gradient }) {
   if (auth.state === 'loading') {
     body = (
       <Box padding={1}>
-        <Text color={C.muted}>Connecting to Life Tracker…</Text>
+        <Text color={C.muted}>Connecting to Supabase…</Text>
       </Box>
     );
   } else if (auth.state === 'offline') {

@@ -1,4 +1,4 @@
-// Mirrors Life Tracker js/data/completions.js, including the grace-period
+// Mirrors Magnus Web js/data/completions.js, including the grace-period
 // streak rule, so both apps always agree on a routine's streak.
 import { supabase } from '../supabase.js';
 import { fetchAll } from './paging.js';

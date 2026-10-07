@@ -1,4 +1,4 @@
-// Mirrors Life Tracker js/data/quotes.js.
+// Mirrors Magnus Web js/data/quotes.js.
 import { supabase } from '../supabase.js';
 import { fetchAll } from './paging.js';
 

@@ -7,7 +7,7 @@ import { fetchSearchIndex } from '../../lib/data/search.js';
 import { PROJECT_STATUS_LABELS, TIME_OF_DAY_LABELS, truncate } from '../../lib/display.js';
 import { windowRange } from '../components/layout.js';
 
-// Port of Life Tracker's Cmd+K palette (js/search.js): same index, same
+// Port of Magnus Web's Cmd+K palette (js/search.js): same index, same
 // ranking (title matches first), same per-group cap.
 const TYPE_ORDER = ['task', 'project', 'book', 'quote', 'routine'];
 const TYPE_LABELS = { task: 'Tasks', project: 'Projects', book: 'Books', quote: 'Quotes', routine: 'Routines' };

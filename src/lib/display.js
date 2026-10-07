@@ -1,4 +1,4 @@
-// Shared pure display helpers — ports of Life Tracker js/taskDisplay.js plus
+// Shared pure display helpers — ports of Magnus Web js/taskDisplay.js plus
 // the label maps each web view defines, so Magnus and the web app never
 // disagree about what's overdue or how a status is spelled.
 

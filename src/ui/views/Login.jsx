@@ -56,7 +56,7 @@ export function Login({ gradient, onAuthenticated }) {
   return (
     <Box flexDirection="column" paddingTop={1}>
       <Banner gradient={gradient} columns={columns} />
-      <Text bold>Sign in to Life Tracker</Text>
+      <Text bold>Sign in to Magnus</Text>
       <Text color={C.muted}>One-time setup — your session is kept in the macOS Keychain after this. (ctrl+c quits)</Text>
       <Box marginTop={1} flexDirection="column">
         {step === 'email' ? (

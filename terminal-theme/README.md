@@ -9,7 +9,7 @@ Fresh follow macOS light/dark mode.
 | `heather` | Slate `#20242A` / Dust `#D2D4C8`, Charcoal highlights, Ash/Steel muted, Lilac accent, green, teal, plus added brick red, ochre and slate blue |
 | `lakeglow` | A spring sunset over a lake: twilight-lake `#1B1D30` / sunlit cream, coral sun, gold, rose and lavender sky, lake blues, new-leaf green. Light mode is a pale peach sky with deep-lake text |
 | `beacon` | A foggy late night in downtown Boston: blue-gray night `#1A1E25` / fog-gray text, sodium-streetlight orange, lamp-lit yellow, brick and taillight red, Green Line green, harbor teal, a hazy neon magenta. Light mode is a pale fog bank with deep-navy text |
-| `hearth` | The Life Tracker web app's original warm palette (parchment / terracotta / amber), contrast-tuned |
+| `hearth` | The Magnus Web app's original warm palette (parchment / terracotta / amber), contrast-tuned |
 
 ## Switching
 
@@ -47,7 +47,7 @@ when they start.
 Magnus takes its accent and banner gradient from the family (see
 `src/lib/theme.js`): lilac → rose for Heather, gold → coral → rose for
 Lakeglow, fog blue → sodium orange → lamp yellow for Beacon, terracotta →
-amber for Life Tracker.
+amber for Magnus Web.
 
 ## Making or tweaking a family
 
@@ -85,15 +85,16 @@ every Magnus screen, and scoring each text/background pair.
 thin bar), and bat's `ansi` theme underlines `--highlight-line` instead of
 shading it.
 
-## Web app (Life Tracker)
+## Web app (Magnus Web)
 
-The same four themes (Heather, Lakeglow, Beacon, Hearth) are available in the Life Tracker web app, generated
+The same four themes (Heather, Lakeglow, Beacon, Hearth) are available in the Magnus Web app, generated
 from these Ghostty files so both use identical colors:
 
-    npm run themes:web      # = node terminal-theme/tools/build-web.mjs ../LifeTracker
+    npm run themes:web      # = node terminal-theme/tools/build-web.mjs ../magnus-web
 
-This writes `themes.css` (CSS variables per theme and light/dark mode) and
-`js/palettes.js` (the picker's list) into the Life Tracker repo, then runs
+This expects a [Magnus Web](https://github.com/cmbaltimore44/magnus-web)
+checkout next to this one. It writes `themes.css` (CSS variables per theme and light/dark mode) and
+`js/palettes.js` (the picker's list) into that repo, then runs
 its `scripts/generate-icon.py` to redraw the per-theme app icons. Commit and
 push there to deploy. It also prints a contrast report: every text color on
 the page background, cards, sidebar and hover shades is >= 4.5:1, and button

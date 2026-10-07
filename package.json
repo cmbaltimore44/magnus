@@ -1,9 +1,9 @@
 {
   "name": "magnus",
   "version": "0.1.0",
-  "description": "Full-screen terminal companion to Life Tracker (tasks, routines, projects, library) plus a front door to the journal scripts.",
+  "description": "Full-screen terminal companion to Magnus Web (tasks, routines, projects, library) plus a front door to the journal scripts.",
   "author": "cmbaltimore44",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "bin": {
@@ -17,7 +17,7 @@
     "start": "npm run build && node bin/magnus.js",
     "demo": "npm run build && MAGNUS_DEMO=1 node bin/magnus.js",
     "test": "npm run build && node --test test/",
-    "themes:web": "node terminal-theme/tools/build-web.mjs ../LifeTracker",
+    "themes:web": "node terminal-theme/tools/build-web.mjs ../magnus-web",
     "art": "python3 art/export.py",
     "themes:obsidian": "node terminal-theme/tools/build-obsidian.mjs"
   },

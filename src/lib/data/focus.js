@@ -1,4 +1,4 @@
-// Focus timer runs (schema_003 `focus_sessions`). Mirrors Life Tracker js/data/focus.js.
+// Focus timer runs (schema_003 `focus_sessions`). Mirrors Magnus Web js/data/focus.js.
 import { supabase } from '../supabase.js';
 
 export async function listFocusSessions(sinceISO) {

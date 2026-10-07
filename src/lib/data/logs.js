@@ -1,4 +1,4 @@
-// The daily Log (schema_003 `log_entries`). Mirrors Life Tracker js/data/logs.js.
+// The daily Log (schema_003 `log_entries`). Mirrors Magnus Web js/data/logs.js.
 // mood/energy/sleep/weight are one per day — setDailyMetric updates the
 // existing row; workouts can repeat.
 import { supabase } from '../supabase.js';

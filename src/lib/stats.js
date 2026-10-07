@@ -1,5 +1,5 @@
 // Pure calculations behind Upcoming, Insights and Book stats. No I/O, so
-// they're unit-tested directly; the Life Tracker web app has a copy
+// they're unit-tested directly; the Magnus Web app has a copy
 // (js/stats.js) — keep the two in sync.
 import { addDays, toISO } from './data/completions.js';
 

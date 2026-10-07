@@ -1,4 +1,4 @@
-// Mirrors Life Tracker js/data/routines.js.
+// Mirrors Magnus Web js/data/routines.js.
 import { supabase } from '../supabase.js';
 import { unwrap } from './_unwrap.js';
 

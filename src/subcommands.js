@@ -1,7 +1,7 @@
 // Non-interactive `magnus context` / `magnus log`, called by the journal
 // scripts (`today`, `jweek`). They never prompt: without a saved session or a
 // network they print an error to stderr and exit 1, and the script carries on
-// without Life Tracker data.
+// without Magnus data.
 import { restoreSession, currentUserId } from './lib/auth.js';
 import { supabase } from './lib/supabase.js';
 import { todayISO } from './lib/data/completions.js';
@@ -28,7 +28,7 @@ function parseFlags(args, known) {
 
 async function session() {
   const { session: s, error } = await restoreSession();
-  if (!s) throw new Error(error ? `can't reach Life Tracker (${error.message})` : 'not signed in — run magnus once to sign in');
+  if (!s) throw new Error(error ? `can't reach Supabase (${error.message})` : 'not signed in — run magnus once to sign in');
   return s;
 }
 

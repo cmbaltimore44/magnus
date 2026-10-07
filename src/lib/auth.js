@@ -26,10 +26,12 @@ function storedSession() {
   }
 }
 
+// Sign-in only: accounts are created in the Supabase dashboard, so the public
+// URL and anon key can't be used to sign up.
 export async function requestCode(email) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true },
+    options: { shouldCreateUser: false },
   });
   if (error) throw error;
 }

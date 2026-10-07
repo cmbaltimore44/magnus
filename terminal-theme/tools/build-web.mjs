@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Generate the Life Tracker web app's theme CSS from the terminal themes:
-//   node terminal-theme/tools/build-web.mjs <life-tracker-repo-dir>
+// Generate the Magnus Web app's theme CSS from the terminal themes:
+//   node terminal-theme/tools/build-web.mjs <magnus-web-repo-dir>
 //
 // Reads each family's finished Ghostty theme files (so the web app gets
 // exactly the same, contrast-tuned colors as the terminal) and writes:
@@ -19,7 +19,7 @@ import { execFileSync } from 'node:child_process';
 import { FAMILIES, familyColors, contrast } from './colors.mjs';
 const outDir = process.argv[2];
 if (!outDir) {
-  console.error('usage: build-web.mjs <life-tracker-repo-dir>');
+  console.error('usage: build-web.mjs <magnus-web-repo-dir>');
   process.exit(1);
 }
 

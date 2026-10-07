@@ -1,4 +1,4 @@
-// Mirrors Life Tracker js/data/tasks.js — same table, same queries.
+// Mirrors Magnus Web js/data/tasks.js — same table, same queries.
 import { supabase } from '../supabase.js';
 import { fetchAll } from './paging.js';
 

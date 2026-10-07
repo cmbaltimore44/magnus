@@ -1,4 +1,4 @@
-// Mirrors Life Tracker js/data/projects.js.
+// Mirrors Magnus Web js/data/projects.js.
 import { supabase } from '../supabase.js';
 
 export async function listProjects() {

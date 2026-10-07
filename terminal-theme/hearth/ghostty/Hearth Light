@@ -1,4 +1,4 @@
-# Hearth Light — derived from the Life Tracker web app palette (style.css).
+# Hearth Light — derived from the Magnus Web app palette (style.css).
 # Every text color is >= 4.8:1 contrast on the background (WCAG AA is 4.5).
 # red = danger, bright red = the app's terracotta accent, yellow = amber, green = success.
 palette = 0=#2b2420
