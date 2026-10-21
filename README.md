@@ -93,9 +93,9 @@ category's tasks) · **t** start a Pomodoro on the selected task (Today, Board, 
 
 | Screen   | Keys |
 | -------- | ---- |
-| Today    | ↑↓ · space check off a routine / cycle a starred task's status · enter edit task · s unstar · r new quote |
+| Today    | ↑↓ · space check off a routine / cycle a starred task's status · y check off a routine for yesterday · enter edit task · s unstar · r new quote |
 | Board    | ←→/h l column · ↑↓/j k task · **space** cycle status (H/L back/forward) · s star (max 3) · enter/e edit · n new · d delete · f text filter · c cycle category filter · C manage categories · esc clears filters |
-| Routines | space check off · **K/J** move up/down · **H/L** move to the previous/next time of day · n new · d delete |
+| Routines | space check off · y check off yesterday · **K/J** move up/down · **H/L** move to the previous/next time of day · n new · d delete |
 | Projects | enter open · n new · s cycle status · d delete → in a project: space toggle item · n add · d delete item · K/J reorder · e edit · D delete project |
 | Library  | tab Books → **Want to Read** (a queue: one line per book in your order, first three "Up next"; n rapid add `Title by Author` or an ISBN; K/J reorder; f filter; **s start reading** sets Currently Reading and today's start date, u undoes; `?` = still missing an author or cover — open it and press i) → Quotes → **Stats** (finished this year, ratings, days to finish, per year, by format, repeat authors) · enter open a book / fold a group · **i look up a book on Open Library** by ISBN or title/author and start a New Book prefilled (title, author, ISBN, cover) · n new → in a book: n add highlight · enter edit · f favorite · **w send a quote to an essay** (append to an existing essay, or start a new book essay with the quote on the clipboard) · e edit book · i fill in the cover/ISBN/author from Open Library · v view cover · D delete · Quotes tab: F favorites only |
 | Upcoming | overdue, today, tomorrow, next 7 days — tasks by due date and projects by target date · space mark done · enter open |

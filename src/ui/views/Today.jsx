@@ -18,7 +18,7 @@ import { layoutQuote, QuoteBlock } from '../components/Quote.jsx';
 // switches for the rest of the session; press r to roll a new one.
 let featuredQuote;
 
-const HINTS = '↑↓ move · space check off / cycle status · enter open task · s unstar · t focus · r new quote · R refresh · esc home';
+const HINTS = '↑↓ move · space check off / cycle status · y check off yesterday · enter open task · s unstar · t focus · r new quote · R refresh · esc home';
 
 export function Today() {
   const { userId, navigate, notify, startFocus, columns, contentHeight } = useAppCtx();
@@ -54,15 +54,17 @@ export function Today() {
   const selected = items[Math.min(index, items.length - 1)];
   const today = completionsApi.todayISO();
 
-  const toggleRoutine = async (routine) => {
+  // day: today, or yesterday (y) for a routine you forgot to check off.
+  const toggleRoutine = async (routine, day = today) => {
     const dates = new Set(data.completions.get(routine.id) || []);
-    const wasDone = dates.has(today);
+    const wasDone = dates.has(day);
     try {
-      if (wasDone) await completionsApi.markIncomplete(routine.id, today);
-      else await completionsApi.markComplete(userId, routine.id, today);
-      if (wasDone) dates.delete(today);
-      else dates.add(today);
+      if (wasDone) await completionsApi.markIncomplete(routine.id, day);
+      else await completionsApi.markComplete(userId, routine.id, day);
+      if (wasDone) dates.delete(day);
+      else dates.add(day);
       setData((d) => ({ ...d, completions: new Map(d.completions).set(routine.id, dates) }));
+      if (day !== today) notify(`“${routine.name}” ${wasDone ? 'unchecked' : 'checked off'} for yesterday`, 'success');
     } catch (err) {
       notify(err.message, 'error');
     }
@@ -104,6 +106,7 @@ export function Today() {
     if (key.downArrow || input === 'j') return setIndex((i) => moveIndex(i, 1, items.length));
     if (!selected) return;
     if (selected.kind === 'routine' && (input === ' ' || key.return)) return toggleRoutine(selected.routine);
+    if (selected.kind === 'routine' && input === 'y') return toggleRoutine(selected.routine, completionsApi.addDays(today, -1));
     if (selected.kind === 'task') {
       if (input === ' ') return cycleStatus(selected.task);
       if (key.return) return navigate('board', { taskId: selected.task.id, edit: true });

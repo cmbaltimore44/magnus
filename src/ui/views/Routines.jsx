@@ -12,7 +12,7 @@ import { RoutineLine } from './Today.jsx';
 import { CalendarHeatmap } from '../components/Heatmap.jsx';
 
 const HINTS =
-  '↑↓ move · space check off today · K/J reorder · H/L move to earlier/later group · n new · d delete · R refresh · esc home';
+  '↑↓ move · space check off today · y check off yesterday · K/J reorder · H/L move to earlier/later group · n new · d delete · R refresh · esc home';
 
 const HEATMAP_ROWS = 10; // title + months + 7 days + summary
 
@@ -82,15 +82,17 @@ export function Routines({ params }) {
   const current = rows[Math.min(index, rows.length - 1)];
   const today = completionsApi.todayISO();
 
-  const toggle = async (routine) => {
+  // day: today, or yesterday (y) for a routine you forgot to check off.
+  const toggle = async (routine, day = today) => {
     const dates = new Set(data.completions.get(routine.id) || []);
-    const wasDone = dates.has(today);
+    const wasDone = dates.has(day);
     try {
-      if (wasDone) await completionsApi.markIncomplete(routine.id, today);
-      else await completionsApi.markComplete(userId, routine.id, today);
-      if (wasDone) dates.delete(today);
-      else dates.add(today);
+      if (wasDone) await completionsApi.markIncomplete(routine.id, day);
+      else await completionsApi.markComplete(userId, routine.id, day);
+      if (wasDone) dates.delete(day);
+      else dates.add(day);
       setData((d) => ({ ...d, completions: new Map(d.completions).set(routine.id, dates) }));
+      if (day !== today) notify(`“${routine.name}” ${wasDone ? 'unchecked' : 'checked off'} for yesterday`, 'success');
     } catch (err) {
       notify(err.message, 'error');
     }
@@ -181,6 +183,7 @@ export function Routines({ params }) {
       const routine = current?.routine;
       if (!routine) return;
       if (input === ' ' || key.return) return toggle(routine);
+      if (input === 'y') return toggle(routine, completionsApi.addDays(today, -1));
       if (input === 'K') return moveWithinGroup(routine, -1);
       if (input === 'J') return moveWithinGroup(routine, 1);
       if (input === 'H') return moveToGroup(routine, -1);
