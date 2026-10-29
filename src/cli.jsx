@@ -6,6 +6,7 @@ import { signOut } from './lib/auth.js';
 import { supabase } from './lib/supabase.js';
 import { ALT_SCREEN_HOME } from './lib/shell.js';
 import { runSubcommand, SUBCOMMANDS } from './subcommands.js';
+import { closeAssistant } from './lib/assistant/index.js';
 
 const HELP = `magnus — terminal companion to Magnus Web (tasks, routines, projects, library)
 
@@ -24,6 +25,14 @@ Journal plumbing (used by the ~/bin scripts; print Markdown or nothing):
 Focus timer (shared with the TUI and Magnus Tutor; magnus timer --help):
   magnus timer status|start|pause|resume|skip|add5|switch|stop|discard [--json]
 
+Ask Magnus (magnus ask --help):
+  magnus ask "question" [--claude] [--yes] [--json]   answers from your data; proposes changes
+  magnus plan                                        plan the week (asks y/N; saves it to the review)
+
+Notifications (magnus notify --help):
+  magnus notify setup|test|status|off   morning brief, close-the-day nudge (phone + Mac)
+  magnus day close|open                 mark today closed: no nudge tonight (today --close does it)
+
 Magnus Tutor (magnus tutor --help):
   magnus tutor [ask "question" [--course SLUG] | stop]
 
@@ -38,7 +47,7 @@ Environment:
 
 const args = process.argv.slice(2);
 
-if (args.includes('--help') || args.includes('-h')) {
+if (!SUBCOMMANDS.includes(args[0]) && (args.includes('--help') || args.includes('-h'))) {
   process.stdout.write(HELP);
   process.exit(0);
 }
@@ -77,5 +86,7 @@ try {
   await instance.waitUntilExit();
 } finally {
   supabase.auth.stopAutoRefresh?.();
+  // Unload the local model and stop `ollama serve` if Ask started it (never wait long on it).
+  await Promise.race([closeAssistant(), new Promise((r) => setTimeout(r, 3000))]);
 }
 process.exit(0);

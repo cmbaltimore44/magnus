@@ -12,8 +12,11 @@ import * as logsApi from './lib/data/logs.js';
 import { runTimer } from './timerCommand.js';
 import { cleanText } from './lib/sanitize.js';
 import { runTutor } from './tutorCommand.js';
+import { runAsk, runPlan } from './askCommand.js';
+import { runNotify } from './notifyCommand.js';
+import { runDay } from './dayCommand.js';
 
-export const SUBCOMMANDS = ['context', 'log', 'timer', 'tutor'];
+export const SUBCOMMANDS = ['context', 'log', 'timer', 'tutor', 'ask', 'notify', 'day', 'plan'];
 
 function parseFlags(args, known) {
   const out = {};
@@ -34,9 +37,9 @@ async function session() {
 
 export async function runSubcommand(name, args) {
   // Scripts wait on us; never hang them on a stalled network.
-  // `magnus tutor` streams answers and may start the backend: no limit there. `magnus timer`
+  // `magnus tutor` and `magnus ask` stream answers and may start a backend: no limit there. `magnus timer`
   // writes the timer first and logs focus time after, so give a slow sign-in room to finish.
-  const limit = name === 'tutor' ? null : name === 'timer' ? 25000 : 12000;
+  const limit = ['tutor', 'ask', 'notify', 'plan'].includes(name) ? null : name === 'timer' ? 25000 : 12000;
   const timer = limit && setTimeout(() => {
     process.stderr.write(`magnus ${name}: timed out\n`);
     process.exit(1);
@@ -44,6 +47,22 @@ export async function runSubcommand(name, args) {
   try {
     if (name === 'timer') return await runTimer(args);
     if (name === 'tutor') return await runTutor(args);
+    if (name === 'day') {
+      if (!args.length || ['--help', '-h', 'help'].includes(args[0])) return await runDay(args, {});
+      return await runDay(args, { userId: currentUserId(await session()) });
+    }
+    if (name === 'notify') {
+      if (!args.length || ['--help', '-h', 'help'].includes(args[0])) return await runNotify(args, {});
+      return await runNotify(args, { userId: currentUserId(await session()) });
+    }
+    if (name === 'plan') {
+      if (args.includes('--help') || args.includes('-h')) return await runPlan(args, {});
+      return await runPlan(args, { userId: currentUserId(await session()) });
+    }
+    if (name === 'ask') {
+      if (args.includes('--help') || args.includes('-h')) return await runAsk(args, {});
+      return await runAsk(args, { userId: currentUserId(await session()) });
+    }
     if (name === 'context') {
       const close = args.includes('--close');
       const flags = parseFlags(args.filter((a) => a !== '--close'), ['date', 'week']);
@@ -82,7 +101,8 @@ export async function runSubcommand(name, args) {
     }
     return 1;
   } catch (err) {
-    const hint = logsApi.isMissingSchema(err) ? ' (run supabase/schema_003.sql)' : '';
+    // The Log and focus tables arrived in schema_003; notify explains its own (schema_007).
+    const hint = logsApi.isMissingSchema(err) && (name === 'context' || name === 'log') ? ' (run supabase/schema_003.sql)' : '';
     process.stderr.write(`magnus ${name}: ${cleanText(String(err.message), { keepNewlines: false })}${hint}\n`);
     return 1;
   } finally {
