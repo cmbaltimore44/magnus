@@ -230,6 +230,17 @@ export function listedTags(dir = journalDir()) {
   }
 }
 
+// Every tag with its entry count (Browse Tags): tags in use plus TAGS.md
+// tags with no entries yet (count 0). `sort` is 'count' (most-used first)
+// or 'name'.
+export function tagCounts(entries, listed = [], sort = 'count') {
+  const counts = new Map(listed.map((t) => [t, 0]));
+  for (const e of entries) for (const t of new Set(e.tags)) if (t) counts.set(t, (counts.get(t) || 0) + 1);
+  return [...counts]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => (sort === 'count' ? b.count - a.count : 0) || a.tag.localeCompare(b.tag));
+}
+
 // Candidates for the word being typed: TAGS.md tags plus tags in use,
 // prefix matches first, most-used first. `counts` is tag → entries.
 export function suggestTags(word, listed, counts, limit = 6) {

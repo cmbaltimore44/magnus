@@ -10,6 +10,7 @@ import { canOpenGhosttyTabs, openInGhosttyTab } from '../../lib/ghostty.js';
 import { cleanText } from '../../lib/sanitize.js';
 import { tagLinkFlags, checkinFlags, todayEntryHasCheckin, journalEditor } from '../../lib/journal.js';
 import { JournalBrowser } from './JournalBrowser.jsx';
+import { TagBrowser } from './TagBrowser.jsx';
 import { InboxTriage } from './InboxTriage.jsx';
 import { CalendarHeatmap } from '../components/Heatmap.jsx';
 import { parseEntries, writingStreak, entriesByDate, importPhoneQueue } from '../../lib/journal.js';
@@ -35,7 +36,7 @@ export const ITEMS = [
   { key: 'b', label: 'New Book Essay', desc: 'new-essay --book … [--tag …] [--link …]', action: { prompt: 'Book title:', run: 'new-essay', flag: '--book', tab: true, tags: true } },
   { key: 'f', label: 'New Film Essay', desc: 'new-essay --film … [--tag …] [--link …]', action: { prompt: 'Film title:', run: 'new-essay', flag: '--film', tab: true, tags: true } },
   { key: 's', label: 'Search', desc: 'jsearch <text> · #tag → jsearch -t <tag>', action: { search: true } },
-  { key: 'g', label: 'Tags', desc: 'jtags', action: { output: 'jtags' } },
+  { key: 'g', label: 'Browse Tags', desc: 'every tag with its count: entries, open, retag', action: { tagBrowse: true } },
   { key: 'k', label: 'Backlinks', desc: 'jbacklinks <slug>', action: { prompt: 'Slug:', run: 'jbacklinks', placeholder: 'note-slug' } },
   { key: 'v', label: 'Graph', desc: 'jgraph (opens in browser)', action: { quick: 'jgraph' } },
   { key: 'c', label: 'Quick Capture', desc: 'capture "…" → inbox.md', action: { capture: true } },
@@ -60,7 +61,7 @@ const HINTS = 'press a letter or ↑↓ enter · esc home';
 export function Journal({ params }) {
   const { navigate, notify, run, capture, openEntry, contentHeight, columns } = useAppCtx();
   const [index, setIndex] = useState(0);
-  const [mode, setMode] = useState(null); // {type:'prompt', item, step?, title?} | {type:'output', title, lines, offset}
+  const [mode, setMode] = useState(null); // {type:'prompt', item, step?, base?} | {type:'browse'|'tags'|'triage'}
   const [entries, setEntries] = useState(null);
   useEffect(() => {
     // Writing streak + heatmap; refreshed whenever we come back to the menu.
@@ -72,7 +73,7 @@ export function Journal({ params }) {
       (err) => notify(`Couldn't add phone captures: ${err.message}`, 'error'),
     );
   }, [mode === null]); // eslint-disable-line react-hooks/exhaustive-deps
-  useHints(mode?.type === 'browse' || mode?.type === 'triage' ? null : mode?.type === 'output' ? '↑↓ scroll · esc back' : HINTS);
+  useHints(mode?.type === 'browse' || mode?.type === 'tags' || mode?.type === 'triage' ? null : HINTS);
 
   const start = async (a, args) => {
     // Opening a file: in the journal editor ($JOURNAL_EDITOR).
@@ -124,11 +125,6 @@ export function Journal({ params }) {
       const res = await capture('capture', [text]);
       return notify(cleanText(res.ok ? res.stdout.trim() || 'Captured.' : res.stderr.trim() || 'capture failed', { keepNewlines: false }), res.ok ? 'success' : 'error');
     }
-    if (a.output) {
-      const res = await capture(a.output, []);
-      const text = cleanText(res.stdout + (res.stderr ? `\n${res.stderr}` : '')).replace(/\s+$/, '');
-      return setMode({ type: 'output', title: item.label, lines: text ? text.split('\n') : ['(no output)'], offset: 0 });
-    }
     if (a.quick) {
       notify(`Running ${a.quick}…`, 'info');
       const res = await capture(a.quick, []);
@@ -156,6 +152,7 @@ export function Journal({ params }) {
     if (a.checkin) return todayEntryHasCheckin() ? launch(item, '') : setMode({ type: 'prompt', item });
     if (a.tags && !a.prompt && !a.note) setMode({ type: 'prompt', item, step: 'tags', base: [] });
     else if (a.browse) setMode({ type: 'browse' });
+    else if (a.tagBrowse) setMode({ type: 'tags' });
     else if (a.triage) setMode({ type: 'triage' });
     else if (a.prompt || a.search || a.capture || a.note) setMode({ type: 'prompt', item });
     else launch(item, '');
@@ -175,15 +172,6 @@ export function Journal({ params }) {
 
   useViewInput(
     (input, key) => {
-      if (mode?.type === 'output') {
-        const max = Math.max(0, mode.lines.length - (contentHeight - 3));
-        if (key.escape) return setMode(null);
-        if (key.upArrow || input === 'k') return setMode({ ...mode, offset: Math.max(0, mode.offset - 1) });
-        if (key.downArrow || input === 'j') return setMode({ ...mode, offset: Math.min(max, mode.offset + 1) });
-        if (key.pageUp) return setMode({ ...mode, offset: Math.max(0, mode.offset - 10) });
-        if (key.pageDown) return setMode({ ...mode, offset: Math.min(max, mode.offset + 10) });
-        return;
-      }
       if (key.escape) return navigate('home');
       const direct = ITEMS.find((it) => it.key === input);
       if (direct) {
@@ -194,33 +182,18 @@ export function Journal({ params }) {
       if (key.downArrow) return setIndex((i) => (i + 1) % ITEMS.length);
       if (key.return) return choose(ITEMS[index]);
     },
-    mode === null || mode.type === 'output'
+    mode === null
   );
 
   if (mode?.type === 'browse') {
     return <JournalBrowser onBack={() => setMode(null)} openEntry={(file) => start({ run: 'fresh', tab: true }, [file])} />;
   }
 
-  if (mode?.type === 'triage') return <InboxTriage onBack={() => setMode(null)} start={start} />;
-
-  if (mode?.type === 'output') {
-    const size = contentHeight - 3;
-    const from = Math.min(mode.offset, Math.max(0, mode.lines.length - size));
-    return (
-      <Box flexDirection="column" height={contentHeight}>
-        <Text bold color={C.accent}>
-          {mode.title} <Text color={C.muted}>{mode.lines.length} lines</Text>
-        </Text>
-        <Box flexDirection="column" marginTop={1}>
-          {mode.lines.slice(from, from + size).map((line, i) => (
-            <Text key={from + i} wrap="truncate-end">
-              {line}
-            </Text>
-          ))}
-        </Box>
-      </Box>
-    );
+  if (mode?.type === 'tags') {
+    return <TagBrowser onBack={() => setMode(null)} openEntry={(file) => start({ run: 'fresh', tab: true }, [file])} />;
   }
+
+  if (mode?.type === 'triage') return <InboxTriage onBack={() => setMode(null)} start={start} />;
 
   const promptItem = mode?.type === 'prompt' ? mode.item : null;
   const promptProps = promptItem

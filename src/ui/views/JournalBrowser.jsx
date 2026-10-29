@@ -159,7 +159,7 @@ export function JournalBrowser({ onBack, openEntry }) {
 }
 
 // First screenful of the entry's Markdown (front matter dimmed).
-function EntryPreview({ entry, height }) {
+export function EntryPreview({ entry, height }) {
   let lines;
   try {
     lines = cleanText(fs.readFileSync(entry.path, 'utf8')).split('\n').slice(0, Math.max(1, height));
