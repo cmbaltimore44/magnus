@@ -5,6 +5,54 @@ Magnus Web app. Any change to the schema has to be mirrored in the web app's
 UI (in the separate [Magnus Web repo](https://github.com/cmbaltimore44/magnus-web),
 which also holds the SQL in `supabase/`), so every change is logged here.
 
+## ⚠️ 2026-10-29 — schema_008: repeating tasks
+
+**Already run on the live project (2026-10-29, `supabase db query --linked`,
+one transaction).** Additive only.
+
+| Change | Why | Used by |
+| ------ | --- | ------- |
+| `tasks.repeat text` (nullable, checked: `daily`, `weekdays`, `weekly:mon,thu`, `monthly:15` / `monthly:last`, `yearly:10-29`, `every:3d` / `every:2w` / `every:6m`) | The task's repeat rule, written by quick add's `~tokens` | Quick add, task forms, ↻ markers, Ask Magnus (both apps) |
+| Function `next_due(rule, from)` (immutable) | Next due date strictly after `from`; mirrors `src/lib/repeat.js` / `js/repeat.js` | the trigger; preview in the SQL editor |
+| Trigger `tasks_repeat` (before update of status) → `spawn_next_repeat()` | When a repeating task moves to Done: insert the next one (To Do, unstarred, same title/notes/category/priority/rule, due = next date after the old due date, or after today if it had none) and clear the rule on the finished row so re-toggling Done can't duplicate it | both apps, the phone, offline replays |
+
+Backward compatible with older clients? **yes**: they don't read or write
+`repeat`; a repeating task finished from an old client still spawns its next
+one (the database does it).
+
+To remove it:
+
+```sql
+drop trigger tasks_repeat on public.tasks;
+drop function public.spawn_next_repeat(), public.next_due(text, date);
+alter table public.tasks drop column repeat;
+```
+
+## ⚠️ 2026-10-29 — schema_007: morning brief, close-the-day nudge, planning reminder
+
+**Already run on the live project (2026-10-29, `supabase db query --linked`,
+one transaction).** Additive only.
+
+| Change | Why | Used by |
+| ------ | --- | ------- |
+| Extensions `pg_cron`, `pg_net` | The database sends notifications on a schedule, so the phone gets them while the Mac sleeps | `assistant_tick()` |
+| New table `assistant_settings (user_id pk, enabled, ntfy_topic, timezone, brief_time, nudge_enabled, nudge_time, plan_day, plan_time, push_detail, web_url, updated_at)` + RLS | Per-user times and the private ntfy topic | `magnus notify setup/status/test/off` |
+| New table `assistant_days (user_id, day, brief_sent_at, nudge_sent_at, plan_sent_at, closed_at)` + RLS | Each notification once per day; "day closed" stops the nudge | the tick; `today --close` (Phase 3) |
+| Functions `build_morning_brief`, `assistant_push`, `assistant_tick` (`security definer`, `search_path = ''`, not callable by `anon`/`authenticated`) | Brief text, one ntfy push, the 5-minute tick | cron job `assistant-tick` (`*/5 * * * *`) |
+
+Backward compatible with older clients? **yes**. Nothing is sent for a user
+until `magnus notify setup` creates their settings row. Preview the brief in
+the SQL editor: `select public.build_morning_brief('<user id>', current_date);`
+
+To remove it:
+
+```sql
+select cron.unschedule('assistant-tick');
+drop function public.assistant_tick(), public.assistant_push(text, text, text, text[], text), public.build_morning_brief(uuid, date, text);
+drop table public.assistant_days, public.assistant_settings;
+-- optional: drop extension pg_net; drop extension pg_cron;
+```
+
 ## ⚠️ 2026-10-07 — schema_006: pin the trigger function's search_path
 
 **Run `supabase/schema_006.sql` (Magnus Web repo) once in the Supabase SQL
@@ -49,7 +97,9 @@ column changes, and old clients never write `completed_at`.
 ## Tables and columns used
 
 Before schema_003, Magnus used exactly what `supabase/schema.sql` and
-`supabase/schema_002.sql` define:
+`supabase/schema_002.sql` define (each ⚠️ entry above lists what later files
+added: `tasks.completed_at`, `focus_sessions`, `log_entries`, `lists`,
+`list_items`, `assistant_settings`, `assistant_days`, `tasks.repeat`):
 
 | Table                 | Columns Magnus reads/writes                                                                                          |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------- |
@@ -83,6 +133,21 @@ Before schema_003, Magnus used exactly what `supabase/schema.sql` and
   Done auto-unstars it; the routine-streak grace period; the heatmap's
   "today's routine count" denominator; quote attribution derived from the
   book's current title.
+- **Shared code, kept identical by hand:** `src/lib/quickadd.js` ↔
+  `js/quickAdd.js` (now with `~repeat` tokens), `src/lib/repeat.js` ↔
+  `js/repeat.js` (and the SQL `next_due` in schema_008), and the
+  repeat-undo helpers `findSpawnedCopy` / `reopenTask` in both apps'
+  `tasks.js` (moving a repeating task out of Done deletes the copy the
+  trigger made, if it's still untouched, and gives the rule back).
+- **Columns sent only when used:** both apps send `tasks.repeat` only when a
+  task has (or had) a rule, so their task forms and quick add keep working on
+  a project without schema_008. `magnus day` and Magnus Web's "Done for
+  today" upsert `assistant_days.closed_at` only (the other columns are left
+  as they are).
+- **Writes the database makes on its own (since schema_007/008):** the
+  `tasks_repeat` trigger inserts tasks, and the `assistant-tick` cron job
+  stamps `assistant_days` and posts to ntfy.sh. Realtime brings the trigger's
+  rows to both apps.
 - **Local-only UI state** (which Library groups are collapsed) lives in
   `~/.config/magnus/prefs.json`, the counterpart of the web app's
   `localStorage`. It never touches Supabase.

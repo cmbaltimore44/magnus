@@ -3,7 +3,10 @@
 A full-screen terminal companion to [Magnus Web](https://github.com/cmbaltimore44/magnus-web)
 (tasks, routines, projects, lists, a daily log, and the book/quote library). It
 talks to the same Supabase project and tables as the web app, so the two are
-always in sync. It also has a shared focus timer, a front door to
+always in sync. It also has a shared focus timer, **Ask Magnus** (an assistant
+that answers questions about your data and proposes changes you confirm, on a
+local model or Claude), weekly planning, repeating tasks, a morning brief and
+close-the-day nudge on your phone and Mac, a front door to
 [Magnus Tutor](https://github.com/cmbaltimore44/magnus-tutor), and a front door
 to a set of journal scripts on your `$PATH`.
 
@@ -39,7 +42,7 @@ new sign-ups. To use it for real:
 
 1. Create a Supabase project and run the Magnus Web repo's
    [`supabase/schema.sql`](https://github.com/cmbaltimore44/magnus-web/tree/main/supabase)
-   and then `schema_002.sql` … `schema_006.sql` in the SQL editor, in order.
+   and then `schema_002.sql` … `schema_008.sql` in the SQL editor, in order.
    They create every table with Row Level Security (each user sees only their
    own rows).
 2. Create your user under *Authentication → Users → Add user* (Magnus only
@@ -67,16 +70,27 @@ After editing anything in `src/`, rebuild with `npm run build` (or leave
 ```sh
 magnus            # launch
 magnus --logout   # sign out + delete the Keychain item
+magnus ask "…"    # Ask Magnus from a shell (--claude, --yes, --json; see below)
+magnus plan       # plan the week (asks y/N, saves it with the week's review)
+magnus notify     # setup | test | status | off: morning brief, nudge, planning reminder
+magnus day close  # mark today closed: no "Close the day?" push (day open undoes it)
 magnus-theme      # show/switch terminal theme family (see terminal-theme/)
 npm run demo      # sample in-memory data: no sign-in, nothing saved
 npm test          # unit tests (+ a Keychain round-trip on a throwaway item)
 ```
 
+`magnus context`, `magnus log`, `magnus timer` and `magnus tutor` serve the
+journal scripts and Magnus Tutor. `magnus --help` lists every command;
+`ask`, `plan`, `notify`, `day`, `timer` and `tutor` also take `--help`.
+
 Environment variables: `MAGNUS_SUPABASE_URL`/`MAGNUS_SUPABASE_ANON_KEY` (your
 Supabase project), `MAGNUS_DEMO=1` (sample data, nothing saved),
 `MAGNUS_KITTY=0|1` (force cover images off/on), `MAGNUS_JOURNAL_TABS=0`
-(start journal entries in this terminal instead of a new Ghostty tab), and
-`VISUAL`/`EDITOR` (editor for long notes; defaults to `fresh`).
+(start journal entries in this terminal instead of a new Ghostty tab),
+`MAGNUS_OLLAMA_URL` (the local model's Ollama server; default
+`http://127.0.0.1:11434`), `ANTHROPIC_API_KEY` (used for Claude when no key is
+saved in Settings), and `VISUAL`/`EDITOR` (editor for long notes; defaults to
+`fresh`).
 
 On first launch you sign in with an email code. The session is stored in the
 macOS Keychain (item `magnus-session`, via the built-in `security` CLI) and
@@ -87,23 +101,24 @@ discards the saved session.
 ## Keys
 
 Global: **1–9** jump to a section · **0** home · **ctrl+k** or **/** search ·
-**ctrl+p** or **:** command palette (every action by name: go to a section, new task/project/book, book lookup, any journal action, focus timer controls, switch theme, undo, sign out) · **,** settings (theme, focus length, weight unit, journal entries in a new tab or here, start screen, sign out; saved per device in `prefs.json`) · **a** quick add · **u** undo the last delete (for 10 s, restores children
+**ctrl+p** or **:** command palette (every action by name: go to a section, new task/project/book, book lookup, any journal action, Ask Magnus, Plan my week, Pick my three, focus timer controls, switch theme, undo, sign out) · **,** settings (theme, focus length, weight unit, journal entries in a new tab or here, start screen, Claude API key, sign out; saved per device in `prefs.json`, the key in the Keychain) · **a** quick add · **m** Ask Magnus (from Home) · **u** undo (for 10 s) the last delete (restores children
 too: a project's checklist, a book's quotes, a routine's history, a
-category's tasks) · **t** start a Pomodoro on the selected task (Today, Board, Upcoming) · **T** start one without a task, or pause / skip / +5 / stop it · **q** quit · **esc** back. Each screen lists its own keys in the footer.
+category's tasks), a batch of applied Ask changes, or finishing a repeating task (its next copy goes away) · **t** start a Pomodoro on the selected task (Today, Board, Upcoming) · **T** start one without a task, or pause / skip / +5 / stop it · **q** quit · **esc** back. Each screen lists its own keys in the footer.
 
 | Screen   | Keys |
 | -------- | ---- |
-| Today    | ↑↓ · space check off a routine / cycle a starred task's status · y check off a routine for yesterday · enter edit task · s unstar · r new quote |
+| Today    | ↑↓ · space check off a routine / cycle a starred task's status · y check off a routine for yesterday · enter edit task · s unstar · **p pick my three** (Ask proposes today's stars) · r new quote |
 | Board    | ←→/h l column · ↑↓/j k task · **space** cycle status (H/L back/forward) · s star (max 3) · enter/e edit · n new · d delete · f text filter · c cycle category filter · C manage categories · esc clears filters |
 | Routines | space check off · y check off yesterday · **K/J** move up/down · **H/L** move to the previous/next time of day · n new · d delete |
 | Projects | enter open · n new · s cycle status · d delete → in a project: space toggle item · n add · d delete item · K/J reorder · e edit · D delete project |
 | Library  | tab Books → **Want to Read** (a queue: one line per book in your order, first three "Up next"; n rapid add `Title by Author` or an ISBN; K/J reorder; f filter; **s start reading** sets Currently Reading and today's start date, u undoes; `?` = still missing an author or cover — open it and press i) → Quotes → **Stats** (finished this year, ratings, days to finish, per year, by format, repeat authors) · enter open a book / fold a group · **i look up a book on Open Library** by ISBN or title/author and start a New Book prefilled (title, author, ISBN, cover) · n new → in a book: n add highlight · enter edit · f favorite · **w send a quote to an essay** (append to an existing essay, or start a new book essay with the quote on the clipboard) · e edit book · i fill in the cover/ISBN/author from Open Library · v view cover · D delete · Quotes tab: F favorites only |
-| Upcoming | overdue, today, tomorrow, next 7 days — tasks by due date and projects by target date · space mark done · enter open |
+| Upcoming | overdue, today, tomorrow, next 7 days — tasks by due date and projects by target date · space mark done · enter open · **P plan my week** (in Ask) |
 | Insights | tasks finished per week (8 weeks, from `completed_at`), routine consistency (30 days), focus minutes per week and by task or label (30 days), mood/energy/sleep sparklines and workouts from the Log, writing streak, books this year · ↑↓ scrolls on narrow windows |
 | Log      | ←→ day · ↑↓ row · enter set mood/energy (1–5), hours slept, weight · n add a workout (`30 run`) · d clear (u undoes) · t back to today · a two-week table below. Mood/energy/sleep from `today` land here too |
 | Today    | under the date, **◎ Goals**: the unchecked items of a list named *Goals* (make it in Lists; check a goal off when you reach it). The weekly review (`jweek`) gets a Goals section with reflection prompts for each |
 | Lists    | `k` from Home (no digit left) or the palette · lists on the left, the open list's items on the right (enter/esc on narrow windows) · space check · n add (stays open for the next item) · e edit text, link, price · o open link · c clear checked · d delete · K/J reorder · checked items sink to the bottom; prices total the unchecked ones |
-| Journal  | header: writing streak (consecutive days with a daily entry) and entries this month; a heatmap of entries per day sits beside the menu on wide windows (below it on tall ones) · t today (asks for mood, energy and hours slept once a day, e.g. `4 3 7.5`) · o close the day (`today --close`: adds an Evening section with tasks finished, routines, carry-overs and reflection prompts; run it again to refresh the summary, your answers are kept) · e new essay · b book essay · f film essay · s search (`#tag` = tag search) · g tags · k backlinks · v graph · c quick capture · **r triage inbox** one item at a time (t → task via quick add, n → note, e → essay, d delete, u undo, s skip) · captures from the phone (a Shortcut appending to `iCloud Drive/Magnus/inbox-queue.txt`) move into inbox.md via `capture-batch` whenever the Journal tab or triage opens · i edit inbox.md in the journal editor (`JOURNAL_EDITOR`: fresh, obsidian or nvim; with obsidian, scripts hand the file over without a new tab) · e/b/f/n end with an optional tags / `[[links]]` prompt that suggests tags from TAGS.md and the ones you use (tab completes) · j tag today's entry (`jtag` checklist) · n new note · x note from inbox · w weekly review (`jweek`) · l browse all entries (enter open, t tags, d move to Trash, tab type filter, f text filter) · d back up to drive (plug it in first) |
+| Ask      | `m` from Home or the palette · type a question, enter asks · the lookups it made show as `· looked at …` · **proposed changes** come up as a checklist: space keep/drop, enter applies the kept ones, x discards all (u undoes an applied batch) · after an answer: enter follow-up, **c asks Claude instead**, n new conversation, ↑↓ scroll |
+| Journal  | header: writing streak (consecutive days with a daily entry) and entries this month; a heatmap of entries per day sits beside the menu on wide windows (below it on tall ones) · t today (asks for mood, energy and hours slept once a day, e.g. `4 3 7.5`) · o close the day (`today --close`: adds an Evening section with tasks finished, routines, carry-overs and reflection prompts; run it again to refresh the summary, your answers are kept) · e new essay · b book essay · f film essay · s search (`#tag` = tag search) · **g browse tags**: every tag with its entry count (TAGS.md tags with none yet show 0; s sorts by count or name, f filters), enter lists a tag's entries (enter open, t tags via `jtag`, ← back), with a preview pane on wide windows · k backlinks · v graph · c quick capture · **r triage inbox** one item at a time (t → task via quick add, n → note, e → essay, d delete, u undo, s skip) · captures from the phone (a Shortcut appending to `iCloud Drive/Magnus/inbox-queue.txt`) move into inbox.md via `capture-batch` whenever the Journal tab or triage opens · i edit inbox.md in the journal editor (`JOURNAL_EDITOR`: fresh, obsidian or nvim; with obsidian, scripts hand the file over without a new tab) · e/b/f/n end with an optional tags / `[[links]]` prompt that suggests tags from TAGS.md and the ones you use (tab completes) · j tag today's entry (`jtag` checklist) · n new note · x note from inbox · w weekly review (`jweek`) · l browse all entries (enter open, t tags, d move to Trash, tab type filter, f text filter) · d back up to drive (plug it in first) |
 
 **Focus timer (Pomodoro)**: `t` on a task (Today, Board, Upcoming) starts a
 focus round on it; `T` anywhere asks what to focus on (a task, a recent
@@ -131,6 +146,54 @@ essays and notes, or type a new label) or *Focus on no task*. Mid-round,
 the minutes so far are logged to the old one and the rest go to the new
 one. In a break, it sets what the next round is on.
 
+**Ask Magnus** (`m` from Home, the palette, or `magnus ask "…"`): questions
+about your tasks, routines, projects, Log, focus time, library and lists,
+answered from your data by a local model (`qwen3.5:9b` through
+[Ollama](https://ollama.com); nothing leaves the Mac). It can also **propose**
+changes (new tasks in quick-add syntax, due dates, priority, stars, status,
+Log entries), which you check before anything is written; `u` undoes a whole
+applied batch. It never reads the journal. `c` (or `--claude`) asks Claude
+instead (Sonnet 5.5 by default; paste an API key under Settings → *Claude API
+key*, saved in the Keychain as `magnus-anthropic`); Claude gets the question
+and the conversation so far, including what Magnus looked up, so anything sent
+that way leaves the Mac.
+The local model is kept light: Ollama is started only when you ask (and
+stopped when Magnus quits, unless Magnus Tutor is using it), the model is
+unloaded when you leave Ask or 2 minutes after the last question, and if
+memory is tight or the battery is under 20% Magnus offers Claude instead of
+loading it. From a shell: `magnus ask "what's overdue?" [--claude] [--yes]
+[--json]` (changes are applied only after a y, or with `--yes`, which takes
+at most 5 changes and never marks a task done). Prefs in
+`prefs.json`: `assistantModel`, `assistantKeepAlive` (`2m`), `assistantContext`
+(8192), `assistantClaudeModel`, `assistantClaudeEffort` (`low`).
+`MAGNUS_DEMO=1 node scripts/ask-eval.js` scores the local model on 20
+questions against the demo data.
+
+**Planning** (in Ask): *Plan my week* (palette, `P` on Upcoming, or
+`magnus plan`) drafts due dates for the week (Friday to Sunday: next
+Monday–Sunday; otherwise the rest of this week), at most four tasks a day,
+overdue and high-priority first, repeating tasks left alone, low-priority
+leftovers moved later, and three stars for the first day. You keep or drop
+each change as usual; the accepted plan is saved with this week's review
+(`jweek --plan`: a *Plan for …* section between markers, so planning again
+replaces it; if the review isn't written yet, the plan waits in
+`reviews/.YYYY-Www.plan.md` and goes in when you write it). *Pick my three* (`p` on Today, or the
+palette) proposes today's stars. A Sunday 6 pm "Plan your week" push comes
+with `magnus notify setup` (change the day and time there, or turn it off).
+`MAGNUS_DEMO=1 node scripts/plan-eval.js` scores planning runs.
+
+**Notifications** (`magnus notify setup`): a morning brief (overdue, due
+today, starred, projects due this week, routines, goals, what you're reading),
+a "Close the day?" nudge in the evening, and optionally a weekly planning
+reminder. Supabase sends them (`schema_007.sql`: a 5-minute `pg_cron` job
+posting to [ntfy.sh](https://ntfy.sh)), so the phone gets them even while the
+Mac sleeps: install the ntfy app and subscribe to the private topic setup
+prints. Setup can also install a tiny launchd agent (`com.magnus.notify`: one
+idle `curl` stream, about 12 MB) that shows them as macOS notifications.
+`magnus notify test | status | off`. Closing the day (`today --close`,
+Journal `o`, `magnus day close`, or *Done for today* on Magnus Web's Today
+after 5 pm) stops that evening's nudge; `magnus day open` undoes it.
+
 **Tutor** (`o` from Home, or the palette's *Tutor:* actions): the front door to
 [Magnus Tutor](https://github.com/cmbaltimore44/magnus-tutor), a separate local study tutor
 (optional; install it separately). Ask a question and
@@ -150,6 +213,14 @@ this one (`../magnus-tutor/.venv/bin/tutor`).
 names, `+3`, `10/1`, `2026-10-01`), priority (`!high`/`!h`, `!low`), the category
 whose name starts with `home`, and a star. `book: Piranesi by Susanna Clarke` (or `b: …`, or `b: <ISBN>`) adds a Want to Read book; Magnus then fills in the author, cover and ISBN from Open Library when there's one clear match. `+groceries oat milk` adds to a list (name or prefix). `> some thought` goes to the journal
 inbox instead. Anything that doesn't resolve stays in the title.
+**Repeats** (`schema_008`): `pay rent ~1st`, `call mom ~sun`, `standup ~weekdays`,
+`review ~mon,thu`, `water plants ~3d`, `~2w`, `~6m`, `~weekly`, `~monthly`,
+`~last`, `~yearly`. Without a date the first due date is the next matching
+day. Marking it done makes the next one (the database does it, so it works
+from the phone too), due the next matching day after the old due date. ↻ marks
+repeating tasks; the task form's *Repeat* field takes the same tokens (blank
+stops it). Undoing the finish, or moving the task back out of Done, takes the
+next one back, unless you've already edited, started or starred it.
 
 **Offline mode**: every read is cached in `~/.config/magnus/cache.json`
 (readable only by you; cleared on sign-out). Without a network, Magnus opens
@@ -230,11 +301,35 @@ voice later). Setup: `brew install whisper-cpp sox`, plus the model from
   supports it). Any key returns. In the panels a text placeholder is shown,
   since Ink's repaints would wipe inline images.
 - **Untrusted text is sanitized.** Supabase responses (via a fetch wrapper),
-  journal script output, and the cover caption have terminal control
+  journal script output, the cover caption, and everything a model writes
+  (answers, the "looked at" lines, change labels) have terminal control
   sequences stripped (`src/lib/sanitize.js`). Ink already drops most, but not
   OSC 8 hyperlinks or CR/backspace overwrites. Arguments typed into a new
   Ghostty tab are also stripped of control characters and newlines.
-- **Schema**: see [MIGRATIONS.md](MIGRATIONS.md). Currently no changes.
+- **Ask Magnus only proposes.** The model's write tools (`add_task`,
+  `update_task`, `log`) return proposals; nothing is written until you accept
+  them in the checklist (or answer y), and each applied batch can be undone.
+  Tasks are referred to by short refs from earlier lookups, so the model can't
+  name rows it hasn't seen. `--yes` applies at most 5 changes and never
+  finishes a task. While planning, repeating tasks keep their dates.
+- **The local model is kept light** (`src/lib/assistant/models/ollama.js`,
+  `resources.js`): Ollama starts only when you ask and stops when Magnus quits
+  (unless Magnus Tutor is up), the model unloads when you leave Ask or 2
+  minutes after the last question, the context is capped at 8k tokens, and a
+  question goes to Claude instead when memory is tight or the battery is low.
+- **Notifications are sent by the database** (`schema_007.sql`: pg_cron every
+  5 minutes → ntfy.sh), so the phone gets them while the Mac sleeps. The Mac
+  receiver (`com.magnus.notify`) is one idle `curl` stream reading its private
+  topic from `~/.config/magnus/notify-curl.conf` (mode 600), never from its
+  command line.
+- **Repeats are made by the database** (`schema_008.sql`: the `tasks_repeat`
+  trigger and `next_due`, mirrored by `src/lib/repeat.js` and Magnus Web's
+  `js/repeat.js`). Taking a finish back finds the copy the trigger made in the
+  same transaction and removes it only if it's untouched (still To Do,
+  unstarred, unedited, on its expected date); `reopenTask` in
+  `src/lib/data/tasks.js`.
+- **Schema**: see [MIGRATIONS.md](MIGRATIONS.md): schema_007 (notifications)
+  and schema_008 (repeating tasks) are the latest.
 
 ## Optional companions
 
@@ -242,9 +337,17 @@ These aren't part of this repo. Without them, the related actions show
 "command not found" and everything else keeps working.
 
 - **Journal scripts** on your `$PATH`: `today`, `new-essay`, `jsearch`,
-  `jbacklinks`, `jtag`, `jweek`, `capture-batch`, writing Markdown into
+  `jbacklinks`, `jtag`, `jweek`, `jlist`, `capture-batch`, writing Markdown into
   `$JOURNAL_DIR` (default `~/journal`). The Journal tab and journal palette
-  actions call them; they're the author's personal scripts and aren't published.
+  actions call them (Plan my week saves through `jweek --plan`, and
+  `today --close` calls `magnus day close`); they're the author's personal
+  scripts and aren't published.
+- **[Ollama](https://ollama.com)** with `qwen3.5:9b` (`ollama pull qwen3.5:9b`,
+  about 6 GB on disk, 16 GB+ of RAM recommended) for Ask Magnus's local model;
+  `assistantModel` in `prefs.json` picks another. Without it, `c` / `--claude`
+  still works with an Anthropic API key.
+- **The [ntfy](https://ntfy.sh) app** on your phone, subscribed to the topic
+  `magnus notify setup` prints, for the morning brief and nudges.
 - **Dictation**: `~/bin/dictate`, a wrapper around `whisper-cpp` and `sox`,
   for ctrl+d in quote fields. Also personal and unpublished.
 - **[Magnus Tutor](https://github.com/cmbaltimore44/magnus-tutor)** for the
