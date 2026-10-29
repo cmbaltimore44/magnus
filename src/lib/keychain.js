@@ -6,9 +6,9 @@ import { KEYCHAIN_SERVICE } from './config.js';
 // Values are base64-encoded so arbitrary JSON survives `security`'s own
 // quoting rules. Writes prefer `security -i` on stdin so the token doesn't
 // appear in the process list, but -i silently truncates lines past ~4 KB, so
-// larger values fall back to `-w <value>` argv (on macOS only processes of
-// your own user can read another process's arguments). Every write is read
-// back and verified.
+// larger values fall back to `-w <value>` argv, briefly visible to other
+// local accounts through ps (macOS shows every process's arguments), so the
+// stdin path is the normal one. Every write is read back and verified.
 
 const ACCOUNT = os.userInfo().username;
 

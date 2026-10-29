@@ -4,7 +4,7 @@ import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import { useCapture } from '../context.js';
 
-export function Prompt({ label, initial = '', placeholder = '', hint, onSubmit, onCancel }) {
+export function Prompt({ label, initial = '', placeholder = '', hint, mask, onSubmit, onCancel }) {
   useCapture();
   const [value, setValue] = useState(initial);
 
@@ -18,7 +18,7 @@ export function Prompt({ label, initial = '', placeholder = '', hint, onSubmit, 
         <Text color={C.accent} bold>
           {label}{' '}
         </Text>
-        <TextInput value={value} onChange={setValue} placeholder={placeholder} onSubmit={(v) => onSubmit(v)} />
+        <TextInput value={value} onChange={setValue} placeholder={placeholder} mask={mask} onSubmit={(v) => onSubmit(v)} />
       </Box>
       <Text color={C.muted}>{hint || 'enter to confirm · esc to cancel'}</Text>
     </Box>

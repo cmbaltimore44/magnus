@@ -23,6 +23,7 @@ import { Insights } from './views/Insights.jsx';
 import { Log } from './views/Log.jsx';
 import { Lists } from './views/Lists.jsx';
 import { Tutor } from './views/Tutor.jsx';
+import { Ask } from './views/Ask.jsx';
 import * as tutorLib from '../lib/tutor.js';
 import { Settings } from './views/Settings.jsx';
 import { getPref } from '../lib/prefs.js';
@@ -53,6 +54,8 @@ export const SECTIONS = [
   { view: 'log', label: 'Log', key: 'g', digit: '9', component: Log },
   // No digit left: k from Home, the palette, or quick add `+list item`.
   { view: 'lists', label: 'Lists', key: 'k', digit: null, component: Lists },
+  // Ask Magnus (local model, or Claude per question): m from Home, or the palette.
+  { view: 'ask', label: 'Ask', key: 'm', digit: null, component: Ask },
   // Magnus Tutor (separate local app): o from Home, or the palette.
   { view: 'tutor', label: 'Tutor', key: 'o', digit: null, component: Tutor },
 ];
@@ -398,6 +401,9 @@ export default function App({ gradient }) {
     const add = (group, label, run, hint) => list.push({ id: `${group}:${label}`, group, label, run, hint });
     add('Go', 'Home', () => navigate('home'), '0');
     for (const s of SECTIONS) add('Go', s.label, () => navigate(s.view), s.digit || undefined);
+    add('Ask', 'Ask Magnus…', () => navigate('ask'), 'm');
+    add('Ask', 'Plan my week', () => navigate('ask', { preset: 'week' }));
+    add('Ask', 'Pick my three for today', () => navigate('ask', { preset: 'three' }));
     add('List', 'New list', () => navigate('lists'));
     add('Task', 'Quick add', () => setQuickAddOpen(true), 'a');
     add('Task', 'New task (form)', () => navigate('board', { new: true }));
