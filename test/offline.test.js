@@ -94,3 +94,19 @@ test('offline: a read that was never cached still fails', async () => {
   server.up = false;
   await assert.rejects(() => f(`${BASE}/books?select=*`), TypeError);
 });
+
+test('offline: inserts get a client-side id, except tables keyed by user (schema_007)', async () => {
+  const sent = [];
+  const fetch = async (url, init = {}) => {
+    sent.push(JSON.parse(init.body));
+    return new Response(init.body, { status: 201 });
+  };
+  const f = makeOfflineFetch(fetch, { store: createOfflineStore({ persist: false }) });
+  const post = (table, row) => f(`${BASE}/${table}?select=*`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(row) });
+  await post('tasks', { title: 'x' });
+  await post('assistant_settings', { user_id: 'u', ntfy_topic: 't' });
+  await post('assistant_days', { user_id: 'u', day: '2026-10-29' });
+  assert.ok(sent[0].id, 'tasks get an id');
+  assert.equal('id' in sent[1], false);
+  assert.equal('id' in sent[2], false);
+});

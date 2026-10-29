@@ -16,10 +16,10 @@ import * as tutor from '../src/lib/tutor.js';
 // Inside the repo (dist/ is git-ignored) so `react` and `ink` resolve from node_modules.
 const out = path.resolve('dist', 'test-tutor-view.mjs');
 await build({
-  stdin: { contents: "export { Tutor } from './src/ui/views/Tutor.jsx'; export { AppContext } from './src/ui/context.js';", resolveDir: path.resolve('.'), loader: 'js' },
+  stdin: { contents: "export { Tutor } from './src/ui/views/Tutor.jsx'; export { AppContext } from './src/ui/context.js'; export { opened } from './src/lib/tutor.js';", resolveDir: path.resolve('.'), loader: 'js' },
   bundle: true, format: 'esm', platform: 'node', packages: 'external', jsx: 'automatic', outfile: out, logLevel: 'silent',
 });
-const { Tutor, AppContext } = await import(out);
+const { Tutor, AppContext, opened: viewOpened } = await import(out); // viewOpened: URLs the bundled view "opened"
 
 const run = promisify(execFile);
 let server;
@@ -108,8 +108,7 @@ test('Tutor view: courses, review items, and an answer streamed in place', async
 
 test('Tutor view: a problem-set session labels the focus round and opens the session', async () => {
   const { ctx, calls } = harness();
-  const opened = [];
-  const origOpen = tutor.openWeb;
+  viewOpened.length = 0;
   const ui = render(React.createElement(AppContext.Provider, { value: ctx }, React.createElement(Tutor, { params: { mode: 'pset' } })));
   await wait(150);
   ui.stdin.write('PSet 3');
@@ -119,7 +118,6 @@ test('Tutor view: a problem-set session labels the focus round and opens the ses
   assert.deepEqual(calls.focus, [{ label: 'office hours: E&M PSet 3' }]);
   const created = seen.filter((s) => s.url === '/api/sessions' && s.method === 'POST').at(-1);
   assert.deepEqual(JSON.parse(created.body), { course: 'em', mode: 'office_hours', title: 'PSet 3' });
-  void opened;
-  void origOpen;
+  assert.deepEqual(viewOpened, [`${process.env.MAGNUS_TUTOR_URL}/session/42`], 'recorded, not opened in a browser');
   ui.unmount();
 });

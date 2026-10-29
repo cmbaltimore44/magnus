@@ -19,6 +19,13 @@ import { randomUUID } from 'node:crypto';
 const DIR = path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'magnus');
 const FILE = path.join(DIR, 'cache.json');
 const OBJECT = 'application/vnd.pgrst.object+json';
+// Tables keyed by something other than an `id` column (schema_007): their
+// inserts are sent as written, with no client-side id.
+const NO_ID_TABLES = new Set(['assistant_settings', 'assistant_days']);
+
+export function tableOf(url) {
+  return /\/rest\/v1\/([^?/]+)/.exec(url)?.[1] ?? null;
+}
 
 // ---------- a tiny PostgREST query evaluator over cached rows ----------
 
@@ -284,7 +291,7 @@ export function makeOfflineFetch(baseFetch, { store = createOfflineStore(), getT
     const key = `${accept === OBJECT ? 'one' : 'many'} ${url}`;
 
     let body = init.body;
-    if (method === 'POST' && typeof body === 'string') {
+    if (method === 'POST' && typeof body === 'string' && !NO_ID_TABLES.has(tableOf(url))) {
       // Client-side ids (see top), so a queued insert keeps its identity.
       try {
         const parsed = JSON.parse(body);
