@@ -15,6 +15,8 @@ import { saveCorpusText } from '../../lib/dictate.js';
 //   date      free-form date text, parsed on save (see lib/dates.js)
 //   select    options: [{ value, label, color? }], cycled with ←/→
 //   toggle    boolean, toggled with space or ←/→
+// A text field may have toText(value) → string and fromText(text, saved) →
+// value (saved = the fields before it), e.g. a repeat rule shown as ~1st.
 
 function toEditable(field, value) {
   if (field.type === 'toggle') return Boolean(value);
@@ -22,10 +24,11 @@ function toEditable(field, value) {
     const found = field.options.find((o) => o.value === value);
     return found ? found.value : field.options[0]?.value;
   }
+  if (field.toText) return field.toText(value);
   return value == null ? '' : String(value);
 }
 
-function fromEditable(field, value) {
+function fromEditable(field, value, saved) {
   if (field.type === 'toggle' || field.type === 'select') return value;
   if (field.type === 'date') {
     try {
@@ -36,6 +39,7 @@ function fromEditable(field, value) {
   }
   const trimmed = String(value).trim();
   if (field.required && !trimmed) throw new Error(`${field.label} is required`);
+  if (field.fromText) return field.fromText(trimmed, saved);
   return trimmed || null;
 }
 
@@ -64,7 +68,7 @@ export function Form({ title, fields, initial = {}, onSubmit, onCancel }) {
     let out;
     try {
       out = {};
-      for (const f of fields) out[f.key] = fromEditable(f, values[f.key]);
+      for (const f of fields) out[f.key] = fromEditable(f, values[f.key], out);
     } catch (err) {
       setError(err.message);
       return;

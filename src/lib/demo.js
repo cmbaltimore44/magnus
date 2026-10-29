@@ -3,6 +3,7 @@
 // (select/order/eq/insert/update/delete/single), so every view can be
 // exercised without touching real data or signing in.
 import { randomUUID } from 'node:crypto';
+import { nextDue } from './repeat.js';
 
 const DEMO_USER = { id: '00000000-0000-4000-8000-000000000000', email: 'demo@example.com' };
 
@@ -36,6 +37,7 @@ function seed() {
     row({ title: 'Fix leaky faucet', notes: null, status: 'todo', category_id: home, priority: 'high', due_date: iso(0), is_starred: false, sort_order: 4 }),
     row({ title: 'Ship onboarding email', notes: null, status: 'done', category_id: work, priority: 'medium', due_date: iso(-1), is_starred: false, sort_order: 5 }),
     row({ title: 'Clean out garage', notes: null, status: 'done', category_id: null, priority: 'low', due_date: null, is_starred: false, sort_order: 6 }),
+    row({ title: 'Water the plants', notes: null, status: 'todo', category_id: home, priority: 'low', due_date: iso(2), is_starred: false, sort_order: 7, repeat: 'every:3d' }),
   ];
   const routines = [
     row({ name: 'Meditate 10 min', time_of_day: 'morning', sort_order: 0 }),
@@ -119,6 +121,21 @@ function stampCompleted(task, previousStatus) {
   }
 }
 
+// Same rule as schema_008's tasks_repeat trigger: a repeating task moving to
+// Done gets its next copy, and loses its rule.
+function spawnRepeat(rows, task, previousStatus) {
+  if (task.status !== 'done' || previousStatus === 'done' || !task.repeat) return;
+  const base = task.due_date || iso(0);
+  rows.push({
+    id: randomUUID(), user_id: task.user_id, created_at: new Date().toISOString(), category_id: task.category_id,
+    title: task.title, notes: task.notes, status: 'todo', due_date: nextDue(task.repeat, base), priority: task.priority,
+    sort_order: task.sort_order, is_starred: false, repeat: task.repeat, completed_at: null,
+  });
+  task.repeat = null;
+}
+
+const UPSERT_KEYS = { assistant_settings: ['user_id'], assistant_days: ['user_id', 'day'] };
+
 // Like a Supabase project's default "max rows": a select returns at most
 // this many rows, silently. Tests seed past it to check paging.
 export const DEMO_MAX_ROWS = 1000;
@@ -191,8 +208,20 @@ class Query {
     this.op = 'delete';
     return this;
   }
+  // PostgREST upsert on the primary key: the schema_007 tables are keyed by
+  // user (and day), everything else by id.
+  upsert(payload) {
+    this.op = 'upsert';
+    this.payload = payload;
+    return this;
+  }
   single() {
     this.isSingle = true;
+    return this;
+  }
+  maybeSingle() {
+    this.isSingle = true;
+    this.maybe = true;
     return this;
   }
   then(resolve, reject) {
@@ -221,12 +250,24 @@ class Query {
         rows.push(inserted);
         result.push(inserted);
       }
+    } else if (this.op === 'upsert') {
+      const key = UPSERT_KEYS[this.table] || ['id'];
+      result = [];
+      for (const payload of Array.isArray(this.payload) ? this.payload : [this.payload]) {
+        const existing = rows.find((r) => key.every((k) => r[k] === payload[k]));
+        if (existing) Object.assign(existing, payload);
+        else rows.push({ ...(key.includes('id') ? { id: randomUUID() } : {}), ...payload });
+        result.push(existing || rows[rows.length - 1]);
+      }
     } else if (this.op === 'update') {
       result = rows.filter(match);
       result.forEach((r) => {
         const before = r.status;
         Object.assign(r, this.payload);
-        if (this.table === 'tasks' && 'status' in this.payload) stampCompleted(r, before);
+        if (this.table === 'tasks' && 'status' in this.payload) {
+          stampCompleted(r, before);
+          spawnRepeat(rows, r, before);
+        }
       });
     } else if (this.op === 'delete') {
       const doomed = new Set(rows.filter(match));
@@ -253,6 +294,7 @@ class Query {
     if (this.head) return { data: null, count: total, error: null };
     result = result.map((r) => this.project(r));
     if (this.isSingle) {
+      if (this.maybe && result.length === 0) return { data: null, error: null };
       if (result.length !== 1) return { data: null, error: { message: 'JSON object requested, multiple (or no) rows returned' } };
       return { data: result[0], error: null };
     }

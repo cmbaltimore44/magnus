@@ -27,7 +27,7 @@ export function TaskCard({ task, categories, selected, width, showNotes = true, 
 
   if (compact) {
     const metaLen = (cat ? cat.name.length + 2 : 0) + (cat && task.due_date ? 2 : 0) + dueLabel(task).length;
-    const titleWidth = Math.max(8, inner - (task.is_starred ? 3 : 1) - (metaLen ? metaLen + 2 : 0));
+    const titleWidth = Math.max(8, inner - (task.is_starred ? 3 : 1) - (task.repeat ? 2 : 0) - (metaLen ? metaLen + 2 : 0));
     return (
       <Box width={width} flexShrink={0}>
         <Text wrap="truncate-end">
@@ -37,6 +37,7 @@ export function TaskCard({ task, categories, selected, width, showNotes = true, 
             {truncate(task.title, titleWidth)}
           </Text>
           {task.is_starred ? <Text color={C.accent}> ★</Text> : null}
+          {task.repeat ? <Text color={C.muted}> ↻</Text> : null}
           {metaLen ? '  ' : ''}
           {meta}
         </Text>
@@ -50,9 +51,10 @@ export function TaskCard({ task, categories, selected, width, showNotes = true, 
         <Text color={C.accent}>{selected ? '› ' : '  '}</Text>
         <Text color={C[PRIORITY_COLORS[priority]]}>●</Text>{' '}
         <Text bold={selected} inverse={selected} color={done && !selected ? C.muted : undefined}>
-          {truncate(task.title, inner - (task.is_starred ? 3 : 1))}
+          {truncate(task.title, inner - (task.is_starred ? 3 : 1) - (task.repeat ? 2 : 0))}
         </Text>
         {task.is_starred ? <Text color={C.accent}> ★</Text> : null}
+        {task.repeat ? <Text color={C.muted}> ↻</Text> : null}
       </Text>
       {showNotes && task.notes ? (
         <Text color={C.muted} wrap="truncate-end">

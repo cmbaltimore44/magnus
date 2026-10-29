@@ -12,14 +12,14 @@ import { categoryColor } from '../../lib/colors.js';
 import { moveIndex, windowRange } from '../components/layout.js';
 
 // Overdue → the next 7 days, across tasks (due date) and projects (target date).
-const HINTS = '↑↓ move · space mark done · t focus · enter open · R refresh · esc home';
+const HINTS = '↑↓ move · space mark done · t focus · enter open · P plan my week · R refresh · esc home';
 
 function dayLabel(iso) {
   return new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 export function Upcoming() {
-  const { navigate, notify, startFocus, columns, contentHeight } = useAppCtx();
+  const { navigate, notify, offerUndo, startFocus, columns, contentHeight } = useAppCtx();
   const [index, setIndex] = useState(0);
   useHints(HINTS);
 
@@ -47,6 +47,12 @@ export function Upcoming() {
       const updated = await tasksApi.updateTask(task.id, updates);
       setData((d) => ({ ...d, tasks: d.tasks.map((t) => (t.id === task.id ? updated : t)) }));
       notify(`“${task.title}” → Done`, 'success');
+      // A repeating task: show its next copy, and let u take the finish back.
+      const copy = task.repeat ? await tasksApi.findSpawnedCopy(updated).catch(() => null) : null;
+      if (copy) {
+        setData((d) => ({ ...d, tasks: d.tasks.some((t) => t.id === copy.id) ? d.tasks : [...d.tasks, copy] }));
+        offerUndo(`“${task.title}” done · next one due ${copy.due_date}`, () => tasksApi.reopenTask(updated, { status: task.status, is_starred: task.is_starred }));
+      }
     } catch (err) {
       notify(err.message, 'error');
     }
@@ -55,6 +61,7 @@ export function Upcoming() {
   useViewInput((input, key) => {
     if (key.escape) return navigate('home');
     if (input === 'R') return reload();
+    if (input === 'P') return navigate('ask', { preset: 'week' });
     if (key.upArrow || input === 'k') return setIndex((i) => moveIndex(i, -1, entries.length));
     if (key.downArrow || input === 'j') return setIndex((i) => moveIndex(i, 1, entries.length));
     if (!selected) return;

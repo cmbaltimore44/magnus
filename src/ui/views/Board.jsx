@@ -17,6 +17,8 @@ import {
 import { categoryColor, CATEGORY_SWATCHES } from '../../lib/colors.js';
 import { TaskCard, taskCardHeight } from '../components/TaskCard.jsx';
 import { Form } from '../components/Form.jsx';
+import { parseRepeatToken, ruleToToken, firstDue } from '../../lib/repeat.js';
+import { todayISO } from '../../lib/data/completions.js';
 import { Prompt, Confirm, Choice } from '../components/Prompt.jsx';
 import { windowByHeight, windowRange, moveIndex, swapped } from '../components/layout.js';
 
@@ -45,7 +47,7 @@ function locate(columns, taskId) {
   return null;
 }
 
-function taskFields(categories) {
+function taskFields(categories, task = null) {
   return [
     { key: 'title', label: 'Title', type: 'text', required: true },
     {
@@ -58,6 +60,21 @@ function taskFields(categories) {
       ],
     },
     { key: 'due_date', label: 'Due', type: 'date' },
+    {
+      key: 'repeat',
+      label: 'Repeat',
+      type: 'text',
+      hint: '~daily ~weekdays ~mon,thu ~weekly ~1st ~last ~monthly ~yearly ~3d ~2w ~6m · blank: no repeat',
+      toText: ruleToToken,
+      fromText: (text, saved) => {
+        if (!text) return null;
+        // Unchanged: keep the rule as it was (~yearly would otherwise re-anchor on the due date).
+        if (task?.repeat && text === ruleToToken(task.repeat)) return task.repeat;
+        const rule = parseRepeatToken(text.startsWith('~') ? text : `~${text}`, saved.due_date || todayISO());
+        if (!rule) throw new Error(`Repeat: can't read "${text}" (try ~weekly, ~1st, ~mon,thu, ~3d)`);
+        return rule;
+      },
+    },
     {
       key: 'status',
       label: 'Status',
@@ -133,11 +150,29 @@ export function Board({ params }) {
     setData((d) => ({ ...d, tasks: optimistic }));
     select(optimistic, task.id);
     try {
-      replaceTask(await tasksApi.updateTask(task.id, updates));
+      if (task.status === 'done') {
+        // Out of Done: a repeating task's next copy goes away and its rule comes back.
+        const { row, removedId } = await tasksApi.reopenTask(task, updates);
+        setData((d) => ({ ...d, tasks: d.tasks.filter((t) => t.id !== removedId).map((t) => (t.id === row.id ? row : t)) }));
+        return;
+      }
+      const row = await tasksApi.updateTask(task.id, updates);
+      replaceTask(row);
+      if (next === 'done' && task.repeat) await showNextCopy(task, row);
     } catch (err) {
       replaceTask(task);
       notify(err.message, 'error');
     }
+  };
+
+  // After finishing a repeating task: show its next copy, and offer u to take it back.
+  const showNextCopy = async (task, row) => {
+    const copy = await tasksApi.findSpawnedCopy(row);
+    if (!copy) return;
+    setData((d) => ({ ...d, tasks: d.tasks.some((t) => t.id === copy.id) ? d.tasks : [...d.tasks, copy] }));
+    offerUndo(`“${task.title}” done · next one due ${copy.due_date}`, async () => {
+      await tasksApi.reopenTask(row, { status: task.status, is_starred: task.is_starred });
+    });
   };
 
   const toggleStar = async (task) => {
@@ -157,12 +192,23 @@ export function Board({ params }) {
 
   const saveTask = async (fields) => {
     const existing = mode.task;
+    if (fields.repeat && !fields.due_date) fields.due_date = firstDue(fields.repeat, todayISO());
+    // Send repeat only when there is one or there was one, so the form keeps
+    // working against a database without schema_008.
+    if (!fields.repeat && !existing?.repeat) delete fields.repeat;
     if (existing && fields.status === 'done' && existing.is_starred) fields.is_starred = false;
     if (existing) {
-      const updated = await tasksApi.updateTask(existing.id, fields);
-      const tasks = data.tasks.map((t) => (t.id === updated.id ? updated : t));
+      let updated;
+      let removedId = null;
+      if (existing.status === 'done' && fields.status !== 'done') {
+        ({ row: updated, removedId } = await tasksApi.reopenTask(existing, fields)); // takes back a repeat's next copy
+      } else {
+        updated = await tasksApi.updateTask(existing.id, fields);
+      }
+      const tasks = data.tasks.filter((t) => t.id !== removedId).map((t) => (t.id === updated.id ? updated : t));
       setData((d) => ({ ...d, tasks }));
       select(tasks, updated.id);
+      if (fields.status === 'done' && existing.status !== 'done' && existing.repeat) await showNextCopy(existing, updated);
     } else {
       const created = await tasksApi.createTask(userId, fields, data.tasks.length);
       const tasks = [...data.tasks, created];
@@ -230,7 +276,7 @@ export function Board({ params }) {
     return (
       <Form
         title={mode.task ? 'Edit Task' : 'New Task'}
-        fields={taskFields(data.categories)}
+        fields={taskFields(data.categories, mode.task)}
         initial={mode.task || { status: mode.status, priority: 'medium' }}
         onSubmit={saveTask}
         onCancel={() => setMode(null)}

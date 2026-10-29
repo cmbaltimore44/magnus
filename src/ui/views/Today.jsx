@@ -18,10 +18,10 @@ import { layoutQuote, QuoteBlock } from '../components/Quote.jsx';
 // switches for the rest of the session; press r to roll a new one.
 let featuredQuote;
 
-const HINTS = '↑↓ move · space check off / cycle status · y check off yesterday · enter open task · s unstar · t focus · r new quote · R refresh · esc home';
+const HINTS = '↑↓ move · space check off / cycle status · y check off yesterday · enter open task · s unstar · t focus · p pick my three · r new quote · R refresh · esc home';
 
 export function Today() {
-  const { userId, navigate, notify, startFocus, columns, contentHeight } = useAppCtx();
+  const { userId, navigate, notify, offerUndo, startFocus, columns, contentHeight } = useAppCtx();
   const [index, setIndex] = useState(0);
   const [quote, setQuote] = useState(featuredQuote ?? null);
   useHints(HINTS);
@@ -87,6 +87,9 @@ export function Today() {
     if (next === 'done' && task.is_starred) updates.is_starred = false; // matches the web board
     const updated = await updateTask(task, updates);
     if (updated) notify(`“${task.title}” → ${TASK_STATUS_LABELS[next]}${updates.is_starred === false ? ' (unstarred)' : ''}`, 'success');
+    // A repeating task just spawned its next copy: u takes the finish back.
+    const copy = updated && next === 'done' && task.repeat ? await tasksApi.findSpawnedCopy(updated).catch(() => null) : null;
+    if (copy) offerUndo(`“${task.title}” done · next one due ${copy.due_date}`, () => tasksApi.reopenTask(updated, { status: task.status, is_starred: task.is_starred }));
   };
 
   const rollQuote = async () => {
@@ -101,6 +104,7 @@ export function Today() {
   useViewInput((input, key) => {
     if (key.escape) return navigate('home');
     if (input === 'R') return reload();
+    if (input === 'p') return navigate('ask', { preset: 'three' }); // Ask suggests today's stars
     if (input === 'r') return rollQuote();
     if (key.upArrow || input === 'k') return setIndex((i) => moveIndex(i, -1, items.length));
     if (key.downArrow || input === 'j') return setIndex((i) => moveIndex(i, 1, items.length));

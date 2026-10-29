@@ -102,7 +102,7 @@ export function QuickAdd({ onClose, initial = '', onCreated }) {
         <TextInput value={value} onChange={setValue} placeholder="renew passport fri !high #home *" onSubmit={submit} />
       </Box>
       <Text color={C.muted} wrap="truncate-end">
-        {preview || 'date (fri, +3, 10/1) · !high/!low · #category · * star · "+list item" → a list · "book: title by author" or an ISBN → Want to Read · "> text" → journal inbox'}
+        {preview || 'date (fri, +3, 10/1) · !high/!low · #category · * star · ~weekly/~1st/~3d repeat · "+list item" → a list · "book: title by author" or an ISBN → Want to Read · "> text" → journal inbox'}
       </Text>
     </Box>
   );
